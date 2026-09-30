@@ -1,0 +1,36 @@
+{
+  "name": "seguridad-higiene",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "config:firebase": "node --env-file=.env.local scripts/generar-config-firebase.mjs",
+    "verificar:publicable": "node scripts/verificar-publicable.mjs",
+    "verificar:historial": "node scripts/verificar-publicable.mjs --historial",
+    "test:rules": "firebase emulators:exec --config firebase.test.json --only firestore --project demo-seguridad-higiene \"vitest run --config vitest.rules.config.ts\""
+  },
+  "dependencies": {
+    "firebase": "^12.19.0",
+    "next": "14.2.35",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "firebase-tools": "^15.32.0",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5",
+    "vitest": "^5.0.2"
+  }
+}
