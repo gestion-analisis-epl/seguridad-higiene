@@ -1,0 +1,304 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens del sistema visual; Tasks 14 y 15 consumen los de nivel, serie y estado */
+:root {
+  color-scheme: light;
+
+  --fondo: #f3f2ee;
+  --superficie: #ffffff;
+  --superficie-2: #ebe9e3;
+  --borde: #d8d5cc;
+  --borde-fuerte: #b3afa3;
+  --borde-control: #807b6f;
+  --texto: #1a1c20;
+  --texto-suave: #555a62;
+  --primario: #1f2933;
+  --primario-hover: #323f4b;
+  --primario-texto: #ffffff;
+  --acento: #f2b705;
+  --acento-texto: #1a1c20;
+  --foco: #0b5fc4;
+  --error: #a4262c;
+  --error-suave: #f8e2e1;
+
+  --barra: #15181c;
+  --barra-2: #1f2328;
+  --barra-borde: #2b3036;
+  --barra-texto: #e7e5de;
+  --barra-suave: #9ba0a7;
+
+  --estado-vigente: #1d6b3a;
+  --estado-vigente-suave: #e1f0e5;
+  --estado-por-vencer: #8a5700;
+  --estado-por-vencer-suave: #fbeecb;
+  --estado-vencido: #a4262c;
+  --estado-vencido-suave: #f8e2e1;
+
+  --nivel-supera: #0f5f4c;
+  --nivel-meta: #3a8a3f;
+  --nivel-minimo: #c08400;
+  --nivel-fuera-de-meta: #b42318;
+  --nivel-sin-dato: #8a8e95;
+  --nivel-supera-tinta: #0b4a3b;
+  --nivel-meta-tinta: #276a2c;
+  --nivel-minimo-tinta: #7d5600;
+  --nivel-fuera-de-meta-tinta: #9a1d14;
+  --nivel-sin-dato-tinta: #50545b;
+  --nivel-supera-suave: #dcefe9;
+  --nivel-meta-suave: #e3f1e3;
+  --nivel-minimo-suave: #fbefcf;
+  --nivel-fuera-de-meta-suave: #f9e0dd;
+  --nivel-sin-dato-suave: #e9e9ea;
+
+  --serie-laboral: #2c5c9e;
+  --serie-trayecto: #c0561a;
+
+  --radio: 4px;
+  --radio-lg: 6px;
+  --sombra: 0 1px 2px rgb(20 22 26 / 0.06), 0 1px 1px rgb(20 22 26 / 0.04);
+  --sombra-alta: 0 12px 32px rgb(20 22 26 / 0.18);
+  --ancho-barra: 16rem;
+  --alto-cabecera: 3.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --fondo: #101215;
+    --superficie: #171a1e;
+    --superficie-2: #1f2328;
+    --borde: #2c3138;
+    --borde-fuerte: #454b54;
+    --borde-control: #737a85;
+    --texto: #ebe9e3;
+    --texto-suave: #a4a8af;
+    --primario: #f2b705;
+    --primario-hover: #ffc933;
+    --primario-texto: #15181c;
+    --foco: #7fb2ff;
+    --error: #ff8f86;
+    --error-suave: #3a1715;
+
+    --barra: #0b0d0f;
+    --barra-2: #16191d;
+    --barra-borde: #23272c;
+
+    --estado-vigente: #7fd39b;
+    --estado-vigente-suave: #16301f;
+    --estado-por-vencer: #f5c451;
+    --estado-por-vencer-suave: #352806;
+    --estado-vencido: #ff8f86;
+    --estado-vencido-suave: #3a1715;
+
+    --nivel-supera: #3fb58f;
+    --nivel-meta: #7ccb6f;
+    --nivel-minimo: #f0b429;
+    --nivel-fuera-de-meta: #f26b5b;
+    --nivel-sin-dato: #7a7f87;
+    --nivel-supera-tinta: #7fdcbc;
+    --nivel-meta-tinta: #a6e09a;
+    --nivel-minimo-tinta: #f7cf6e;
+    --nivel-fuera-de-meta-tinta: #ff9a8e;
+    --nivel-sin-dato-tinta: #b3b7bd;
+    --nivel-supera-suave: #0f2e25;
+    --nivel-meta-suave: #172b16;
+    --nivel-minimo-suave: #33270a;
+    --nivel-fuera-de-meta-suave: #3a1714;
+    --nivel-sin-dato-suave: #24272b;
+
+    --serie-laboral: #7ea8e6;
+    --serie-trayecto: #f29a5e;
+
+    --sombra: 0 1px 2px rgb(0 0 0 / 0.4);
+    --sombra-alta: 0 12px 32px rgb(0 0 0 / 0.55);
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-fondo font-sans text-texto antialiased;
+    font-feature-settings: 'ss01', 'tnum';
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
+  }
+
+  h1, h2, h3 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .franja-seguridad {
+    background: repeating-linear-gradient(-45deg, var(--acento) 0 7px, var(--barra) 7px 14px);
+  }
+
+  .zona-barra :focus-visible {
+    outline-color: var(--acento);
+  }
+
+  .rotulo {
+    @apply font-mono text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-texto-suave;
+  }
+
+  .titulo-pagina {
+    @apply text-xl text-texto sm:text-2xl;
+  }
+
+  .tarjeta {
+    @apply rounded-lg border border-borde bg-superficie shadow-suave;
+  }
+
+  .boton {
+    @apply inline-flex min-h-[2.5rem] items-center justify-center gap-2 rounded px-4 text-sm font-medium
+      transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .boton-primario {
+    @apply boton bg-primario text-primario-texto hover:bg-primario-hover;
+  }
+
+  .boton-secundario {
+    @apply boton border border-borde-fuerte bg-superficie text-texto hover:bg-superficie-2;
+  }
+
+  .etiqueta {
+    @apply mb-1 block text-sm font-medium text-texto;
+  }
+
+  .control {
+    @apply block min-h-[2.5rem] w-full rounded border border-borde-control bg-superficie px-3 text-sm text-texto
+      placeholder:text-texto-suave disabled:cursor-not-allowed disabled:bg-superficie-2 disabled:text-texto-suave;
+  }
+
+  .control[aria-invalid='true'] {
+    @apply border-error;
+  }
+
+  .casilla {
+    @apply h-4 w-4 rounded-sm border-borde-control;
+    accent-color: var(--primario);
+  }
+
+  .contenedor-tabla {
+    @apply tarjeta max-w-full overflow-x-auto;
+  }
+
+  .tabla {
+    @apply w-full border-collapse text-left text-sm tabular-nums;
+  }
+
+  .tabla thead th {
+    @apply whitespace-nowrap border-b border-borde-fuerte bg-superficie-2 px-3 py-2 font-mono text-[0.6875rem]
+      font-medium uppercase tracking-[0.1em] text-texto-suave;
+  }
+
+  .tabla tbody td {
+    @apply border-b border-borde px-3 py-2 align-middle;
+  }
+
+  .tabla tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .tabla tbody tr[data-estado] td:first-child {
+    @apply border-l-4 border-l-transparent;
+  }
+
+  .tabla tbody tr[data-estado='vencido'] td {
+    @apply bg-estado-vencido-suave;
+  }
+
+  .tabla tbody tr[data-estado='vencido'] td:first-child {
+    border-left-color: var(--estado-vencido);
+  }
+
+  .tabla tbody tr[data-estado='por_vencer'] td {
+    @apply bg-estado-por-vencer-suave;
+  }
+
+  .tabla tbody tr[data-estado='por_vencer'] td:first-child {
+    border-left-color: var(--estado-por-vencer);
+  }
+
+  .aviso {
+    @apply flex items-start gap-3 rounded border px-4 py-3 text-sm;
+  }
+
+  .aviso-error {
+    @apply aviso border-error bg-error-suave text-error;
+  }
+
+  .aviso-info {
+    @apply aviso border-borde bg-superficie text-texto;
+  }
+
+  .insignia {
+    @apply inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium;
+  }
+
+  .kpi[data-nivel] {
+    @apply border-l-4;
+    border-left-color: var(--nivel-color);
+    background: var(--nivel-fondo);
+    color: var(--nivel-texto);
+  }
+
+  .kpi[data-nivel] .rotulo {
+    color: inherit;
+  }
+
+  .tabla tbody tr[data-nivel] td:first-child {
+    @apply border-l-4;
+    border-left-color: var(--nivel-color);
+  }
+
+  .nivel-etiqueta {
+    @apply inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium;
+    background: var(--nivel-fondo);
+    color: var(--nivel-texto);
+  }
+
+  .nivel-etiqueta::before {
+    content: '';
+    @apply h-2 w-2 rounded-full;
+    background: var(--nivel-color);
+  }
+
+  [data-nivel='supera'] { --nivel-color: var(--nivel-supera); --nivel-fondo: var(--nivel-supera-suave); --nivel-texto: var(--nivel-supera-tinta); }
+  [data-nivel='meta'] { --nivel-color: var(--nivel-meta); --nivel-fondo: var(--nivel-meta-suave); --nivel-texto: var(--nivel-meta-tinta); }
+  [data-nivel='minimo'] { --nivel-color: var(--nivel-minimo); --nivel-fondo: var(--nivel-minimo-suave); --nivel-texto: var(--nivel-minimo-tinta); }
+  [data-nivel='fuera_de_meta'] { --nivel-color: var(--nivel-fuera-de-meta); --nivel-fondo: var(--nivel-fuera-de-meta-suave); --nivel-texto: var(--nivel-fuera-de-meta-tinta); }
+  [data-nivel='sin_dato'] { --nivel-color: var(--nivel-sin-dato); --nivel-fondo: var(--nivel-sin-dato-suave); --nivel-texto: var(--nivel-sin-dato-tinta); }
+
+  .insignia-vigente { @apply insignia bg-estado-vigente-suave text-estado-vigente; }
+  .insignia-por-vencer { @apply insignia bg-estado-por-vencer-suave text-estado-por-vencer; }
+  .insignia-neutra { @apply insignia bg-superficie-2 text-texto-suave; }
+  .insignia-vencido { @apply insignia bg-estado-vencido-suave text-estado-vencido; }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .aparecer {
+      animation: aparecer 220ms ease-out both;
+    }
+  }
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
