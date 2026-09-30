@@ -1,0 +1,4 @@
+#!/bin/sh
+# Bloquea el push si el árbol o lo que se publica trae secretos o valores sensibles
+node scripts/verificar-publicable.mjs || exit 1
+node scripts/verificar-publicable.mjs --push

@@ -1,0 +1,8 @@
+# Una línea por valor prohibido (sin distinguir mayúsculas ni acentos). Copia a .valores-sensibles.local (git-ignorado).
+# Ejemplos de la forma, no son valores reales:
+<ID-DEL-PROYECTO>
+<ID-DE-LA-BASE>
+<dominio-de-correo.example>
+<nombre-de-una-ciudad>
+<nombre-de-otra-app>
+<ruta-local-o-usuario-de-windows>

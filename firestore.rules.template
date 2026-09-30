@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function correoPermitido() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@{{DOMINIO_REGEX}}');
+    }
+
+    function tieneRegistro() {
+      return correoPermitido()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    function usuarioActual() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function activoConRol(roles) {
+      return tieneRegistro() && usuarioActual().activo == true && usuarioActual().rol in roles;
+    }
+
+    function puedeLeer() { return activoConRol(['admin', 'capturista', 'consulta']); }
+    function puedeCapturar() { return activoConRol(['admin', 'capturista']); }
+    function esAdmin() { return activoConRol(['admin']); }
+
+    match /usuarios/{uid} {
+      allow get: if correoPermitido() && (request.auth.uid == uid || esAdmin());
+      allow list: if esAdmin();
+      allow create: if correoPermitido()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'rol', 'activo'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.rol == 'consulta'
+        && request.resource.data.activo == true;
+      allow update: if esAdmin();
+      // Revocar es activo: false; borrar re-registraria la cuenta como consulta activa
+      allow delete: if false;
+    }
+
+    match /catalogos/{id} {
+      allow read: if puedeLeer();
+      allow write: if esAdmin();
+    }
+
+    match /configuracion/{id} {
+      allow read: if puedeLeer();
+      allow write: if esAdmin();
+    }
+
+    function esOperativa(c) {
+      return c in [
+        'colaboradores', 'capacitaciones', 'entregas_uniforme', 'entregas_epp',
+        'accidentes', 'oficinas_equipo', 'vehiculos', 'indicadores_mensuales'
+      ];
+    }
+
+    // Los colaboradores se desactivan con activo: false, nunca se borran.
+    match /{coleccion}/{id} {
+      allow read: if esOperativa(coleccion) && puedeLeer();
+      allow create, update: if esOperativa(coleccion) && puedeCapturar();
+      allow delete: if coleccion != 'colaboradores' && esOperativa(coleccion) && esAdmin();
+    }
+  }
+}

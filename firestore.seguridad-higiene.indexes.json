@@ -1,0 +1,15 @@
+{
+  "indexes": [
+    { "collectionGroup": "capacitaciones", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "ciudad", "order": "ASCENDING" }, { "fieldPath": "vencimiento", "order": "ASCENDING" } ] },
+    { "collectionGroup": "entregas_epp", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "ciudad", "order": "ASCENDING" }, { "fieldPath": "vencimiento", "order": "ASCENDING" } ] },
+    { "collectionGroup": "oficinas_equipo", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "ciudad", "order": "ASCENDING" }, { "fieldPath": "vencimiento", "order": "ASCENDING" } ] },
+    { "collectionGroup": "accidentes", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "ciudad", "order": "ASCENDING" }, { "fieldPath": "periodo", "order": "ASCENDING" } ] },
+    { "collectionGroup": "entregas_uniforme", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "ciudad", "order": "ASCENDING" }, { "fieldPath": "periodo", "order": "ASCENDING" } ] }
+  ],
+  "fieldOverrides": []
+}
