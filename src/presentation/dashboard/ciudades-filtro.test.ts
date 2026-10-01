@@ -28,4 +28,14 @@ describe('ciudades-filtro', () => {
     expect(ocultasValidas('a')).toBe(false)
     expect(ocultasValidas(null)).toBe(false)
   })
+  it('con catálogo vacío conserva las ocultas guardadas', () => {
+    expect(ocultasDesdeSeleccion([], [], ['ciudad-b'])).toEqual(['ciudad-b'])
+  })
+  it('conserva ocultas guardadas que aún no están en el catálogo', () => {
+    expect(ocultasDesdeSeleccion(todas, ['ciudad-a', 'ciudad-b', 'ciudad-c'], ['ciudad-x'])).toEqual(['ciudad-x'])
+    expect(ocultasDesdeSeleccion(todas, ['ciudad-a'], ['ciudad-x', 'ciudad-b'])).toEqual(['ciudad-b', 'ciudad-c', 'ciudad-x'])
+  })
+  it('una ciudad mostrada de nuevo deja de estar oculta', () => {
+    expect(ocultasDesdeSeleccion(todas, todas, ['ciudad-b'])).toEqual([])
+  })
 })

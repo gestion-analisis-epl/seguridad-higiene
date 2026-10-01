@@ -18,7 +18,7 @@ export function useFiltroCiudades() {
   const todas = useMemo(() => catalogo.map((c) => c.valor), [catalogo])
   const seleccion = useMemo(() => seleccionDesdeOcultas(todas, ocultas), [todas, ocultas])
   const cambiar = useCallback(
-    (nueva: string[]) => setOcultas(ocultasDesdeSeleccion(todas, nueva)),
+    (nueva: string[]) => setOcultas((previas) => ocultasDesdeSeleccion(todas, nueva, previas)),
     [todas, setOcultas],
   )
   const etiqueta = useCallback(
