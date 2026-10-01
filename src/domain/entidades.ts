@@ -33,10 +33,13 @@ export interface Accidente {
   dias_incapacidad: number
 }
 
+export interface ItemBotiquin { nombre: string; cantidad?: number | null; caducidad: Date | null }
+
 export interface EquipoOficina {
   ciudad: string
   tipo: 'extintor' | 'botiquin' | 'senaletica'
   vencimiento: Date | null
+  items?: ItemBotiquin[] | null
 }
 
 export interface Vehiculo {
@@ -44,6 +47,7 @@ export interface Vehiculo {
   placa: string
   extintor_vencimiento: Date | null
   botiquin_caducidad: Date | null
+  botiquin_items?: ItemBotiquin[] | null
 }
 
 export interface Poblacion { ciudad: string; periodo: string; poblacion: number }

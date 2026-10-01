@@ -1,8 +1,10 @@
 import { formatearFecha, periodoDe } from './fechas'
 
-export type Valor = string | number | boolean | Date | null
+export type ValorItem = string | number | Date | null
+export type Item = Record<string, ValorItem>
+export type Valor = string | number | boolean | Date | null | Item[]
 export type Valores = Record<string, Valor>
-export type TipoCampo = 'texto' | 'numero' | 'fecha' | 'booleano' | 'seleccion'
+export type TipoCampo = 'texto' | 'numero' | 'fecha' | 'booleano' | 'seleccion' | 'lista'
 export type OrigenOpciones = { tipo: 'catalogo'; id: string } | { tipo: 'colaboradores' }
 export interface Opcion { valor: string; etiqueta: string }
 
@@ -15,6 +17,8 @@ export interface CampoDef {
   opciones?: Opcion[]
   patron?: RegExp
   mensajePatron?: string
+  subcampos?: CampoDef[]
+  visibleSi?: (valores: Valores) => boolean
 }
 
 export interface ContextoModulo { ciudadDeColaborador(id: string): string | null }
@@ -35,10 +39,32 @@ export function validarRegistro(def: ModuloDef, valores: Valores): Record<string
   return validarCampos(def.campos, valores)
 }
 
+export const campoVisible = (c: CampoDef, valores: Valores): boolean => c.visibleSi?.(valores) ?? true
+
+// Los campos ocultos se guardan en null para no dejar valores obsoletos.
+export function limpiarOcultos(campos: CampoDef[], valores: Valores): Valores {
+  const salida = { ...valores }
+  for (const c of campos) if (!campoVisible(c, valores)) salida[c.nombre] = null
+  return salida
+}
+
+// Errores de ítems con clave "lista.fila.subcampo" (fila desde 0).
+function validarLista(c: CampoDef, v: Valor | undefined, errores: Record<string, string>) {
+  if (!Array.isArray(v)) return
+  v.forEach((item, i) => {
+    for (const [k, msg] of Object.entries(validarCampos(c.subcampos ?? [], item))) errores[`${c.nombre}.${i}.${k}`] = msg
+  })
+}
+
 export function validarCampos(campos: CampoDef[], valores: Valores): Record<string, string> {
   const errores: Record<string, string> = {}
   for (const c of campos) {
+    if (!campoVisible(c, valores)) continue
     const v = valores[c.nombre]
+    if (c.tipo === 'lista') {
+      validarLista(c, v, errores)
+      continue
+    }
     const vacio = v === null || v === undefined || v === ''
     if (vacio) {
       if (c.requerido && c.tipo !== 'booleano') errores[c.nombre] = 'Obligatorio'
@@ -59,12 +85,26 @@ export function validarCampos(campos: CampoDef[], valores: Valores): Record<stri
 
 export function formatearValor(campo: CampoDef, valor: Valor | undefined, opciones: Opcion[] = []): string {
   if (valor === null || valor === undefined || valor === '') return '-'
+  if (Array.isArray(valor)) return valor.length === 0 ? '-' : `${valor.length} ${valor.length === 1 ? 'ítem' : 'ítems'}`
   switch (campo.tipo) {
     case 'fecha': return valor instanceof Date ? formatearFecha(valor) : '-'
     case 'booleano': return valor ? 'Sí' : 'No'
     case 'seleccion': return opciones.find((o) => o.valor === valor)?.etiqueta ?? String(valor)
     default: return String(valor)
   }
+}
+
+export function caducidadMasProxima(items: Valor | undefined): Date | null {
+  if (!Array.isArray(items)) return null
+  const fechas = items.map((i) => i.caducidad).filter((f): f is Date => f instanceof Date)
+  return fechas.reduce<Date | null>((min, f) => (min === null || f < min ? f : min), null)
+}
+
+// Con ítems el campo de fecha se deriva; sin ítems se conserva el valor manual.
+export function derivarCaducidad(v: Valores, campoItems: string, campoFecha: string): Valores {
+  const items = v[campoItems]
+  if (!Array.isArray(items) || items.length === 0) return v
+  return { ...v, [campoFecha]: caducidadMasProxima(items) }
 }
 
 export function derivarCiudad(v: Valores, ctx: ContextoModulo): Valores {

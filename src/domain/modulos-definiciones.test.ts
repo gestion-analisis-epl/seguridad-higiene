@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fechaCalendario } from './fechas'
 import { admiteEliminar, MODULO_CONFIGURACION, MODULOS } from './modulos-definiciones'
-import { validarRegistro } from './modulos'
+import { campoVisible, limpiarOcultos, validarRegistro } from './modulos'
 
 const ctx = { ciudadDeColaborador: (id: string) => (id === 'c1' ? 'ciudad-a' : null) }
 const hoy = new Date(2026, 8, 30)
@@ -38,6 +38,29 @@ describe('definiciones', () => {
 
   it('la configuración usa ID fijo', () => {
     expect(MODULO_CONFIGURACION.idFijo!({})).toBe('indicadores')
+  })
+
+  it('botiquín de oficina: la lista solo aplica a botiquín y deriva el vencimiento', () => {
+    const def = MODULOS.oficinas_equipo
+    const items = [{ nombre: 'Gasas', cantidad: 2, caducidad: fechaCalendario(2027, 1, 5) }, { nombre: 'Venda', cantidad: 1, caducidad: fechaCalendario(2026, 12, 1) }]
+    const v = { ciudad: 'ciudad-a', tipo: 'botiquin', items, vencimiento: fechaCalendario(2030, 1, 1) }
+    expect(limpiarOcultos(def.campos, { ...v, tipo: 'extintor' }).items).toBeNull()
+    expect(def.derivar!(v, ctx, hoy).vencimiento).toEqual(fechaCalendario(2026, 12, 1))
+    expect(def.derivar!({ ...v, items: [] }, ctx, hoy).vencimiento).toEqual(fechaCalendario(2030, 1, 1))
+    expect(validarRegistro(def, { ...v, items: [{ nombre: '' }] })['items.0.nombre']).toBe('Obligatorio')
+    const oculto = (n: string, valores: Record<string, unknown>) =>
+      !campoVisible(def.campos.find((c) => c.nombre === n)!, valores as never)
+    expect(oculto('vencimiento', v)).toBe(true)
+    expect(oculto('vencimiento', { ...v, items: [] })).toBe(false)
+    expect(oculto('items', { ...v, tipo: 'extintor' })).toBe(true)
+  })
+
+  it('botiquín de vehículo deriva la caducidad y conserva la manual sin ítems', () => {
+    const def = MODULOS.vehiculos
+    const base = { ciudad: 'ciudad-a', placa: 'ABC-1', botiquin_caducidad: fechaCalendario(2030, 1, 1) }
+    const items = [{ nombre: 'Gasas', cantidad: 1, caducidad: fechaCalendario(2027, 3, 3) }, { nombre: 'Venda', cantidad: 1, caducidad: null }]
+    expect(def.derivar!({ ...base, botiquin_items: items }, ctx, hoy).botiquin_caducidad).toEqual(fechaCalendario(2027, 3, 3))
+    expect(def.derivar!(base, ctx, hoy).botiquin_caducidad).toEqual(fechaCalendario(2030, 1, 1))
   })
 
   it('colaboradores nace activo', () => {

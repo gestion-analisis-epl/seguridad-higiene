@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { fechaCalendario } from './fechas'
 import {
-  derivarCiudad, derivarPeriodo, formatearValor, validarRegistro,
+  campoVisible, caducidadMasProxima, derivarCiudad, derivarPeriodo, formatearValor, limpiarOcultos,
+  validarCampos, validarRegistro,
   type CampoDef, type ModuloDef,
 } from './modulos'
 
@@ -57,5 +58,61 @@ describe('derivaciones', () => {
   it('calcula el periodo desde una fecha', () => {
     expect(derivarPeriodo({ fecha: fechaCalendario(2026, 8, 24) }, 'fecha').periodo).toBe('2026-08')
     expect(derivarPeriodo({ fecha: null }, 'fecha').periodo).toBeNull()
+  })
+})
+
+const botiquin: CampoDef[] = [
+  { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'texto' },
+  {
+    nombre: 'items', etiqueta: 'Contenido', tipo: 'lista', visibleSi: (v) => v.tipo === 'botiquin',
+    subcampos: [
+      { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true },
+      { nombre: 'cantidad', etiqueta: 'Cantidad', tipo: 'numero' },
+      { nombre: 'caducidad', etiqueta: 'Caducidad', tipo: 'fecha' },
+    ],
+  },
+  { nombre: 'notas', etiqueta: 'Notas', tipo: 'texto', requerido: true, visibleSi: (v) => v.tipo !== 'botiquin' },
+]
+
+describe('validarCampos con listas', () => {
+  it('direcciona errores por fila y subcampo', () => {
+    const e = validarCampos(botiquin, {
+      tipo: 'botiquin',
+      items: [{ nombre: 'Gasas', cantidad: 2, caducidad: null }, { nombre: '', cantidad: -1, caducidad: new Date('x') }],
+    })
+    expect(e).toEqual({
+      'items.1.nombre': 'Obligatorio', 'items.1.cantidad': 'Número inválido', 'items.1.caducidad': 'Fecha inválida',
+    })
+  })
+  it('acepta lista vacía o ausente y no valida campos ocultos', () => {
+    expect(validarCampos(botiquin, { tipo: 'botiquin', items: [] })).toEqual({})
+    expect(validarCampos(botiquin, { tipo: 'botiquin' })).toEqual({})
+    expect(validarCampos(botiquin, { tipo: 'extintor', items: [{ nombre: '' }] })).toEqual({ notas: 'Obligatorio' })
+  })
+})
+
+describe('visibilidad', () => {
+  it('limpiarOcultos pone en null los campos no visibles', () => {
+    const v = limpiarOcultos(botiquin, { tipo: 'extintor', items: [{ nombre: 'Gasas' }], notas: 'x' })
+    expect(v).toEqual({ tipo: 'extintor', items: null, notas: 'x' })
+    expect(campoVisible(botiquin[1], { tipo: 'botiquin' })).toBe(true)
+  })
+})
+
+describe('caducidadMasProxima', () => {
+  const a = new Date(2026, 10, 1)
+  const b = new Date(2026, 9, 1)
+  it('devuelve la fecha más temprana o null', () => {
+    expect(caducidadMasProxima([{ caducidad: a }, { caducidad: null }, { caducidad: b }])).toBe(b)
+    expect(caducidadMasProxima([{ nombre: 'Gasas' }])).toBeNull()
+    expect(caducidadMasProxima(null)).toBeNull()
+  })
+})
+
+describe('formatearValor de lista', () => {
+  it('resume la cantidad de ítems', () => {
+    expect(formatearValor(botiquin[1], [{ nombre: 'Gasas' }, { nombre: 'Venda' }])).toBe('2 ítems')
+    expect(formatearValor(botiquin[1], [{ nombre: 'Gasas' }])).toBe('1 ítem')
+    expect(formatearValor(botiquin[1], [])).toBe('-')
   })
 })

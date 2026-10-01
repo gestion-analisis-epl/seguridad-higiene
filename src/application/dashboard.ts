@@ -1,6 +1,6 @@
 import { PRENDAS, TIPOS_EPP } from '@/domain/catalogos-iniciales'
 import type {
-  Accidente, Capacitacion, Colaborador, DatosOperativos, Poblacion,
+  Accidente, Capacitacion, Colaborador, DatosOperativos, ItemBotiquin, Poblacion,
 } from '@/domain/entidades'
 import { diasParaVencer, estadoVencimiento, DIAS_AVISO_VENCIMIENTO } from '@/domain/fechas'
 import {
@@ -134,12 +134,19 @@ export function alertasVencimiento(d: DatosOperativos, hoy: Date, dias = DIAS_AV
   for (const e of ultimosPorClave(epp, (e) => `${e.colaborador_id}|${e.tipo}`)) {
     agregar('epp', colaborador(e.colaborador_id)?.ciudad ?? '', nombre(e.colaborador_id), e.vencimiento)
   }
+  // Con ítems cada uno alerta por separado; sin ítems rige la fecha única (registros antiguos).
+  const porItem = (origen: OrigenAlerta, ciudad: string, prefijo: string, items: ItemBotiquin[]) => {
+    for (const i of items) agregar(origen, ciudad, `${prefijo}Botiquín: ${i.nombre}`, i.caducidad)
+  }
   for (const o of d.equipoOficinas) {
-    if (o.tipo === 'extintor' || o.tipo === 'botiquin') agregar(o.tipo, o.ciudad, o.tipo === 'extintor' ? 'Extintor' : 'Botiquín', o.vencimiento)
+    if (o.tipo === 'extintor') agregar('extintor', o.ciudad, 'Extintor', o.vencimiento)
+    else if (o.tipo === 'botiquin' && o.items?.length) porItem('botiquin', o.ciudad, '', o.items)
+    else if (o.tipo === 'botiquin') agregar('botiquin', o.ciudad, 'Botiquín', o.vencimiento)
   }
   for (const v of d.vehiculos) {
     agregar('vehiculo_extintor', v.ciudad, v.placa, v.extintor_vencimiento)
-    agregar('vehiculo_botiquin', v.ciudad, v.placa, v.botiquin_caducidad)
+    if (v.botiquin_items?.length) porItem('vehiculo_botiquin', v.ciudad, `${v.placa} - `, v.botiquin_items)
+    else agregar('vehiculo_botiquin', v.ciudad, v.placa, v.botiquin_caducidad)
   }
   return alertas.sort((a, b) => a.dias - b.dias)
 }

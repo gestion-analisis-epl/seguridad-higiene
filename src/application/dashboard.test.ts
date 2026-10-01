@@ -63,6 +63,45 @@ describe('alertasVencimiento', () => {
     expect(a[1].referencia).toBe('ABC-1')
   })
 
+  const botiquinOficina = (items?: { nombre: string; caducidad: Date | null }[]) =>
+    ({ ciudad: 'ciudad-a', tipo: 'botiquin' as const, vencimiento: fechaCalendario(2026, 10, 10), items })
+
+  it('botiquín con ítems: una alerta por ítem con caducidad en ventana o vencida', () => {
+    const a = alertasVencimiento(soloPersonas({
+      equipoOficinas: [botiquinOficina([
+        { nombre: 'Gasas', caducidad: fechaCalendario(2026, 10, 5) },
+        { nombre: 'Venda', caducidad: fechaCalendario(2026, 9, 1) },
+        { nombre: 'Tijeras', caducidad: null },
+        { nombre: 'Alcohol', caducidad: fechaCalendario(2028, 1, 1) },
+      ])],
+    }), hoy)
+    expect(a.map((x) => [x.origen, x.referencia, x.estado])).toEqual([
+      ['botiquin', 'Botiquín: Venda', 'vencido'],
+      ['botiquin', 'Botiquín: Gasas', 'por_vencer'],
+    ])
+  })
+
+  it('botiquín sin ítems conserva la alerta de la fecha única', () => {
+    const a = alertasVencimiento(soloPersonas({ equipoOficinas: [botiquinOficina(), botiquinOficina([])] }), hoy)
+    expect(a.map((x) => x.referencia)).toEqual(['Botiquín', 'Botiquín'])
+  })
+
+  it('vehículo con ítems alerta por ítem y sin ítems usa la fecha única', () => {
+    const base = { ciudad: 'ciudad-a', placa: 'ABC-1', extintor_vencimiento: null }
+    const a = alertasVencimiento(soloPersonas({
+      vehiculos: [
+        { ...base, botiquin_caducidad: fechaCalendario(2026, 10, 1), botiquin_items: [
+          { nombre: 'Gasas', caducidad: fechaCalendario(2026, 10, 3) }, { nombre: 'Venda', caducidad: null },
+        ] },
+        { ...base, placa: 'XYZ-2', botiquin_caducidad: fechaCalendario(2026, 10, 4) },
+      ],
+    }), hoy)
+    expect(a.map((x) => [x.origen, x.referencia])).toEqual([
+      ['vehiculo_botiquin', 'ABC-1 - Botiquín: Gasas'],
+      ['vehiculo_botiquin', 'XYZ-2'],
+    ])
+  })
+
   const cap = (colaborador_id: string, anio: number, vencimiento: Date | null) =>
     ({ colaborador_id, norma: 'norma-a', ciudad: 'ciudad-a', cumple: true, fecha: fechaCalendario(anio, 1, 1), vencimiento })
   const epp = (colaborador_id: string, vencimiento: Date | null) =>

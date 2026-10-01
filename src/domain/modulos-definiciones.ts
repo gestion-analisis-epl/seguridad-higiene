@@ -1,11 +1,18 @@
 import { estadoCapacitacion } from './fechas'
-import { derivarCiudad, derivarPeriodo, type CampoDef, type ModuloDef } from './modulos'
+import { derivarCaducidad, derivarCiudad, derivarPeriodo, type CampoDef, type ModuloDef, type Valores } from './modulos'
 
 const catalogo = (id: string) => ({ tipo: 'catalogo', id }) as const
 const colaborador: CampoDef = {
   nombre: 'colaborador_id', etiqueta: 'Colaborador', tipo: 'seleccion',
   requerido: true, origen: { tipo: 'colaboradores' },
 }
+
+const subcamposBotiquin: CampoDef[] = [
+  { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true },
+  { nombre: 'cantidad', etiqueta: 'Cantidad', tipo: 'numero' },
+  { nombre: 'caducidad', etiqueta: 'Caducidad', tipo: 'fecha' },
+]
+const sinItems = (campo: string) => (v: Valores) => !(Array.isArray(v[campo]) && v[campo].length > 0)
 
 const colaboradores: ModuloDef = {
   id: 'colaboradores', coleccion: 'colaboradores', titulo: 'Colaboradores',
@@ -87,10 +94,18 @@ const oficinasEquipo: ModuloDef = {
     { nombre: 'ciudad', etiqueta: 'Ciudad', tipo: 'seleccion', requerido: true, origen: catalogo('ciudades') },
     { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion', requerido: true, origen: catalogo('tipos_equipo') },
     { nombre: 'detalle', etiqueta: 'Detalle', tipo: 'texto' },
+    {
+      nombre: 'items', etiqueta: 'Contenido del botiquín', tipo: 'lista', subcampos: subcamposBotiquin,
+      visibleSi: (v) => v.tipo === 'botiquin',
+    },
     { nombre: 'fecha_recarga', etiqueta: 'Fecha de recarga', tipo: 'fecha' },
-    { nombre: 'vencimiento', etiqueta: 'Vencimiento o caducidad', tipo: 'fecha' },
+    {
+      nombre: 'vencimiento', etiqueta: 'Vencimiento o caducidad', tipo: 'fecha',
+      visibleSi: (v) => v.tipo !== 'botiquin' || sinItems('items')(v),
+    },
   ],
-  columnas: ['ciudad', 'tipo', 'detalle', 'fecha_recarga', 'vencimiento'],
+  columnas: ['ciudad', 'tipo', 'detalle', 'items', 'fecha_recarga', 'vencimiento'],
+  derivar: (v) => (v.tipo === 'botiquin' ? derivarCaducidad(v, 'items', 'vencimiento') : v),
 }
 
 const vehiculos: ModuloDef = {
@@ -99,9 +114,14 @@ const vehiculos: ModuloDef = {
     { nombre: 'ciudad', etiqueta: 'Ciudad', tipo: 'seleccion', requerido: true, origen: catalogo('ciudades') },
     { nombre: 'placa', etiqueta: 'Placa', tipo: 'texto', requerido: true },
     { nombre: 'extintor_vencimiento', etiqueta: 'Vencimiento del extintor', tipo: 'fecha' },
-    { nombre: 'botiquin_caducidad', etiqueta: 'Caducidad del botiquín', tipo: 'fecha' },
+    { nombre: 'botiquin_items', etiqueta: 'Contenido del botiquín', tipo: 'lista', subcampos: subcamposBotiquin },
+    {
+      nombre: 'botiquin_caducidad', etiqueta: 'Caducidad del botiquín', tipo: 'fecha',
+      visibleSi: sinItems('botiquin_items'),
+    },
   ],
-  columnas: ['ciudad', 'placa', 'extintor_vencimiento', 'botiquin_caducidad'],
+  columnas: ['ciudad', 'placa', 'extintor_vencimiento', 'botiquin_items', 'botiquin_caducidad'],
+  derivar: (v) => derivarCaducidad(v, 'botiquin_items', 'botiquin_caducidad'),
 }
 
 const indicadoresMensuales: ModuloDef = {

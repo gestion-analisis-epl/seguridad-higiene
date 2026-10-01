@@ -48,3 +48,18 @@ describe('columnasDeModulo', () => {
     expect(por('cantidad').alinear).toBe('derecha')
   })
 })
+
+describe('columnasDeModulo con lista', () => {
+  const lista: ModuloDef = {
+    id: 'l', coleccion: 'l', titulo: 'L', columnas: ['items'],
+    campos: [{ nombre: 'items', etiqueta: 'Contenido', tipo: 'lista', subcampos: [{ nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto' }] }],
+  }
+  const col = columnasDeModulo(lista, {})[0]
+  it('resume en texto con cantidad y nombres filtrables', () => {
+    expect(col.tipo).toBe('texto')
+    expect(col.valor({ id: '1', items: [{ nombre: 'Gasas' }, { nombre: 'Venda' }] })).toBe('2 ítems: Gasas, Venda')
+    expect(col.valor({ id: '1', items: [{ nombre: 'Gasas' }] })).toBe('1 ítem: Gasas')
+    expect(col.valor({ id: '1', items: [] })).toBeNull()
+    expect(col.valor({ id: '1' })).toBeNull()
+  })
+})
