@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alternar, esTodo, filtrarOpciones, plegar, resumenSeleccion, todos } from './seleccion'
+import { alternar, esTodo, filtrarOpciones, ordenarOpciones, plegar, resumenSeleccion, todos } from './seleccion'
 
 const opciones = [
   { valor: 'a', etiqueta: 'Ciudad A' },
@@ -47,5 +47,19 @@ describe('seleccion', () => {
     expect(filtrarOpciones(opciones, 'ARBOL').map((o) => o.valor)).toEqual(['c'])
     expect(filtrarOpciones(opciones, '  ').length).toBe(3)
     expect(filtrarOpciones(opciones, 'ciudad').length).toBe(2)
+  })
+})
+
+describe('ordenarOpciones', () => {
+  it('ordena por etiqueta sin distinguir mayusculas ni acentos y no muta', () => {
+    const entrada = [
+      { valor: '1', etiqueta: 'zeta' },
+      { valor: '2', etiqueta: 'Ñandú' },
+      { valor: '3', etiqueta: 'árbol' },
+      { valor: '4', etiqueta: 'Arbol B' },
+      { valor: '5', etiqueta: 'Ciudad A' },
+    ]
+    expect(ordenarOpciones(entrada).map((o) => o.valor)).toEqual(['3', '4', '5', '2', '1'])
+    expect(entrada[0].valor).toBe('1')
   })
 })

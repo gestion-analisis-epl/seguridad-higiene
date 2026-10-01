@@ -37,29 +37,43 @@ export function ContenidoFiltro({ tipo, encabezado, filtro, opciones, alCambiar 
   const id = useId()
   const limpiar = () => alCambiar(null)
 
-  if (tipo === 'categoria') {
-    const ocultos = filtro?.tipo === 'categoria' ? filtro.ocultos : []
-    const visibles = opciones.filter((o) => !ocultos.includes(o.valor)).map((o) => o.valor)
+  const ocultos = filtro?.tipo === 'categoria' || filtro?.tipo === 'texto' ? filtro.ocultos ?? [] : []
+  const lista = (enfocar: boolean) => (
+    <PanelOpciones
+      etiqueta={encabezado} opciones={opciones}
+      seleccion={opciones.filter((o) => !ocultos.includes(o.valor)).map((o) => o.valor)}
+      textoMarcar="Mostrar todo" textoDesmarcar="Ocultar todo" enfocar={enfocar}
+      alCambiar={(sel) => {
+        const nuevos = opciones.filter((o) => !sel.includes(o.valor)).map((o) => o.valor)
+        alCambiar(tipo === 'texto'
+          ? { tipo: 'texto', texto: filtro?.tipo === 'texto' ? filtro.texto : '', ocultos: nuevos }
+          : { tipo: 'categoria', ocultos: nuevos })
+      }}
+    />
+  )
+
+  if (tipo === 'categoria') return lista(true)
+
+  if (tipo === 'texto') {
     return (
-      <PanelOpciones
-        etiqueta={encabezado} opciones={opciones} seleccion={visibles}
-        textoMarcar="Mostrar todo" textoDesmarcar="Ocultar todo"
-        alCambiar={(sel) => alCambiar({ tipo: 'categoria', ocultos: opciones.filter((o) => !sel.includes(o.valor)).map((o) => o.valor) })}
-      />
+      <div className="flex min-h-0 flex-col">
+        <div className="flex flex-col gap-1 border-b border-borde p-3">
+          <Campo id={`${id}-t`} etiqueta="Contiene">
+            <input
+              id={`${id}-t`} type="search" autoFocus autoComplete="off" className="control"
+              value={filtro?.tipo === 'texto' ? filtro.texto : ''}
+              onChange={(e) => alCambiar({ tipo: 'texto', texto: e.target.value, ocultos })}
+            />
+          </Campo>
+          <BotonLimpiar alLimpiar={limpiar} />
+        </div>
+        {lista(false)}
+      </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-3 overflow-y-auto p-3">
-      {tipo === 'texto' && (
-        <Campo id={`${id}-t`} etiqueta="Contiene">
-          <input
-            id={`${id}-t`} type="search" autoFocus autoComplete="off" className="control"
-            value={filtro?.tipo === 'texto' ? filtro.texto : ''}
-            onChange={(e) => alCambiar({ tipo: 'texto', texto: e.target.value })}
-          />
-        </Campo>
-      )}
       {tipo === 'numero' && (() => {
         const f = filtro?.tipo === 'numero' ? filtro : { tipo: 'numero' as const, min: null, max: null }
         return (

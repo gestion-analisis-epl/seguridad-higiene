@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { posicionarPanel, type PosicionPanel } from './posicion'
 
 const MARGEN = 8
@@ -9,7 +10,7 @@ const igual = (a: PosicionPanel | null, b: PosicionPanel) =>
   !!a && a.left === b.left && a.ancho === b.ancho && a.arriba === b.arriba
   && a.top === b.top && a.bottom === b.bottom && a.maxHeight === b.maxHeight
 
-// Panel fijo en el viewport: no lo recorta el overflow del contenedor de la tabla
+// Panel en un portal sobre body: ningun ancestro (overflow, transform o animacion) lo recorta ni lo desplaza
 export function Popover({ id, ancla, alCerrar, ancho = 288, altoMax = 340, etiqueta, children }: {
   id?: string
   ancla: RefObject<HTMLElement>
@@ -72,7 +73,7 @@ export function Popover({ id, ancla, alCerrar, ancho = 288, altoMax = 340, etiqu
   }
 
   // Antes de medir se oculta con opacidad: visibility:hidden impediria enfocar el contenido
-  return (
+  return createPortal(
     <div
       ref={panel} id={id} role="dialog" aria-label={etiqueta} onBlur={alSalirFoco}
       style={pos ? {
@@ -82,6 +83,7 @@ export function Popover({ id, ancla, alCerrar, ancho = 288, altoMax = 340, etiqu
       className="aparecer z-40 flex flex-col overflow-hidden rounded-lg border border-borde-fuerte bg-superficie font-sans text-sm font-normal normal-case tracking-normal text-texto shadow-alta"
     >
       {children}
-    </div>
+    </div>,
+    document.body,
   )
 }

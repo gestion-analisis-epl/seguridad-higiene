@@ -12,7 +12,7 @@ const colaboradores = [
 describe('resolverOpciones', () => {
   it('prioriza opciones fijas', () => {
     const opciones = [{ valor: '1', etiqueta: 'Uno' }]
-    expect(resolverOpciones({ ...base, opciones }, {}, [])).toBe(opciones)
+    expect(resolverOpciones({ ...base, opciones }, {}, [])).toEqual(opciones)
   })
 
   it('toma items del catalogo indicado', () => {
@@ -25,6 +25,14 @@ describe('resolverOpciones', () => {
   it('lista colaboradores activos ordenados por nombre', () => {
     const campo: CampoDef = { ...base, origen: { tipo: 'colaboradores' } }
     expect(resolverOpciones(campo, {}, colaboradores).map((o) => o.valor)).toEqual(['a', 'b'])
+  })
+
+  it('ordena catalogos y opciones fijas por etiqueta', () => {
+    const campo: CampoDef = { ...base, origen: { tipo: 'catalogo', id: 'c' } }
+    const cat = { c: [{ valor: '2', etiqueta: 'Ciudad B' }, { valor: '1', etiqueta: 'ciudad A' }] }
+    expect(resolverOpciones(campo, cat, []).map((o) => o.valor)).toEqual(['1', '2'])
+    const fijas = [{ valor: 'z', etiqueta: 'Zeta' }, { valor: 'a', etiqueta: 'Árbol' }]
+    expect(resolverOpciones({ ...base, opciones: fijas }, {}, []).map((o) => o.valor)).toEqual(['a', 'z'])
   })
 
   it('sin origen devuelve vacio', () => {

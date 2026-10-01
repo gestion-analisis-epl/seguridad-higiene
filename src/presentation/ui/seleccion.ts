@@ -27,3 +27,10 @@ export function filtrarOpciones(opciones: OpcionSeleccion[], texto: string): Opc
   const q = plegar(texto.trim())
   return q ? opciones.filter((o) => plegar(o.etiqueta).includes(q)) : opciones
 }
+
+const COLADOR_OPCIONES = new Intl.Collator('es', { sensitivity: 'base' })
+
+// Orden alfabetico por etiqueta visible, sin distinguir mayusculas ni acentos
+export function ordenarOpciones<T extends { etiqueta: string }>(opciones: T[]): T[] {
+  return [...opciones].sort((a, b) => COLADOR_OPCIONES.compare(a.etiqueta, b.etiqueta))
+}

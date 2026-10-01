@@ -10,9 +10,11 @@ import { useColeccion } from '@/presentation/datos/useColeccion'
 import { ETIQUETA_ROL } from '@/presentation/navegacion/enlaces'
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
+import { ordenarOpciones } from '@/presentation/ui/seleccion'
 import { DataTable, type ColumnaTabla } from '@/presentation/ui'
 
 const ROLES: Rol[] = ['sin_rol', 'consulta', 'capturista', 'admin']
+const ROLES_ORDENADOS = ordenarOpciones(ROLES.map((valor) => ({ valor, etiqueta: ETIQUETA_ROL[valor] }))).map((o) => o.valor)
 const idUsuario = (u: Registro) => u.id
 
 function Usuarios() {
@@ -30,7 +32,7 @@ function Usuarios() {
           <select aria-label={`Rol de ${u.email}`} value={String(u.rol)} className="control min-w-[9rem]"
             disabled={u.id === uid}
             onChange={(e) => void actualizar(u.id, { rol: e.target.value as Rol })}>
-            {ROLES.map((r) => <option key={r} value={r}>{ETIQUETA_ROL[r]}</option>)}
+            {ROLES_ORDENADOS.map((r) => <option key={r} value={r}>{ETIQUETA_ROL[r]}</option>)}
           </select>
         ),
       },

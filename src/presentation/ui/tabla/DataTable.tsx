@@ -94,7 +94,7 @@ export function DataTable<T>({
                     dir={orden?.id === c.id ? orden.dir : null}
                     ordenable={c.ordenable !== false} filtrable={c.filtrable !== false}
                     filtro={filtro} filtroActivo={!!filtro && filtroActivo(filtro)}
-                    opciones={c.tipo === 'categoria' ? opcionesDeCategoria(filas, c) : []}
+                    opciones={c.tipo === 'categoria' || c.tipo === 'texto' ? opcionesDeCategoria(filas, c) : []}
                     ancho={anchos[c.id]} minimo={minimoDe(c)} ultima={i === columnas.length - 1}
                     alOrdenar={() => setOrden((o) => siguienteOrden(o, c.id))}
                     alFiltrar={(f) => cambiarFiltro(c.id, f)}

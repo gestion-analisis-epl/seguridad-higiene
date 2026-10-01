@@ -4,20 +4,20 @@ import { useId, useMemo, useRef, useState } from 'react'
 import { Icono } from './Icono'
 import { PanelOpciones } from './PanelOpciones'
 import { Popover } from './Popover'
-import { resumenSeleccion, type OpcionSeleccion } from './seleccion'
+import { ordenarOpciones, resumenSeleccion, type OpcionSeleccion } from './seleccion'
 
-export function MultiSelect({ etiqueta, opciones, seleccion, alCambiar, textoTodos, textoNinguno, buscable }: {
+export function MultiSelect({ etiqueta, opciones: sinOrden, seleccion, alCambiar, textoTodos, textoNinguno }: {
   etiqueta: string
   opciones: OpcionSeleccion[]
   seleccion: string[]
   alCambiar: (seleccion: string[]) => void
   textoTodos: string
   textoNinguno: string
-  buscable?: boolean
 }) {
   const [abierto, setAbierto] = useState(false)
   const boton = useRef<HTMLButtonElement>(null)
   const id = useId()
+  const opciones = useMemo(() => ordenarOpciones(sinOrden), [sinOrden])
   const resumen = useMemo(
     () => resumenSeleccion(opciones, seleccion, { todos: textoTodos, ninguno: textoNinguno }),
     [opciones, seleccion, textoTodos, textoNinguno],
@@ -36,7 +36,7 @@ export function MultiSelect({ etiqueta, opciones, seleccion, alCambiar, textoTod
       </button>
       {abierto && (
         <Popover id={`${id}-panel`} ancla={boton} alCerrar={() => setAbierto(false)} etiqueta={etiqueta}>
-          <PanelOpciones etiqueta={etiqueta} opciones={opciones} seleccion={seleccion} alCambiar={alCambiar} buscable={buscable} />
+          <PanelOpciones etiqueta={etiqueta} opciones={opciones} seleccion={seleccion} alCambiar={alCambiar} />
         </Popover>
       )}
     </div>

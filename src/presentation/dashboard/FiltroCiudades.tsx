@@ -11,7 +11,7 @@ export function FiltroCiudades({ opciones, seleccion, alCambiar }: {
   return (
     <div className="min-w-0 sm:max-w-xs sm:flex-1 sm:min-w-[14rem]">
       <MultiSelect etiqueta="Ciudades" opciones={opciones} seleccion={seleccion} alCambiar={alCambiar}
-        textoTodos="Todas las ciudades" textoNinguno="Ninguna ciudad" buscable />
+        textoTodos="Todas las ciudades" textoNinguno="Ninguna ciudad" />
     </div>
   )
 }

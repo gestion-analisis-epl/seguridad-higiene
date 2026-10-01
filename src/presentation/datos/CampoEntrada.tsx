@@ -3,6 +3,7 @@
 import { aTextoIso, deTextoIso } from '@/domain/fechas'
 import type { CampoDef, Valor } from '@/domain/modulos'
 import { Icono } from '@/presentation/ui/Icono'
+import { SelectBuscable } from '@/presentation/ui/SelectBuscable'
 import { InputFecha } from '@/presentation/ui/InputFecha'
 import { useOpciones } from './useOpciones'
 
@@ -40,11 +41,9 @@ export function CampoEntrada({ campo, valor, error, deshabilitado = false, prefi
   let control
   if (campo.tipo === 'seleccion') {
     control = (
-      <select id={id} className="control" value={typeof valor === 'string' ? valor : ''} disabled={deshabilitado}
-        onChange={(e) => alCambiar(e.target.value || null)} {...aria}>
-        <option value="">Selecciona</option>
-        {opciones.map((o) => <option key={o.valor} value={o.valor}>{o.etiqueta}</option>)}
-      </select>
+      <SelectBuscable id={id} etiqueta={campo.etiqueta} etiquetaId={`${id}-et`} opciones={opciones}
+        valor={typeof valor === 'string' ? valor : ''} textoVacio="Selecciona" deshabilitado={deshabilitado}
+        alCambiar={(v) => alCambiar(v || null)} {...aria} />
     )
   } else if (campo.tipo === 'fecha') {
     control = <InputFecha id={id} className="control" valor={valor instanceof Date ? aTextoIso(valor) : ''}
@@ -59,7 +58,7 @@ export function CampoEntrada({ campo, valor, error, deshabilitado = false, prefi
   }
   return (
     <div className="min-w-0">
-      <label htmlFor={id} className="etiqueta">{campo.etiqueta}{requerido}</label>
+      <label id={`${id}-et`} htmlFor={id} className="etiqueta">{campo.etiqueta}{requerido}</label>
       {control}
       {mensaje}
     </div>

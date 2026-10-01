@@ -13,7 +13,7 @@ export interface ColumnaLogica<T> {
 }
 
 export type Filtro =
-  | { tipo: 'texto'; texto: string }
+  | { tipo: 'texto'; texto: string; ocultos?: string[] }
   | { tipo: 'categoria'; ocultos: string[] }
   | { tipo: 'fecha'; desde: string; hasta: string }
   | { tipo: 'numero'; min: number | null; max: number | null }
@@ -71,7 +71,7 @@ export function siguienteOrden(actual: Orden | null, id: string): Orden | null {
 
 export function filtroActivo(f: Filtro): boolean {
   switch (f.tipo) {
-    case 'texto': return f.texto.trim() !== ''
+    case 'texto': return f.texto.trim() !== '' || (f.ocultos?.length ?? 0) > 0
     case 'categoria': return f.ocultos.length > 0
     case 'fecha': return f.desde !== '' || f.hasta !== ''
     case 'numero': return f.min !== null || f.max !== null
@@ -88,7 +88,11 @@ export function pasaFiltro<T>(fila: T, columna: ColumnaLogica<T>, f: Filtro): bo
   const v = columna.valor(fila)
   switch (f.tipo) {
     case 'categoria': return !f.ocultos.includes(claveCategoria(v))
-    case 'texto': return !esNulo(v) && plegar(comoTexto(v)).includes(plegar(f.texto.trim()))
+    case 'texto': {
+      if (f.ocultos?.includes(claveCategoria(v))) return false
+      const q = plegar(f.texto.trim())
+      return q === '' || (!esNulo(v) && plegar(comoTexto(v)).includes(q))
+    }
     case 'booleano': return typeof v === 'boolean' && v === f.valor
     case 'numero': {
       if (esNulo(v) || typeof v !== 'number') return false

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from 'react'
 import { useCatalogo } from '@/presentation/datos/useCatalogo'
+import { ordenarOpciones } from '@/presentation/ui/seleccion'
 import { usePersistente } from '@/presentation/ui/usePersistente'
 import {
   CLAVE_CIUDADES_OCULTAS, ocultasDesdeSeleccion, ocultasValidas, seleccionDesdeOcultas,
@@ -13,6 +14,7 @@ const SIN_OCULTAS: string[] = []
 export function useFiltroCiudades() {
   const catalogo = useCatalogo('ciudades')
   const [ocultas, setOcultas] = usePersistente<string[]>(CLAVE_CIUDADES_OCULTAS, SIN_OCULTAS, ocultasValidas)
+  const opciones = useMemo(() => ordenarOpciones(catalogo), [catalogo])
   const todas = useMemo(() => catalogo.map((c) => c.valor), [catalogo])
   const seleccion = useMemo(() => seleccionDesdeOcultas(todas, ocultas), [todas, ocultas])
   const cambiar = useCallback(
@@ -24,7 +26,7 @@ export function useFiltroCiudades() {
     [catalogo],
   )
   return {
-    opciones: catalogo, seleccion, cambiar, etiqueta,
+    opciones, seleccion, cambiar, etiqueta,
     ciudades: todas.length === 0 ? undefined : seleccion,
   }
 }

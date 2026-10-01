@@ -162,3 +162,24 @@ describe('ordenar con cadena vacia', () => {
     expect(COLADOR.compare('Árbol', 'arbol')).toBe(0)
   })
 })
+
+describe('filtro de texto combinado con lista de valores', () => {
+  const filas = [f('1', { nombre: 'Ana Ciudad A' }), f('2', { nombre: 'Beto' }), f('3', { nombre: 'Anabel' }), f('4', { nombre: null })]
+  const ids = (fs: Fila[]) => fs.map((r) => r.id)
+  it('sin contiene y con ocultos solo excluye los ocultos', () => {
+    const fl: Filtro = { tipo: 'texto', texto: '', ocultos: ['Beto'] }
+    expect(filtroActivo(fl)).toBe(true)
+    expect(ids(aplicarFiltros(filas, [cNombre], { nombre: fl }))).toEqual(['1', '3', '4'])
+  })
+  it('aplica contiene Y ocultos a la vez', () => {
+    const fl: Filtro = { tipo: 'texto', texto: 'ana', ocultos: ['Anabel'] }
+    expect(ids(aplicarFiltros(filas, [cNombre], { nombre: fl }))).toEqual(['1'])
+  })
+  it('solo contiene sigue funcionando y sin nada no esta activo', () => {
+    expect(ids(aplicarFiltros(filas, [cNombre], { nombre: { tipo: 'texto', texto: 'ana' } }))).toEqual(['1', '3'])
+    expect(filtroActivo({ tipo: 'texto', texto: ' ', ocultos: [] })).toBe(false)
+  })
+  it('los vacios se ocultan con la clave VACIO', () => {
+    expect(ids(aplicarFiltros(filas, [cNombre], { nombre: { tipo: 'texto', texto: '', ocultos: [VACIO] } }))).toEqual(['1', '2', '3'])
+  })
+})

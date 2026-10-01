@@ -10,10 +10,12 @@ import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { TablaCatalogo } from '@/presentation/catalogos/TablaCatalogo'
 import { useEdicionCatalogo } from '@/presentation/catalogos/useEdicionCatalogo'
 import { useUsoCatalogo } from '@/presentation/catalogos/useUsoCatalogo'
+import { SelectBuscable } from '@/presentation/ui/SelectBuscable'
 import { AvisoError } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
 
 const IDS = Object.keys(CATALOGOS_INICIALES)
+const OPCIONES_CATALOGO = IDS.map((c) => ({ valor: c, etiqueta: c }))
 
 function Catalogos() {
   const { uid } = useSesion()
@@ -49,10 +51,9 @@ function Catalogos() {
       <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <div className="space-y-5">
           <div>
-            <label htmlFor="catalogo" className="etiqueta">Catálogo</label>
-            <select id="catalogo" value={id} onChange={(e) => { setId(e.target.value); edicion.reiniciar() }} className="control">
-              {IDS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <label id="catalogo-et" htmlFor="catalogo" className="etiqueta">Catálogo</label>
+            <SelectBuscable id="catalogo" etiqueta="Catálogo" etiquetaId="catalogo-et" opciones={OPCIONES_CATALOGO}
+              valor={id} alCambiar={(nuevo) => { setId(nuevo); edicion.reiniciar() }} />
           </div>
           <form onSubmit={agregar} className="space-y-3">
             <div>
