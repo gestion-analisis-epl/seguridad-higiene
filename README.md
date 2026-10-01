@@ -69,6 +69,8 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 - `DataTable` ordena, filtra por encabezado y redimensiona columnas; con `claveAnchos` guarda los anchos en el navegador.
 - Las tablas de datos, entregas y usuarios son dinámicas (ordenar, filtrar por encabezado, redimensionar).
 - Los anchos de columna se recuerdan por navegador, por tabla.
+- Los dashboards operativo y analítico comparten un filtro multiselección de ciudades (por defecto todas) y muestran la vista general de las seleccionadas.
+- El filtro guarda en el navegador las ciudades ocultas, así las ciudades nuevas del catálogo quedan incluidas.
 - `MultiSelect` es un desplegable con casillas; su selección es controlada y puede persistirse con `usePersistente`.
 - `usePersistente` guarda en `localStorage` (clave `sh:v1:`), valida lo leído y no falla si el almacenamiento no está disponible.
 

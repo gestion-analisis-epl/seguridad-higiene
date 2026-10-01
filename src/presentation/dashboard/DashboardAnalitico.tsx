@@ -4,36 +4,40 @@ import { useMemo, useState } from 'react'
 import { acumuladoAnual, comparativoCiudades, serieMensual } from '@/application/dashboard'
 import type { Accidente, Poblacion } from '@/domain/entidades'
 import { clasificarIli } from '@/domain/indicadores'
-import { useCatalogo } from '@/presentation/datos/useCatalogo'
 import { useColeccion } from '@/presentation/datos/useColeccion'
 import { useConfigIndicadores } from '@/presentation/datos/useConfigIndicadores'
 import { GraficaBarrasApiladas } from '@/presentation/graficas/GraficaBarrasApiladas'
 import { GraficaLinea } from '@/presentation/graficas/GraficaLinea'
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
+import { DataTable } from '@/presentation/ui/tabla'
+import { atributosNivel, columnasComparativo } from './columnas-analitico'
+import { celdaNivel, columnasMensualUi, conCeldas } from './celdas'
+import { AvisoSinCiudades, FiltroCiudades } from './FiltroCiudades'
 import { FiltrosAnaliticos } from './FiltrosAnaliticos'
 import { MESES } from './formato'
-import { TablaComparativo } from './TablaComparativo'
-import { TablaMensual } from './TablaMensual'
+import { filasMensuales } from './mensual'
 import { TarjetasIndicadores } from './TarjetasIndicadores'
+import { useFiltroCiudades } from './useFiltroCiudades'
 
 export function DashboardAnalitico() {
   const cfg = useConfigIndicadores()
-  const ciudades = useCatalogo('ciudades')
+  const filtro = useFiltroCiudades()
+  const { ciudades, etiqueta } = filtro
   const accidentesFuente = useColeccion('accidentes')
   const poblacionesFuente = useColeccion('indicadores_mensuales')
   const [anio, setAnio] = useState(new Date().getFullYear())
-  const [ciudad, setCiudad] = useState('')
 
   const accidentes = accidentesFuente.registros as unknown as Accidente[]
   const poblaciones = poblacionesFuente.registros as unknown as Poblacion[]
-  const serie = useMemo(() => serieMensual(accidentes, poblaciones, cfg, anio, ciudad ? [ciudad] : undefined), [accidentes, poblaciones, cfg, anio, ciudad])
+  const serie = useMemo(() => serieMensual(accidentes, poblaciones, cfg, anio, ciudades), [accidentes, poblaciones, cfg, anio, ciudades])
   const anual = useMemo(() => acumuladoAnual(serie, cfg), [serie, cfg])
   const comparativo = useMemo(
-    () => comparativoCiudades(accidentes, poblaciones, cfg, anio, ciudades.map((c) => c.valor)),
-    [accidentes, poblaciones, cfg, anio, ciudades],
+    () => comparativoCiudades(accidentes, poblaciones, cfg, anio, filtro.seleccion),
+    [accidentes, poblaciones, cfg, anio, filtro.seleccion],
   )
-  const etiqueta = (valor: string) => ciudades.find((c) => c.valor === valor)?.etiqueta ?? valor
+  const filasMes = useMemo(() => filasMensuales(serie, cfg), [serie, cfg])
+  const colsComparativo = useMemo(() => conCeldas(columnasComparativo(etiqueta), celdaNivel), [etiqueta])
   const nivel = clasificarIli(anual.ili, cfg)
 
   if (accidentesFuente.cargando || poblacionesFuente.cargando) return <Cargando />
@@ -43,7 +47,10 @@ export function DashboardAnalitico() {
   return (
     <div className="aparecer">
       <EncabezadoPagina rotulo="Analítico" titulo="Accidentabilidad" />
-      <FiltrosAnaliticos anio={anio} ciudad={ciudad} ciudades={ciudades} alCambiarAnio={setAnio} alCambiarCiudad={setCiudad} />
+      <FiltrosAnaliticos anio={anio} alCambiarAnio={setAnio}>
+        <FiltroCiudades opciones={filtro.opciones} seleccion={filtro.seleccion} alCambiar={filtro.cambiar} />
+      </FiltrosAnaliticos>
+      {ciudades !== undefined && ciudades.length === 0 ? <AvisoSinCiudades /> : <>
       <TarjetasIndicadores anual={anual} nivel={nivel} />
 
       <div className="grid gap-3 lg:grid-cols-2">
@@ -70,13 +77,16 @@ export function DashboardAnalitico() {
       <section className="mt-8">
         <h2 className="mb-1 text-base">Detalle mensual ({anio})</h2>
         <p className="mb-3 text-sm text-texto-suave">Los índices consideran solo accidentes laborales; trayecto es informativo.</p>
-        <TablaMensual serie={serie} cfg={cfg} />
+        <DataTable columnas={columnasMensualUi} filas={filasMes} idFila={(f) => f.periodo} atributosFila={atributosNivel}
+          vacio="Sin datos" etiqueta="Detalle mensual" claveAnchos="dashboard-mensual" />
       </section>
 
       <section className="mt-8">
         <h2 className="mb-3 text-base">Comparativo entre ciudades ({anio})</h2>
-        <TablaComparativo filas={comparativo} etiqueta={etiqueta} />
+        <DataTable columnas={colsComparativo} filas={comparativo} idFila={(f) => f.ciudad} atributosFila={atributosNivel}
+          vacio="Sin ciudades" etiqueta="Comparativo entre ciudades" claveAnchos="dashboard-comparativo" />
       </section>
+      </>}
     </div>
   )
 }

@@ -2,7 +2,7 @@ import type { Indices, NivelIli } from '@/domain/indicadores'
 import { miles, num } from './formato'
 import { NIVELES } from './niveles'
 
-function Tarjeta({ rotulo, valor, nivel }: { rotulo: string; valor: string; nivel?: NivelIli }) {
+export function Tarjeta({ rotulo, valor, nivel }: { rotulo: string; valor: string; nivel?: NivelIli }) {
   return (
     <div data-nivel={nivel} className="kpi tarjeta min-w-0 p-4">
       <dt className="rotulo">{rotulo}</dt>
