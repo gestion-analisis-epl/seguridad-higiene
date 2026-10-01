@@ -1,6 +1,7 @@
 import type { ItemCatalogo } from './catalogos-iniciales'
 import type { ModuloDef } from './modulos'
 import { slug } from './slug'
+import { limpiarTexto } from './texto'
 
 export interface UsoCatalogo { total: number; porColeccion: Record<string, number> }
 export interface UsoModulo { coleccion: string; campos: string[] }
@@ -13,7 +14,7 @@ const ERR_VACIA = 'Escribe una etiqueta.'
 const ERR_REPETIDA = 'Ya existe un valor con esa etiqueta en este catálogo.'
 
 export function validarAlta(items: ItemCatalogo[], etiqueta: string) {
-  const limpia = etiqueta.trim()
+  const limpia = limpiarTexto(etiqueta)
   const valor = slug(limpia)
   const error = !valor ? ERR_VACIA
     : items.some((i) => i.valor === valor) ? 'Ya existe un valor interno igual a este.'
@@ -27,7 +28,7 @@ export function validarEdicion(items: ItemCatalogo[], valor: string, etiqueta: s
 }
 
 export function aplicarEdicion(items: ItemCatalogo[], valor: string, etiqueta: string): ItemCatalogo[] {
-  return items.map((i) => (i.valor === valor ? { valor: i.valor, etiqueta: etiqueta.trim() } : i))
+  return items.map((i) => (i.valor === valor ? { valor: i.valor, etiqueta: limpiarTexto(etiqueta) } : i))
 }
 
 export function usosDeCatalogo(modulos: Record<string, ModuloDef>, catalogoId: string): UsoModulo[] {

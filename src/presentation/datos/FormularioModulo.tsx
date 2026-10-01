@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react'
 import {
-  campoVisible, limpiarOcultos, validarRegistro, type ContextoModulo, type ModuloDef, type Valor, type Valores,
+  campoVisible, limpiarOcultos, sanitizarValores, validarRegistro, type ContextoModulo, type ModuloDef, type Valor, type Valores,
 } from '@/domain/modulos'
 import { admiteEliminar } from '@/domain/modulos-definiciones'
 import { puede } from '@/domain/permisos'
@@ -49,13 +49,15 @@ export function FormularioModulo({ def, registro, alTerminar }: Props) {
 
   async function enviar(e: FormEvent) {
     e.preventDefault()
-    const errs = validarRegistro(def, valores)
+    const saneados = sanitizarValores(def.campos, valores)
+    setValores(saneados)
+    const errs = validarRegistro(def, saneados)
     setErrores(errs)
     if (Object.keys(errs).length || !uid) return
     setGuardando(true)
     setFallo(null)
     try {
-      const limpio = limpiarOcultos(def.campos, valores)
+      const limpio = limpiarOcultos(def.campos, saneados)
       const final = def.derivar ? def.derivar(limpio, ctx, new Date()) : limpio
       await guardar(def.coleccion, final, uid, def.idFijo ? def.idFijo(final) : registro?.id)
       alTerminar()

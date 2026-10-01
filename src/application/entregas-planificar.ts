@@ -1,4 +1,4 @@
-import { derivarCiudad, derivarPeriodo, validarCampos, type CampoDef, type Valor, type Valores } from '@/domain/modulos'
+import { derivarCiudad, derivarPeriodo, sanitizarValores, validarCampos, type CampoDef, type Valor, type Valores } from '@/domain/modulos'
 import type { ConfigEntrega } from './entregas-config'
 import type { ErroresEntrega, Modo, Operacion, RegistroEntrega } from './entregas-tipos'
 
@@ -25,6 +25,8 @@ function normalizar(campo: CampoDef, v: unknown): Valor {
 function comparable(v: Valor): unknown {
   return v instanceof Date ? v.getTime() : v
 }
+
+const limpio = (e: EntradaEntrega, v: Valores): Valores => sanitizarValores(e.config.campos, v)
 
 export function valoresIniciales(config: ConfigEntrega, registro: RegistroEntrega | undefined): Valores {
   const valores: Valores = {}
@@ -59,7 +61,7 @@ function planNueva(e: EntradaEntrega, errores: ErroresEntrega): Operacion[] {
   const operaciones: Operacion[] = []
   let capturados = 0
   for (const clave of e.claves) {
-    const v: Valores = { ...(e.items[clave] ?? {}), fecha: e.fecha }
+    const v: Valores = limpio(e, { ...(e.items[clave] ?? {}), fecha: e.fecha })
     const soloVencimiento = e.config.conVencimiento && !vacio(v.vencimiento) && !e.config.capturado(v)
     if (!e.config.capturado(v) && !soloVencimiento) continue
     capturados++
@@ -77,8 +79,8 @@ function planNueva(e: EntradaEntrega, errores: ErroresEntrega): Operacion[] {
 function planCorregir(e: EntradaEntrega, errores: ErroresEntrega): Operacion[] {
   const operaciones: Operacion[] = []
   for (const clave of e.claves) {
-    const v = e.items[clave]
-    if (!v) continue
+    if (!e.items[clave]) continue
+    const v = limpio(e, e.items[clave])
     const registro = e.ultimas[clave]
     if (!registro) {
       if (!e.config.capturado(v)) continue

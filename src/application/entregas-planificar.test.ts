@@ -167,3 +167,10 @@ describe('valoresIniciales', () => {
     expect(valoresIniciales(CONFIG_EPP, undefined)).toEqual({})
   })
 })
+
+describe('sanitizado de texto en entregas', () => {
+  it('limpia la talla antes de guardar', () => {
+    const r = planificarEntrega(uniforme({ items: { botas: { talla: '  27 \n ', cantidad: 1 } } }))
+    expect(r.operaciones[0]).toMatchObject({ valores: { talla: '27' } })
+  })
+})

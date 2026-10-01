@@ -1,4 +1,5 @@
 import { formatearFecha, periodoDe } from './fechas'
+import { aPlaca, aTitulo, limpiarLibre, limpiarTexto } from './texto'
 
 export type ValorItem = string | number | Date | null
 export type Item = Record<string, ValorItem>
@@ -6,6 +7,7 @@ export type Valor = string | number | boolean | Date | null | Item[]
 export type Valores = Record<string, Valor>
 export type TipoCampo = 'texto' | 'numero' | 'fecha' | 'booleano' | 'seleccion' | 'lista'
 export type OrigenOpciones = { tipo: 'catalogo'; id: string } | { tipo: 'colaboradores' }
+export type FormatoTexto = 'titulo' | 'placa' | 'libre'
 export interface Opcion { valor: string; etiqueta: string }
 
 export interface CampoDef {
@@ -15,6 +17,7 @@ export interface CampoDef {
   requerido?: boolean
   origen?: OrigenOpciones
   opciones?: Opcion[]
+  formato?: FormatoTexto
   patron?: RegExp
   mensajePatron?: string
   subcampos?: CampoDef[]
@@ -37,6 +40,30 @@ export interface ModuloDef {
 
 export function validarRegistro(def: ModuloDef, valores: Valores): Record<string, string> {
   return validarCampos(def.campos, valores)
+}
+
+function sanitizarTexto(c: CampoDef, v: string): string {
+  if (c.patron) return v.trim()
+  switch (c.formato) {
+    case 'titulo': return aTitulo(v)
+    case 'placa': return aPlaca(v)
+    case 'libre': return limpiarLibre(v)
+    default: return limpiarTexto(v)
+  }
+}
+
+// Sanitiza los campos de texto (y subcampos de listas) antes de validar y guardar.
+export function sanitizarValores(campos: CampoDef[], valores: Valores): Valores {
+  const salida = { ...valores }
+  for (const c of campos) {
+    const v = valores[c.nombre]
+    if (c.tipo === 'lista' && Array.isArray(v)) {
+      salida[c.nombre] = v.map((item) => sanitizarValores(c.subcampos ?? [], item) as Item)
+    } else if (c.tipo === 'texto' && typeof v === 'string') {
+      salida[c.nombre] = sanitizarTexto(c, v)
+    }
+  }
+  return salida
 }
 
 export const campoVisible = (c: CampoDef, valores: Valores): boolean => c.visibleSi?.(valores) ?? true

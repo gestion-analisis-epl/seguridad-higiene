@@ -80,3 +80,10 @@ describe('uso y eliminación', () => {
     expect(bloqueado.error).toContain('col_a: 2')
   })
 })
+
+describe('limpieza de etiquetas', () => {
+  it('colapsa espacios internos en alta y edicion', () => {
+    expect(validarAlta([], ' Gamma \n  Uno​ ').etiqueta).toBe('Gamma Uno')
+    expect(aplicarEdicion([{ valor: 'a', etiqueta: 'A' }], 'a', ' B   C ')).toEqual([{ valor: 'a', etiqueta: 'B C' }])
+  })
+})

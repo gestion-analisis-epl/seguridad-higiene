@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { fechaCalendario } from './fechas'
 import {
   campoVisible, caducidadMasProxima, derivarCiudad, derivarPeriodo, formatearValor, limpiarOcultos,
-  validarCampos, validarRegistro,
+  sanitizarValores, validarCampos, validarRegistro,
   type CampoDef, type ModuloDef,
 } from './modulos'
 
@@ -114,5 +114,31 @@ describe('formatearValor de lista', () => {
     expect(formatearValor(botiquin[1], [{ nombre: 'Gasas' }, { nombre: 'Venda' }])).toBe('2 ítems')
     expect(formatearValor(botiquin[1], [{ nombre: 'Gasas' }])).toBe('1 ítem')
     expect(formatearValor(botiquin[1], [])).toBe('-')
+  })
+})
+
+describe('sanitizarValores', () => {
+  const campos: CampoDef[] = [
+    { nombre: 'nombre', etiqueta: 'N', tipo: 'texto', formato: 'titulo' },
+    { nombre: 'placa', etiqueta: 'P', tipo: 'texto', formato: 'placa' },
+    { nombre: 'detalle', etiqueta: 'D', tipo: 'texto', formato: 'libre' },
+    { nombre: 'otro', etiqueta: 'O', tipo: 'texto' },
+    { nombre: 'periodo', etiqueta: 'Pe', tipo: 'texto', patron: /^\d{4}-\d{2}$/ },
+    { nombre: 'cantidad', etiqueta: 'C', tipo: 'numero' },
+    { nombre: 'items', etiqueta: 'I', tipo: 'lista', subcampos: [{ nombre: 'nombre', etiqueta: 'N', tipo: 'texto' }] },
+  ]
+  it('aplica el formato de cada campo', () => {
+    const r = sanitizarValores(campos, {
+      nombre: ' JUAN  PEREZ ', placa: ' ab 12 ', detalle: ' a  b\n\n\n\nc ', otro: ' x \n y ',
+      periodo: ' 2026-01 ', cantidad: 3, items: [{ nombre: '  gasa \n estéril ' }],
+    })
+    expect(r).toEqual({
+      nombre: 'Juan Perez', placa: 'AB12', detalle: 'a b\n\nc', otro: 'x y',
+      periodo: '2026-01', cantidad: 3, items: [{ nombre: 'gasa estéril' }],
+    })
+  })
+  it('no toca nulos ni fechas', () => {
+    const f = new Date(0)
+    expect(sanitizarValores(campos, { nombre: null, otro: f as never })).toEqual({ nombre: null, otro: f })
   })
 })

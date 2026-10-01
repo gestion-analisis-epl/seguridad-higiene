@@ -18,7 +18,7 @@ const colaboradores: ModuloDef = {
   id: 'colaboradores', coleccion: 'colaboradores', titulo: 'Colaboradores',
   inicial: { activo: true },
   campos: [
-    { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true },
+    { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true, formato: 'titulo' },
     { nombre: 'ciudad', etiqueta: 'Ciudad', tipo: 'seleccion', requerido: true, origen: catalogo('ciudades') },
     { nombre: 'area', etiqueta: 'Área', tipo: 'seleccion', origen: catalogo('areas') },
     { nombre: 'linea_negocio', etiqueta: 'Línea de negocio', tipo: 'seleccion', requerido: true, origen: catalogo('lineas_negocio') },
@@ -93,7 +93,7 @@ const oficinasEquipo: ModuloDef = {
   campos: [
     { nombre: 'ciudad', etiqueta: 'Ciudad', tipo: 'seleccion', requerido: true, origen: catalogo('ciudades') },
     { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion', requerido: true, origen: catalogo('tipos_equipo') },
-    { nombre: 'detalle', etiqueta: 'Detalle', tipo: 'texto' },
+    { nombre: 'detalle', etiqueta: 'Detalle', tipo: 'texto', formato: 'libre' },
     {
       nombre: 'items', etiqueta: 'Contenido del botiquín', tipo: 'lista', subcampos: subcamposBotiquin,
       visibleSi: (v) => v.tipo === 'botiquin',
@@ -112,7 +112,7 @@ const vehiculos: ModuloDef = {
   id: 'vehiculos', coleccion: 'vehiculos', titulo: 'Vehículos',
   campos: [
     { nombre: 'ciudad', etiqueta: 'Ciudad', tipo: 'seleccion', requerido: true, origen: catalogo('ciudades') },
-    { nombre: 'placa', etiqueta: 'Placa', tipo: 'texto', requerido: true },
+    { nombre: 'placa', etiqueta: 'Placa', tipo: 'texto', requerido: true, formato: 'placa' },
     { nombre: 'extintor_vencimiento', etiqueta: 'Vencimiento del extintor', tipo: 'fecha' },
     { nombre: 'botiquin_items', etiqueta: 'Contenido del botiquín', tipo: 'lista', subcampos: subcamposBotiquin },
     {
