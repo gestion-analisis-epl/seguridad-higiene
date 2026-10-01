@@ -5,7 +5,7 @@ import type { ModuloDef } from '@/domain/modulos'
 import type { Registro } from '@/infrastructure/firestore/repositorio'
 import { DataTable } from '@/presentation/ui/tabla'
 import { mapaActivos } from '@/application/estado-colaborador'
-import { columnasDeModulo, filtrosInicialesDeModulo, tieneColaborador } from './columnas-modulo'
+import { claveTablaModulo, columnasDeModulo, filtrosInicialesDeModulo, tieneColaborador } from './columnas-modulo'
 import { ordenarRegistros } from './orden'
 import { useColeccion } from './useColeccion'
 import { useOpcionesDeCampos } from './useOpcionesDeCampos'
@@ -27,6 +27,6 @@ export function TablaModulo({ def, registros, alSeleccionar }: {
   const filas = useMemo(() => ordenarRegistros(def, registros, opciones), [def, registros, opciones])
   return (
     <DataTable columnas={columnas} filas={filas} idFila={idRegistro} alSeleccionarFila={alSeleccionar}
-      vacio="Sin registros" etiqueta={def.titulo} claveAnchos={`tabla-${def.id}`} filtrosIniciales={iniciales} />
+      vacio="Sin registros" etiqueta={def.titulo} claveAnchos={claveTablaModulo(def.id)} filtrosIniciales={iniciales} />
   )
 }

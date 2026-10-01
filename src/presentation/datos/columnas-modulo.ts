@@ -32,6 +32,9 @@ function valorDe(campo: CampoDef, opciones: Opcion[], v: unknown): ValorCelda {
 export const ID_COLUMNA_ESTADO = 'estado_colaborador'
 const CAMPO_COLABORADOR = 'colaborador_id'
 
+// Clave de persistencia de la tabla de cada modulo
+export const claveTablaModulo = (id: string) => `tabla-${id}`
+
 export const tieneColaborador = (def: ModuloDef) => def.campos.some((c) => c.nombre === CAMPO_COLABORADOR)
 
 // Estado derivado del colaborador referenciado, resuelto una vez por pagina en el mapa
