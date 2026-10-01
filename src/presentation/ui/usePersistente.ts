@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { almacenDe, escribirJson, leerJson, type TipoAlmacen } from './persistencia'
+import { EVENTO_CLAVE_EXTERNA, almacenDe, escribirJson, leerJson, type TipoAlmacen } from './persistencia'
 
 type Actualizador<T> = T | ((anterior: T) => T)
 
@@ -21,6 +21,20 @@ export function usePersistente<T>(
     ultimo.current = guardado
     hidratado.current = true
     setValorEstado(guardado)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clave, tipo])
+
+  // Relee cuando otra parte de la app escribe esta clave con la pagina ya abierta
+  useEffect(() => {
+    if (clave === null) return
+    const alAvisar = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== clave) return
+      const guardado = leerJson(almacenDe(tipo), clave, validar, porDefecto)
+      ultimo.current = guardado
+      setValorEstado(guardado)
+    }
+    window.addEventListener(EVENTO_CLAVE_EXTERNA, alAvisar)
+    return () => window.removeEventListener(EVENTO_CLAVE_EXTERNA, alAvisar)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clave, tipo])
 

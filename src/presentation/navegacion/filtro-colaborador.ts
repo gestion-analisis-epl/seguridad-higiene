@@ -1,5 +1,5 @@
 import { claveEstadoTabla, type EstadoGuardado } from '@/presentation/ui/tabla/estado'
-import { almacenDe, escribirJson, type Almacen } from '@/presentation/ui/persistencia'
+import { almacenDe, avisarClaveExterna, escribirJson, type Almacen } from '@/presentation/ui/persistencia'
 import { claveTablaModulo } from '@/presentation/datos/columnas-modulo'
 
 export const RUTA_COLABORADORES = '/datos/colaboradores'
@@ -12,5 +12,7 @@ export const estadoParaColaborador = (nombre: string): EstadoGuardado => ({
 // Deja la tabla de colaboradores lista para abrirse filtrada por esa persona
 export function prepararTablaColaboradores(nombre: string, almacen: Almacen | null = almacenDe('sesion')): boolean {
   const clave = claveEstadoTabla(claveTablaModulo('colaboradores'))
-  return clave !== null && escribirJson(almacen, clave, estadoParaColaborador(nombre))
+  if (clave === null || !escribirJson(almacen, clave, estadoParaColaborador(nombre))) return false
+  avisarClaveExterna(clave)
+  return true
 }

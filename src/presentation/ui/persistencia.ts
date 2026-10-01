@@ -42,3 +42,10 @@ export function almacenDe(tipo: TipoAlmacen): Almacen | null {
     return null
   }
 }
+
+// Aviso para que los hooks montados relean una clave escrita desde fuera de ellos
+export const EVENTO_CLAVE_EXTERNA = 'sh:clave-externa'
+
+export function avisarClaveExterna(clave: string): void {
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(EVENTO_CLAVE_EXTERNA, { detail: clave }))
+}
