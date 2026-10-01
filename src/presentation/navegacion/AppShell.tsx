@@ -5,15 +5,17 @@ import { usePathname } from 'next/navigation'
 import { useSesion } from '@/presentation/auth/AuthProvider'
 import { Icono } from '@/presentation/ui/Icono'
 import { gruposDeNavegacion } from './enlaces'
+import { BuscadorGlobal } from './BuscadorGlobal'
 import { Marca } from './Marca'
 import { MenuNavegacion } from './MenuNavegacion'
 import { TarjetaUsuario } from './TarjetaUsuario'
 import { useMenuMovil } from './useMenuMovil'
 
+const BOTON_MENU = 'grid h-10 w-10 shrink-0 place-items-center rounded text-texto hover:bg-superficie-2 lg:hidden'
 const BOTON_ICONO = 'grid h-10 w-10 place-items-center rounded text-barra-texto hover:bg-barra-2 lg:hidden'
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { usuario } = useSesion()
+  const { usuario, cerrarSesion } = useSesion()
   const ruta = usePathname() ?? '/'
   const grupos = useMemo(() => gruposDeNavegacion(usuario), [usuario])
   const { abierto, abrir, cerrar, botonAbrir, botonCerrar } = useMenuMovil(ruta)
@@ -25,11 +27,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         Saltar al contenido
       </a>
 
-      <header className="zona-barra sticky top-0 z-30 flex h-cabecera items-center justify-between border-b border-barra-borde bg-barra px-4 text-barra-texto lg:hidden">
-        <Marca />
+      <header className="sticky top-0 z-30 flex h-cabecera items-center gap-2 border-b border-borde bg-superficie px-3 sm:px-6 lg:px-10">
         <button ref={botonAbrir} type="button" onClick={abrir} aria-expanded={abierto} aria-controls="navegacion"
-          aria-label="Abrir menú" className={BOTON_ICONO}>
+          aria-label="Abrir menú" className={BOTON_MENU}>
           <Icono nombre="menu" className="h-5 w-5" />
+        </button>
+        <BuscadorGlobal />
+        <button type="button" onClick={() => void cerrarSesion()} aria-label="Cerrar sesión" title="Cerrar sesión"
+          className={`${BOTON_MENU} ml-auto`}>
+          <Icono nombre="salir" className="h-5 w-5" />
         </button>
       </header>
 
