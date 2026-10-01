@@ -22,9 +22,24 @@ describe('resolverOpciones', () => {
     expect(resolverOpciones(campo, {}, [])).toEqual([])
   })
 
-  it('lista colaboradores activos ordenados por nombre', () => {
+  it('al mostrar, resuelve el nombre de TODOS los colaboradores, tambien inactivos', () => {
     const campo: CampoDef = { ...base, origen: { tipo: 'colaboradores' } }
-    expect(resolverOpciones(campo, {}, colaboradores).map((o) => o.valor)).toEqual(['a', 'b'])
+    const opciones = resolverOpciones(campo, {}, colaboradores)
+    expect(opciones.map((o) => o.valor)).toEqual(['a', 'b', 'c'])
+    expect(opciones.find((o) => o.valor === 'c')?.etiqueta).toBe('Caro')
+  })
+
+  it('al elegir, ofrece solo activos ordenados por nombre', () => {
+    const campo: CampoDef = { ...base, origen: { tipo: 'colaboradores' } }
+    expect(resolverOpciones(campo, {}, colaboradores, 'elegir').map((o) => o.valor)).toEqual(['a', 'b'])
+  })
+
+  it('al elegir, conserva al colaborador inactivo ya seleccionado y lo marca', () => {
+    const campo: CampoDef = { ...base, origen: { tipo: 'colaboradores' } }
+    const opciones = resolverOpciones(campo, {}, colaboradores, 'elegir', 'c')
+    expect(opciones.map((o) => o.valor)).toEqual(['a', 'b', 'c'])
+    expect(opciones.find((o) => o.valor === 'c')?.etiqueta).toBe('Caro (inactivo)')
+    expect(opciones.find((o) => o.valor === 'a')?.etiqueta).toBe('Ana')
   })
 
   it('ordena catalogos y opciones fijas por etiqueta', () => {

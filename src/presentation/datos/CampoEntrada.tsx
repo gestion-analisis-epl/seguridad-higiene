@@ -11,7 +11,7 @@ export function CampoEntrada({ campo, valor, error, deshabilitado = false, prefi
   campo: CampoDef; valor: Valor | undefined; error?: string; deshabilitado?: boolean
   prefijo?: string; alCambiar: (v: Valor) => void
 }) {
-  const opciones = useOpciones(campo)
+  const opciones = useOpciones(campo, typeof valor === 'string' ? valor : null)
   const id = `campo-${prefijo}${campo.nombre}`
   const idError = `${id}-error`
   const aria = {

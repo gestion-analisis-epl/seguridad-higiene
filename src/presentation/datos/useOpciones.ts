@@ -5,9 +5,10 @@ import { useCatalogo } from './useCatalogo'
 import { useColeccion } from './useColeccion'
 import { resolverOpciones } from './opciones'
 
-export function useOpciones(campo: CampoDef): Opcion[] {
+// Para elegir en formularios: solo colaboradores activos, mas el ya seleccionado aunque este inactivo
+export function useOpciones(campo: CampoDef, valorActual: string | null = null): Opcion[] {
   const idCatalogo = campo.origen?.tipo === 'catalogo' ? campo.origen.id : null
   const catalogo = useCatalogo(idCatalogo)
   const { registros } = useColeccion(campo.origen?.tipo === 'colaboradores' ? 'colaboradores' : null)
-  return resolverOpciones(campo, idCatalogo ? { [idCatalogo]: catalogo } : {}, registros)
+  return resolverOpciones(campo, idCatalogo ? { [idCatalogo]: catalogo } : {}, registros, 'elegir', valorActual)
 }
