@@ -14,7 +14,7 @@ import type { ColumnaTabla, PropsDataTable } from './tipos'
 // columnas debe ser una referencia estable (modulo o useMemo); los anchos solo dependen de ids y medidas
 export function DataTable<T>({
   columnas, filas, idFila, alSeleccionarFila, vacio, etiqueta, claveAnchos, densidad = 'normal',
-  textoAccionFila = 'editar registro',
+  textoAccionFila = 'editar registro', atributosFila,
 }: PropsDataTable<T>) {
   const [orden, setOrden] = useState<Orden | null>(null)
   const [filtros, setFiltros] = useState<Record<string, Filtro>>({})
@@ -113,6 +113,7 @@ export function DataTable<T>({
             {visibles.map((fila) => (
               <tr
                 key={idFila(fila)}
+                {...atributosFila?.(fila)}
                 onClick={alSeleccionarFila ? (e) => alClicFila(e, fila) : undefined}
                 className={alSeleccionarFila ? 'cursor-pointer transition-colors hover:bg-superficie-2 focus-within:bg-superficie-2' : undefined}
               >

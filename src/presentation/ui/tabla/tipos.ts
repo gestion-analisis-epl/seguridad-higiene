@@ -23,4 +23,5 @@ export interface PropsDataTable<T> {
   claveAnchos?: string
   densidad?: 'normal' | 'compacta'
   textoAccionFila?: string
+  atributosFila?: (fila: T) => Record<string, string>
 }
