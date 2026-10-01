@@ -42,6 +42,8 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 - `/`: vista operativa. `/analitico`: vista analítica. Los índices IF, IS e ILI cuentan solo accidentes laborales; los de trayecto se registran como informativos.
 - `/datos/<modulo>`: captura y consulta. Módulos: `colaboradores`, `capacitaciones`, `entregas_uniforme`, `entregas_epp`, `accidentes`, `oficinas_equipo`, `vehiculos`, `indicadores_mensuales`.
 - Administración: `/admin/usuarios`, `/admin/catalogos`, `/admin/configuracion`.
+- En `/admin/catalogos` se puede editar la etiqueta de un valor (el valor interno nunca cambia) y eliminar valores sin uso; si hay registros que lo usan, se bloquea y muestra cuántos por colección.
+- Los dashboards toman prendas y EPP requeridos de los catálogos `prendas` y `tipos_epp` (si están vacíos, de las constantes del código).
 
 ## Botiquín por ítems
 
