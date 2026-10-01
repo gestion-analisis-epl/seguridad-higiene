@@ -67,6 +67,8 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 
 - Se importan desde `@/presentation/ui`: `DataTable`, `MultiSelect` y `usePersistente`.
 - `DataTable` ordena, filtra por encabezado y redimensiona columnas; con `claveAnchos` guarda los anchos en el navegador.
+- Las tablas de datos, entregas y usuarios son dinámicas (ordenar, filtrar por encabezado, redimensionar).
+- Los anchos de columna se recuerdan por navegador, por tabla.
 - `MultiSelect` es un desplegable con casillas; su selección es controlada y puede persistirse con `usePersistente`.
 - `usePersistente` guarda en `localStorage` (clave `sh:v1:`), valida lo leído y no falla si el almacenamiento no está disponible.
 
