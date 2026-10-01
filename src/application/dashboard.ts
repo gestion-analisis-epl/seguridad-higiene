@@ -7,6 +7,7 @@ import {
   calcularAnual, calcularMes, clasificarIli,
   type ConfigIndicadores, type Indices, type NivelIli,
 } from '@/domain/indicadores'
+import { filtrarPorCiudad } from './dashboard-filtro'
 
 const esActivo = (c: Colaborador) => c.activo !== false
 
@@ -55,6 +56,30 @@ export function resumenPorCiudad(d: DatosOperativos, hoy: Date): ResumenCiudad[]
       pctEpp: pct(evaluados.filter((e) => e.eppFaltantes.length === 0).length),
     }
   })
+}
+
+export interface ResumenGlobal {
+  activos: number
+  pctCapacitacion: number
+  pctUniforme: number
+  pctEpp: number
+  vencidos: number
+  porVencer: number
+}
+
+// Porcentajes como suma de numeradores sobre suma de activos; d ya viene filtrado por ciudad.
+export function resumenGlobal(d: DatosOperativos, hoy: Date): ResumenGlobal {
+  const evaluados = d.colaboradores.filter(esActivo).map((c) => evaluar(c, d, hoy))
+  const pct = (n: number) => (evaluados.length === 0 ? 0 : n / evaluados.length)
+  const alertas = alertasVencimiento(d, hoy)
+  return {
+    activos: evaluados.length,
+    pctCapacitacion: pct(evaluados.filter((e) => e.capacitacionOk).length),
+    pctUniforme: pct(evaluados.filter((e) => e.prendasFaltantes.length === 0).length),
+    pctEpp: pct(evaluados.filter((e) => e.eppFaltantes.length === 0).length),
+    vencidos: alertas.filter((a) => a.estado === 'vencido').length,
+    porVencer: alertas.filter((a) => a.estado === 'por_vencer').length,
+  }
 }
 
 export interface Pendiente {
@@ -128,16 +153,16 @@ export interface PuntoMes extends Indices {
 }
 
 export function serieMensual(
-  accidentes: Accidente[], poblaciones: Poblacion[], cfg: ConfigIndicadores, anio: number, ciudad?: string,
+  accidentes: Accidente[], poblaciones: Poblacion[], cfg: ConfigIndicadores, anio: number, ciudades?: string[],
 ): PuntoMes[] {
   return Array.from({ length: 12 }, (_, i) => {
     const periodo = `${anio}-${String(i + 1).padStart(2, '0')}`
-    const delMes = accidentes.filter((a) => a.periodo === periodo && (!ciudad || a.ciudad === ciudad))
+    const delMes = filtrarPorCiudad(accidentes, ciudades).filter((a) => a.periodo === periodo)
     const trayecto = delMes.filter((a) => a.tipo === 'trayecto').length
     const laboral = delMes.filter((a) => a.tipo === 'laboral').length
     const dias = delMes.filter((a) => a.tipo === 'laboral').reduce((s, a) => s + a.dias_incapacidad, 0)
-    const poblacion = poblaciones
-      .filter((p) => p.periodo === periodo && (!ciudad || p.ciudad === ciudad))
+    const poblacion = filtrarPorCiudad(poblaciones, ciudades)
+      .filter((p) => p.periodo === periodo)
       .reduce((s, p) => s + p.poblacion, 0)
     return { periodo, trayecto, laboral, poblacion, ...calcularMes({ poblacion, eventos: laboral, dias }, cfg) }
   })
@@ -154,7 +179,7 @@ export function comparativoCiudades(
 ): FilaComparativo[] {
   return ciudades
     .map((ciudad) => {
-      const indices = acumuladoAnual(serieMensual(accidentes, poblaciones, cfg, anio, ciudad), cfg)
+      const indices = acumuladoAnual(serieMensual(accidentes, poblaciones, cfg, anio, [ciudad]), cfg)
       return { ciudad, indices, nivel: clasificarIli(indices.ili, cfg) }
     })
     .sort((a, b) => (b.indices.ili ?? -1) - (a.indices.ili ?? -1))

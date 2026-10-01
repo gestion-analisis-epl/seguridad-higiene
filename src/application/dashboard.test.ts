@@ -5,8 +5,9 @@ import { CONFIG_INDICADORES_INICIAL as cfg } from '@/domain/indicadores'
 import { PRENDAS, TIPOS_EPP } from '@/domain/catalogos-iniciales'
 import {
   acumuladoAnual, alertasVencimiento, comparativoCiudades, pendientesPorColaborador,
-  resumenPorCiudad, serieMensual,
+  resumenGlobal, resumenPorCiudad, serieMensual,
 } from './dashboard'
+import { filtrarPorCiudad, filtrarPorCiudades } from './dashboard-filtro'
 
 const hoy = new Date(2026, 8, 30)
 
@@ -146,7 +147,7 @@ describe('serie e indicadores', () => {
   ]
 
   it('arma 12 meses; eventos y dias solo cuentan laborales y trayecto es informativo', () => {
-    const s = serieMensual(accidentes, poblaciones, cfg, 2026, 'ciudad-a')
+    const s = serieMensual(accidentes, poblaciones, cfg, 2026, ['ciudad-a'])
     expect(s).toHaveLength(12)
     expect(s[5]).toMatchObject({ periodo: '2026-06', laboral: 1, trayecto: 0, eventos: 1, dias: 3, poblacion: 10 })
     expect(s[7]).toMatchObject({ periodo: '2026-08', laboral: 0, trayecto: 1, eventos: 0, dias: 0 })
@@ -154,7 +155,7 @@ describe('serie e indicadores', () => {
     expect(s[0].ili).toBeNull()
   })
   it('un mes solo con trayecto da indices en cero, no nulos, si hay HHT', () => {
-    const p = serieMensual(accidentes, poblaciones, cfg, 2026, 'ciudad-a')[7]
+    const p = serieMensual(accidentes, poblaciones, cfg, 2026, ['ciudad-a'])[7]
     expect([p.indiceFrecuencia, p.indiceSeveridad, p.ili]).toEqual([0, 0, 0])
   })
   it('un mes con ambos tipos cuenta solo el laboral en eventos y dias', () => {
@@ -170,7 +171,7 @@ describe('serie e indicadores', () => {
     expect(s[7]).toMatchObject({ eventos: 1, trayecto: 1, laboral: 1, poblacion: 30 })
   })
   it('acumulado anual suma HHT, eventos y dias laborales de los meses', () => {
-    const r = acumuladoAnual(serieMensual(accidentes, poblaciones, cfg, 2026, 'ciudad-a'), cfg)
+    const r = acumuladoAnual(serieMensual(accidentes, poblaciones, cfg, 2026, ['ciudad-a']), cfg)
     expect(r.hht).toBe((10 + 20) * 240)
     expect(r.eventos).toBe(1)
     expect(r.dias).toBe(3)
@@ -179,5 +180,66 @@ describe('serie e indicadores', () => {
     const r = comparativoCiudades(accidentes, poblaciones, cfg, 2026, ['ciudad-b', 'ciudad-a', 'ciudad-c'])
     expect(r.map((f) => f.ciudad)).toEqual(['ciudad-a', 'ciudad-b', 'ciudad-c'])
     expect(r[2].nivel).toBe('sin_dato')
+  })
+})
+
+describe('filtrarPorCiudades', () => {
+  it('undefined devuelve todo', () => {
+    expect(filtrarPorCiudades(datos, undefined)).toBe(datos)
+  })
+  it('filtra colaboradores, capacitaciones, equipo y vehículos por ciudad', () => {
+    const d = filtrarPorCiudades(datos, ['ciudad-b'])
+    expect(d.colaboradores.map((c) => c.id)).toEqual(['c3'])
+    expect(d.capacitaciones).toEqual([])
+    expect(d.equipoOficinas).toEqual([])
+    expect(d.vehiculos).toEqual([])
+  })
+  it('las entregas siguen a su colaborador', () => {
+    const a = filtrarPorCiudades(datos, ['ciudad-a'])
+    expect(a.entregasUniforme).toHaveLength(PRENDAS.length)
+    expect(a.entregasEpp).toHaveLength(TIPOS_EPP.length)
+    const b = filtrarPorCiudades(datos, ['ciudad-b'])
+    expect(b.entregasUniforme).toEqual([])
+    expect(b.entregasEpp).toEqual([])
+  })
+  it('una lista vacía no deja nada', () => {
+    expect(filtrarPorCiudades(datos, []).colaboradores).toEqual([])
+  })
+  it('filtra listas con ciudad (accidentes y población)', () => {
+    const lista = [{ ciudad: 'ciudad-a' }, { ciudad: 'ciudad-b' }]
+    expect(filtrarPorCiudad(lista, ['ciudad-b'])).toEqual([{ ciudad: 'ciudad-b' }])
+    expect(filtrarPorCiudad(lista, undefined)).toBe(lista)
+  })
+})
+
+describe('resumenGlobal', () => {
+  it('suma numeradores sobre activos y cuenta alertas', () => {
+    const r = resumenGlobal(datos, hoy)
+    expect(r.activos).toBe(2)
+    expect(r.pctCapacitacion).toBeCloseTo(0.5)
+    expect(r.pctUniforme).toBeCloseTo(0.5)
+    expect(r.pctEpp).toBeCloseTo(0.5)
+    expect(r.vencidos).toBe(2)
+    expect(r.porVencer).toBe(1)
+  })
+  it('sin activos devuelve ceros', () => {
+    expect(resumenGlobal(filtrarPorCiudades(datos, ['ciudad-b']), hoy))
+      .toMatchObject({ activos: 0, pctCapacitacion: 0, pctUniforme: 0, pctEpp: 0 })
+  })
+})
+
+describe('series con varias ciudades', () => {
+  const acc = [
+    { ciudad: 'ciudad-a', periodo: '2026-08', tipo: 'laboral' as const, dias_incapacidad: 1 },
+    { ciudad: 'ciudad-b', periodo: '2026-08', tipo: 'laboral' as const, dias_incapacidad: 2 },
+    { ciudad: 'ciudad-c', periodo: '2026-08', tipo: 'laboral' as const, dias_incapacidad: 4 },
+  ]
+  const pob = ['ciudad-a', 'ciudad-b', 'ciudad-c'].map((ciudad) => ({ ciudad, periodo: '2026-08', poblacion: 10 }))
+  it('suma solo las ciudades indicadas', () => {
+    const p = serieMensual(acc, pob, cfg, 2026, ['ciudad-a', 'ciudad-b'])[7]
+    expect(p).toMatchObject({ eventos: 2, dias: 3, poblacion: 20 })
+  })
+  it('lista vacía no suma nada', () => {
+    expect(serieMensual(acc, pob, cfg, 2026, [])[7]).toMatchObject({ eventos: 0, poblacion: 0 })
   })
 })

@@ -27,7 +27,7 @@ export function DashboardAnalitico() {
 
   const accidentes = accidentesFuente.registros as unknown as Accidente[]
   const poblaciones = poblacionesFuente.registros as unknown as Poblacion[]
-  const serie = useMemo(() => serieMensual(accidentes, poblaciones, cfg, anio, ciudad || undefined), [accidentes, poblaciones, cfg, anio, ciudad])
+  const serie = useMemo(() => serieMensual(accidentes, poblaciones, cfg, anio, ciudad ? [ciudad] : undefined), [accidentes, poblaciones, cfg, anio, ciudad])
   const anual = useMemo(() => acumuladoAnual(serie, cfg), [serie, cfg])
   const comparativo = useMemo(
     () => comparativoCiudades(accidentes, poblaciones, cfg, anio, ciudades.map((c) => c.valor)),
