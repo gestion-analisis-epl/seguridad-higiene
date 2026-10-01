@@ -1,13 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
+import { claveDoc } from '@/application/almacen-lecturas'
 import { CONFIG_INDICADORES_INICIAL, configDesdeDoc, type ConfigIndicadores } from '@/domain/indicadores'
-import { suscribirDoc } from '@/infrastructure/firestore/repositorio'
+import type { Registro } from '@/infrastructure/firestore/repositorio'
+import { useLectura } from './useLectura'
 
 export function useConfigIndicadores(): ConfigIndicadores {
-  const [cfg, setCfg] = useState<ConfigIndicadores>(CONFIG_INDICADORES_INICIAL)
-
-  useEffect(() => suscribirDoc('configuracion', 'indicadores', (r) => setCfg(configDesdeDoc(r))), [])
-
-  return cfg
+  const { dato } = useLectura(claveDoc('configuracion', 'indicadores'))
+  return useMemo(
+    () => (dato === undefined ? CONFIG_INDICADORES_INICIAL : configDesdeDoc(dato as Registro | null)),
+    [dato],
+  )
 }

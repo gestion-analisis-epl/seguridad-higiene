@@ -72,6 +72,12 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 
 `domain` y `application` nunca importan Firebase ni React. Solo `src/infrastructure` importa el SDK de Firebase.
 
+## Lecturas compartidas
+
+Cada colección o documento (catálogos, configuración de indicadores) tiene un solo listener de Firestore por pestaña (`src/application/almacen-lecturas.ts`); todos los componentes lo comparten con `useSyncExternalStore`, así que navegar entre páginas no vuelve a leer las colecciones y los cambios llegan como deltas.
+El listener se mantiene aunque no haya componentes montados; si falla, se descarta y el siguiente componente que lo pida abre uno nuevo.
+Al cerrar sesión o cambiar de usuario se cancelan todos los listeners y se vacía la memoria; no se usa caché persistente de Firestore para que los datos no queden en disco.
+
 ## Componentes de interfaz reutilizables
 
 - Se importan desde `@/presentation/ui`: `DataTable`, `MultiSelect` y `usePersistente`.
