@@ -16,6 +16,12 @@ const TRAZOS = {
   editar: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   volver: 'M10 6l-6 6 6 6M4 12h16',
   check: 'M5 12.5l4.5 4.5L19 7.5',
+  chevron: 'M6 9l6 6 6-6',
+  filtro: 'M4 5h16l-6 7.5V19l-4 1.5v-8z',
+  'orden-asc': 'M12 19V6M6.5 11.5L12 6l5.5 5.5',
+  'orden-desc': 'M12 5v13M6.5 12.5L12 18l5.5-5.5',
+  'orden-sin': 'M8 9.5L12 5.5l4 4M8 14.5l4 4 4-4',
+  buscar: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13M20 20l-4.9-4.9',
 } as const
 
 export type NombreIcono = keyof typeof TRAZOS
