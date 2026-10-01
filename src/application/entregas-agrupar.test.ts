@@ -40,8 +40,8 @@ describe('filasPorColaborador', () => {
     { id: 'c4', nombre: 'Carla', ciudad: 'y' },
   ]
   const filas = filasPorColaborador(colaboradores, registros, 'prenda')
-  it('una fila por colaborador activo ordenada por nombre', () => {
-    expect(filas.map((f) => f.colaborador.id)).toEqual(['c2', 'c1', 'c4'])
+  it('una fila por colaborador, inactivos incluidos, ordenada por nombre', () => {
+    expect(filas.map((f) => f.colaborador.id)).toEqual(['c2', 'c1', 'c4', 'c3'])
   })
   it('incluye ultimas y cantidad de entregas', () => {
     const beto = filas.find((f) => f.colaborador.id === 'c1')!

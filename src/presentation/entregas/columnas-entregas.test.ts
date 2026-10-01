@@ -25,19 +25,21 @@ describe('etiquetaEstadoEntrega', () => {
 describe('columnasDeEntregas', () => {
   const cols = columnasDeEntregas(CONFIG_EPP, items, ciudades, hoy)
   it('colaborador, ciudad, un item por columna y acciones', () => {
-    expect(cols.map((c) => c.id)).toEqual(['colaborador', 'ciudad', 'casco', 'botas', 'acciones'])
-    expect(cols.map((c) => c.tipo)).toEqual(['texto', 'categoria', 'categoria', 'categoria', 'texto'])
+    expect(cols.map((c) => c.id)).toEqual(['colaborador', 'ciudad', 'estado_colaborador', 'casco', 'botas', 'acciones'])
+    expect(cols.map((c) => c.tipo)).toEqual(['texto', 'categoria', 'categoria', 'categoria', 'categoria', 'texto'])
   })
   it('valores: nombre, etiqueta de ciudad y estado', () => {
     const f = fila({ casco: { id: 'r', entregado: false } })
     expect(cols[0].valor(f)).toBe('Ana')
     expect(cols[1].valor(f)).toBe('Ciudad A')
-    expect(cols[2].valor(f)).toBe('No entregado')
-    expect(cols[3].valor(f)).toBe('Sin entrega')
+    expect(cols[2].valor(f)).toBe('Activo')
+    expect(cols[2].valor({ ...f, colaborador: { ...f.colaborador, activo: false } })).toBe('Inactivo')
+    expect(cols[3].valor(f)).toBe('No entregado')
+    expect(cols[4].valor(f)).toBe('Sin entrega')
   })
   it('acciones no se ordena ni filtra', () => {
-    expect(cols[4].ordenable).toBe(false)
-    expect(cols[4].filtrable).toBe(false)
+    expect(cols[5].ordenable).toBe(false)
+    expect(cols[5].filtrable).toBe(false)
   })
 })
 

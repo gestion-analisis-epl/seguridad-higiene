@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { ColumnaLogica } from './logica'
+import type { ColumnaLogica, Filtro } from './logica'
 
 export type { TipoColumna, ValorCelda } from './logica'
 
@@ -23,6 +23,8 @@ export interface PropsDataTable<T> {
   vacio: string
   etiqueta: string
   claveAnchos?: string
+  // Filtros con que arranca la tabla si no hay estado guardado; deben ser una referencia estable
+  filtrosIniciales?: Record<string, Filtro>
   densidad?: 'normal' | 'compacta'
   textoAccionFila?: string
   atributosFila?: (fila: T) => Record<string, string>

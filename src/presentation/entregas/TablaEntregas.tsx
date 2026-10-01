@@ -5,11 +5,13 @@ import type { FilaEntrega } from '@/application/entregas-agrupar'
 import type { Opcion } from '@/domain/modulos'
 import { Icono } from '@/presentation/ui/Icono'
 import { DataTable } from '@/presentation/ui/tabla'
+import { FILTRO_ESTADO_ACTIVO } from '@/presentation/ui/tabla/filtros-estado'
 import type { ColumnaTabla } from '@/presentation/ui/tabla'
 import { CeldaEntrega } from './CeldaEntrega'
-import { columnasDeEntregas } from './columnas-entregas'
+import { ID_COLUMNA_ESTADO_ENTREGAS, columnasDeEntregas } from './columnas-entregas'
 import type { ConfiguracionPagina } from './configuraciones'
 
+const FILTROS_INICIALES = { [ID_COLUMNA_ESTADO_ENTREGAS]: FILTRO_ESTADO_ACTIVO }
 const idFila = (f: FilaEntrega) => f.colaborador.id
 
 export function TablaEntregas({ cfg, filas, items, ciudades, alAbrir, alNueva }: {
@@ -39,6 +41,6 @@ export function TablaEntregas({ cfg, filas, items, ciudades, alAbrir, alNueva }:
   return (
     <DataTable columnas={columnas} filas={filas} idFila={idFila} alSeleccionarFila={(f) => alAbrir(f.colaborador.id)}
       vacio="Sin colaboradores" etiqueta={cfg.titulo} claveAnchos={`tabla-entregas-${cfg.titulo}`}
-      textoAccionFila="ver entregas" />
+      textoAccionFila="ver entregas" filtrosIniciales={FILTROS_INICIALES} />
   )
 }

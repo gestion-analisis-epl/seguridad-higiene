@@ -11,12 +11,17 @@ export function etiquetaEstadoEntrega(config: ConfigEntrega, registro: RegistroE
   return config.conVencimiento ? estadoEpp(registro, hoy).texto : 'Con entrega'
 }
 
+export const ID_COLUMNA_ESTADO_ENTREGAS = 'estado_colaborador'
+
+export const estadoDeFila = (f: FilaEntrega) => (f.colaborador.activo === false ? 'Inactivo' : 'Activo')
+
 export function columnasDeEntregas(
   config: ConfigEntrega, items: Opcion[], ciudades: Opcion[], hoy: Date,
 ): ColumnaTabla<FilaEntrega>[] {
   return [
     { id: 'colaborador', encabezado: 'Colaborador', tipo: 'texto', anchoInicial: 220, valor: (f) => f.colaborador.nombre },
     { id: 'ciudad', encabezado: 'Ciudad', tipo: 'categoria', valor: (f) => etiquetaDe(ciudades, f.colaborador.ciudad) },
+    { id: ID_COLUMNA_ESTADO_ENTREGAS, encabezado: 'Estado', tipo: 'categoria', valor: (f) => estadoDeFila(f) },
     ...items.map((i): ColumnaTabla<FilaEntrega> => ({
       id: i.valor, encabezado: i.etiqueta, tipo: 'categoria',
       valor: (f) => etiquetaEstadoEntrega(config, f.ultimas[i.valor], hoy),

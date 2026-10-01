@@ -1,5 +1,6 @@
 import { aTextoIso, deTextoIso } from '@/domain/fechas'
 import { filtroActivo, opcionesDeCategoria, type Filtro, type Orden } from './logica'
+import { mismoFiltro } from './filtros-iniciales'
 import type { ColumnaTabla } from './tipos'
 
 export interface EstadoTabla { filtros: Record<string, Filtro>; orden: Orden | null; pagina: number }
@@ -53,7 +54,7 @@ function sanearFiltro<T>(
 }
 
 export function sanearEstado<T>(
-  guardado: EstadoGuardado, columnas: ColumnaTabla<T>[], filas: T[],
+  guardado: EstadoGuardado, columnas: ColumnaTabla<T>[], filas: T[], iniciales?: Record<string, Filtro>,
 ): EstadoTabla {
   let cache: Set<string> | null | undefined
   const filtros: Record<string, Filtro> = {}
@@ -66,7 +67,11 @@ export function sanearEstado<T>(
       }
       cache = undefined
       const f = sanearFiltro(guardado.filtros[c.id], c, presentes)
-      if (f && filtroActivo(f)) filtros[c.id] = f
+      // El defecto no se poda: seguiria valido cuando aparezcan filas con ese valor
+      const inicial = iniciales?.[c.id]
+      const sinPodar = f && inicial ? sanearFiltro(guardado.filtros[c.id], c, () => null) : null
+      if (sinPodar && inicial && mismoFiltro(sinPodar, inicial)) filtros[c.id] = inicial
+      else if (f && filtroActivo(f)) filtros[c.id] = f
     }
   }
   const o = guardado.orden

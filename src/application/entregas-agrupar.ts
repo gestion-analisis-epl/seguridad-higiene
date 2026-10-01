@@ -39,8 +39,7 @@ export function filasPorColaborador<C extends ColaboradorEntrega>(
   const ultimas = ultimaEntregaPorItem(registros, claveItem)
   const total = new Map<string, number>()
   for (const r of registros) total.set(String(r.colaborador_id), (total.get(String(r.colaborador_id)) ?? 0) + 1)
-  return colaboradores
-    .filter((c) => c.activo !== false)
+  return [...colaboradores]
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
     .map((colaborador) => ({
       colaborador,

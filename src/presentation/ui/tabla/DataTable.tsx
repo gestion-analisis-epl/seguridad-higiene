@@ -7,6 +7,7 @@ import { EncabezadoColumna } from './EncabezadoColumna'
 import { ControlesPaginacion } from './ControlesPaginacion'
 import { TAMANO_PAGINA_INICIAL, paginar, resumenPagina, tamanoValido } from './paginacion'
 import { esControlInteractivo } from './interaccion'
+import { difiereDeIniciales, estadoBase, filtrosRestablecidos } from './filtros-iniciales'
 import {
   claveEstadoTabla, estadoGuardadoValido, sanearEstado, type EstadoGuardado, type EstadoTabla,
 } from './estado'
@@ -21,12 +22,15 @@ const SIN_GUARDADO: EstadoGuardado = {}
 // columnas debe ser una referencia estable (modulo o useMemo); los anchos solo dependen de ids y medidas
 export function DataTable<T>({
   columnas, filas, idFila, alSeleccionarFila, vacio, etiqueta, claveAnchos, densidad = 'normal',
-  textoAccionFila = 'editar registro', atributosFila,
+  textoAccionFila = 'editar registro', atributosFila, filtrosIniciales,
 }: PropsDataTable<T>) {
   const [guardado, setGuardado] = usePersistente<EstadoGuardado>(
     claveEstadoTabla(claveAnchos), SIN_GUARDADO, estadoGuardadoValido, 'sesion',
   )
-  const { filtros, orden, pagina } = useMemo(() => sanearEstado(guardado, columnas, filas), [guardado, columnas, filas])
+  const { filtros, orden, pagina } = useMemo(
+    () => sanearEstado(estadoBase(guardado, guardado !== SIN_GUARDADO, filtrosIniciales), columnas, filas, filtrosIniciales),
+    [guardado, columnas, filas, filtrosIniciales],
+  )
   const cambiarEstado = (cambios: Partial<EstadoTabla>) => setGuardado({ filtros, orden, pagina, ...cambios })
   const [tamano, setTamano] = usePersistente<number>(
     claveAnchos ? `tamano:${claveAnchos}` : null, TAMANO_PAGINA_INICIAL, tamanoValido,
@@ -44,7 +48,8 @@ export function DataTable<T>({
   )
   const anchos = enVivo ? { ...base, [enVivo.id]: enVivo.ancho } : base
   const anchoTotal = columnas.reduce((suma, c) => suma + anchos[c.id], 0)
-  const hayFiltros = columnas.some((c) => filtros[c.id] && filtroActivo(filtros[c.id]))
+  const difiere = difiereDeIniciales(filtros, filtrosIniciales)
+  const hayIniciales = !!filtrosIniciales && Object.keys(filtrosIniciales).length > 0
 
   const visibles = useMemo(() => {
     const filtradas = aplicarFiltros(filas, columnas, filtros)
@@ -81,10 +86,10 @@ export function DataTable<T>({
     <div className="min-w-0">
       <div className="mb-2 flex min-h-[2.5rem] flex-wrap items-center justify-between gap-2">
         <p role="status" className="text-sm text-texto-suave">{resumenPagina(actual, filas.length)}</p>
-        {hayFiltros && (
-          <button type="button" onClick={() => cambiarEstado({ filtros: {}, pagina: 1 })} className="boton-secundario min-h-[2rem] px-3 text-xs">
+        {difiere && (
+          <button type="button" onClick={() => cambiarEstado({ filtros: filtrosRestablecidos(filtrosIniciales), pagina: 1 })} className="boton-secundario min-h-[2rem] px-3 text-xs">
             <Icono nombre="cerrar" className="h-3.5 w-3.5" />
-            Limpiar filtros
+            {hayIniciales ? 'Restablecer filtros' : 'Limpiar filtros'}
           </button>
         )}
       </div>

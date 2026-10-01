@@ -60,7 +60,7 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 - **Nueva entrega**: una fecha compartida y solo se captura lo que se entrega; cada artículo capturado crea un documento nuevo y el historial se conserva. En uniforme se exigen talla y cantidad; en EPP se marca el artículo y el vencimiento es opcional.
 - **Corregir**: precarga la última entrega de cada artículo con su propia fecha; solo se actualizan los documentos que cambiaron. Vaciar un artículo no lo borra.
 - Solo el administrador elimina una entrada, desde el historial y con confirmación.
-- Los colaboradores inactivos no aparecen en la tabla, así que sus entregas no se editan desde aquí.
+- La matriz incluye a los colaboradores inactivos (columna Estado); por defecto se filtra Activo y se cambia en el encabezado.
 - Cada entrega sigue siendo un documento de un artículo con los mismos campos de siempre; el tablero, las alertas y la migración no cambian.
 
 ## Arquitectura
@@ -78,6 +78,7 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 - `DataTable` ordena, filtra por encabezado y redimensiona columnas; con `claveAnchos` guarda los anchos en el navegador.
 - Las tablas de datos, entregas y usuarios son dinámicas (ordenar, filtrar por encabezado, redimensionar).
 - Los anchos de columna se recuerdan por navegador, por tabla.
+- Las tablas con colaborador, colaboradores y usuarios abren con el filtro Estado en Activo; lo guardado en la sesión manda y "Restablecer filtros" lo recupera.
 - Los dashboards operativo y analítico comparten un filtro multiselección de ciudades (por defecto todas) y muestran la vista general de las seleccionadas.
 - El filtro guarda en el navegador las ciudades ocultas, así las ciudades nuevas del catálogo quedan incluidas.
 - `MultiSelect` es un desplegable con casillas; su selección es controlada y puede persistirse con `usePersistente`.

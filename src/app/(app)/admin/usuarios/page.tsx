@@ -12,9 +12,11 @@ import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { ordenarOpciones } from '@/presentation/ui/seleccion'
 import { DataTable, type ColumnaTabla } from '@/presentation/ui'
+import { FILTRO_ACTIVO_BOOLEANO } from '@/presentation/ui/tabla/filtros-estado'
 
 const ROLES: Rol[] = ['sin_rol', 'consulta', 'capturista', 'admin']
 const ROLES_ORDENADOS = ordenarOpciones(ROLES.map((valor) => ({ valor, etiqueta: ETIQUETA_ROL[valor] }))).map((o) => o.valor)
+const FILTROS_INICIALES = { activo: FILTRO_ACTIVO_BOOLEANO }
 const idUsuario = (u: Registro) => u.id
 
 function Usuarios() {
@@ -60,7 +62,7 @@ function Usuarios() {
       {error && <AvisoError>{error}</AvisoError>}
       {cargando ? <Cargando /> : (
         <DataTable columnas={columnas} filas={registros} idFila={idUsuario} vacio="Sin usuarios"
-          etiqueta="Usuarios" claveAnchos="tabla-usuarios" />
+          etiqueta="Usuarios" claveAnchos="tabla-usuarios" filtrosIniciales={FILTROS_INICIALES} />
       )}
     </section>
   )
