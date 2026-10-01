@@ -1,6 +1,7 @@
 'use client'
 
 import { useId } from 'react'
+import { InputFecha } from '../InputFecha'
 import { PanelOpciones } from '../PanelOpciones'
 import type { OpcionSeleccion } from '../seleccion'
 import type { Filtro, TipoColumna } from './logica'
@@ -79,12 +80,12 @@ export function ContenidoFiltro({ tipo, encabezado, filtro, opciones, alCambiar 
         return (
           <div className="grid gap-2 min-[400px]:grid-cols-2">
             <Campo id={`${id}-d`} etiqueta="Desde">
-              <input id={`${id}-d`} type="date" autoFocus className="control" value={f.desde}
-                onChange={(e) => alCambiar({ ...f, desde: e.target.value })} />
+              <InputFecha id={`${id}-d`} autoFocus className="control" valor={f.desde}
+                alCambiar={(t) => alCambiar({ ...f, desde: t })} />
             </Campo>
             <Campo id={`${id}-h`} etiqueta="Hasta">
-              <input id={`${id}-h`} type="date" className="control" value={f.hasta}
-                onChange={(e) => alCambiar({ ...f, hasta: e.target.value })} />
+              <InputFecha id={`${id}-h`} className="control" valor={f.hasta}
+                alCambiar={(t) => alCambiar({ ...f, hasta: t })} />
             </Campo>
           </div>
         )

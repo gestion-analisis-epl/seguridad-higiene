@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   aTextoIso, deTextoIso, diasParaVencer, estadoCapacitacion, estadoVencimiento,
-  fechaCalendario, formatearFecha, periodoDe,
+  esFechaCompleta, fechaCalendario, formatearFecha, periodoDe, textoParaCommit,
 } from './fechas'
 
 const hoy = new Date(2026, 8, 30)
@@ -43,5 +43,37 @@ describe('vencimientos', () => {
     expect(estadoCapacitacion(fechaCalendario(2026, 5, 4), null, hoy)).toBe('vigente')
     expect(estadoCapacitacion(fechaCalendario(2025, 5, 4), fechaCalendario(2026, 5, 4), hoy)).toBe('vencido')
     expect(estadoCapacitacion(fechaCalendario(2026, 5, 4), fechaCalendario(2027, 5, 4), hoy)).toBe('vigente')
+  })
+})
+
+describe('anios menores a 1000', () => {
+  it('fechaCalendario conserva los anios 0 a 99', () => {
+    expect(fechaCalendario(2, 1, 1).getUTCFullYear()).toBe(2)
+    expect(fechaCalendario(99, 12, 31).getUTCFullYear()).toBe(99)
+  })
+  it('ida y vuelta con texto ISO', () => {
+    for (const t of ['0002-01-01', '0202-05-06', '0999-12-31', '2026-08-31']) {
+      expect(aTextoIso(deTextoIso(t))).toBe(t)
+    }
+  })
+})
+
+describe('esFechaCompleta', () => {
+  it('acepta solo fechas completas validas con anio de 4 digitos', () => {
+    expect(esFechaCompleta('2026-08-31')).toBe(true)
+    expect(esFechaCompleta('1000-01-01')).toBe(true)
+  })
+  it('rechaza parciales, anios bajos e inexistentes', () => {
+    for (const t of ['', '0002-01-01', '0202-05-06', '0999-12-31', '2026-02-31', '2026-8-1', 'abc']) {
+      expect(esFechaCompleta(t)).toBe(false)
+    }
+  })
+})
+
+describe('textoParaCommit', () => {
+  it('confirma vacio y completos, ignora parciales', () => {
+    expect(textoParaCommit('')).toBe('')
+    expect(textoParaCommit('2026-08-31')).toBe('2026-08-31')
+    expect(textoParaCommit('0002-01-01')).toBeNull()
   })
 })

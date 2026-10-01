@@ -1,7 +1,10 @@
 export const DIAS_AVISO_VENCIMIENTO = 30
 
 export function fechaCalendario(anio: number, mes: number, dia: number): Date {
-  return new Date(Date.UTC(anio, mes - 1, dia, 12))
+  const fecha = new Date(Date.UTC(2000, mes - 1, dia, 12))
+  // Date.UTC mapea los anios 0 a 99 a 1900-1999; setUTCFullYear no
+  fecha.setUTCFullYear(anio, mes - 1, dia)
+  return fecha
 }
 
 export function periodoDe(fecha: Date): string {
@@ -22,6 +25,21 @@ export function aTextoIso(fecha: Date | null): string {
 export function deTextoIso(texto: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto)
   return m ? fechaCalendario(Number(m[1]), Number(m[2]), Number(m[3])) : null
+}
+
+const ANIO_MINIMO_COMPLETO = 1000
+
+// Fecha escrita completa: AAAA-MM-DD real y anio de 4 digitos sin ceros a la izquierda
+export function esFechaCompleta(texto: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto)
+  if (!m || Number(m[1]) < ANIO_MINIMO_COMPLETO) return false
+  const fecha = deTextoIso(texto)
+  return !!fecha && aTextoIso(fecha) === texto
+}
+
+// Texto a confirmar al padre mientras se escribe: vacio o completo; null si aun es parcial
+export function textoParaCommit(texto: string): string | null {
+  return texto === '' || esFechaCompleta(texto) ? texto : null
 }
 
 export function diasParaVencer(vencimiento: Date, hoy: Date): number {

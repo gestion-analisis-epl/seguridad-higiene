@@ -3,6 +3,7 @@
 import { aTextoIso, deTextoIso } from '@/domain/fechas'
 import type { CampoDef, Valor } from '@/domain/modulos'
 import { Icono } from '@/presentation/ui/Icono'
+import { InputFecha } from '@/presentation/ui/InputFecha'
 import { useOpciones } from './useOpciones'
 
 export function CampoEntrada({ campo, valor, error, deshabilitado = false, prefijo = '', alCambiar }: {
@@ -46,8 +47,8 @@ export function CampoEntrada({ campo, valor, error, deshabilitado = false, prefi
       </select>
     )
   } else if (campo.tipo === 'fecha') {
-    control = <input id={id} type="date" className="control" value={valor instanceof Date ? aTextoIso(valor) : ''}
-      disabled={deshabilitado} onChange={(e) => alCambiar(deTextoIso(e.target.value))} {...aria} />
+    control = <InputFecha id={id} className="control" valor={valor instanceof Date ? aTextoIso(valor) : ''}
+      disabled={deshabilitado} alCambiar={(t) => alCambiar(deTextoIso(t))} {...aria} />
   } else if (campo.tipo === 'numero') {
     control = <input id={id} type="number" inputMode="decimal" className="control tabular-nums" min={0} step="any"
       value={typeof valor === 'number' ? valor : ''} disabled={deshabilitado}
