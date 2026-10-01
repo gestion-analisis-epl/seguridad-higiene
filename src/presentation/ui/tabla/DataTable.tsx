@@ -8,19 +8,26 @@ import { ControlesPaginacion } from './ControlesPaginacion'
 import { TAMANO_PAGINA_INICIAL, paginar, resumenPagina, tamanoValido } from './paginacion'
 import { esControlInteractivo } from './interaccion'
 import {
+  claveEstadoTabla, estadoGuardadoValido, sanearEstado, type EstadoGuardado, type EstadoTabla,
+} from './estado'
+import {
   ANCHO_MINIMO, anchosEfectivos, anchosValidos, aplicarFiltros, clamparAncho, filtroActivo,
-  opcionesDeCategoria, ordenarFilas, siguienteOrden, textoVisible, type Filtro, type Orden,
+  opcionesDeCategoria, ordenarFilas, siguienteOrden, textoVisible, type Filtro,
 } from './logica'
 import type { ColumnaTabla, PropsDataTable } from './tipos'
+
+const SIN_GUARDADO: EstadoGuardado = {}
 
 // columnas debe ser una referencia estable (modulo o useMemo); los anchos solo dependen de ids y medidas
 export function DataTable<T>({
   columnas, filas, idFila, alSeleccionarFila, vacio, etiqueta, claveAnchos, densidad = 'normal',
   textoAccionFila = 'editar registro', atributosFila,
 }: PropsDataTable<T>) {
-  const [orden, setOrden] = useState<Orden | null>(null)
-  const [filtros, setFiltros] = useState<Record<string, Filtro>>({})
-  const [pagina, setPagina] = useState(1)
+  const [guardado, setGuardado] = usePersistente<EstadoGuardado>(
+    claveEstadoTabla(claveAnchos), SIN_GUARDADO, estadoGuardadoValido, 'sesion',
+  )
+  const { filtros, orden, pagina } = useMemo(() => sanearEstado(guardado, columnas, filas), [guardado, columnas, filas])
+  const cambiarEstado = (cambios: Partial<EstadoTabla>) => setGuardado({ filtros, orden, pagina, ...cambios })
   const [tamano, setTamano] = usePersistente<number>(
     claveAnchos ? `tamano:${claveAnchos}` : null, TAMANO_PAGINA_INICIAL, tamanoValido,
   )
@@ -46,13 +53,10 @@ export function DataTable<T>({
   }, [filas, columnas, filtros, orden])
 
   const cambiarFiltro = (id: string, filtro: Filtro | null) => {
-    setPagina(1)
-    setFiltros((previos) => {
-      const siguientes = { ...previos }
-      if (filtro && filtroActivo(filtro)) siguientes[id] = filtro
-      else delete siguientes[id]
-      return siguientes
-    })
+    const siguientes = { ...filtros }
+    if (filtro && filtroActivo(filtro)) siguientes[id] = filtro
+    else delete siguientes[id]
+    cambiarEstado({ filtros: siguientes, pagina: 1 })
   }
 
   const actual = useMemo(() => paginar(visibles, pagina, tamano), [visibles, pagina, tamano])
@@ -78,7 +82,7 @@ export function DataTable<T>({
       <div className="mb-2 flex min-h-[2.5rem] flex-wrap items-center justify-between gap-2">
         <p role="status" className="text-sm text-texto-suave">{resumenPagina(actual, filas.length)}</p>
         {hayFiltros && (
-          <button type="button" onClick={() => { setPagina(1); setFiltros({}) }} className="boton-secundario min-h-[2rem] px-3 text-xs">
+          <button type="button" onClick={() => cambiarEstado({ filtros: {}, pagina: 1 })} className="boton-secundario min-h-[2rem] px-3 text-xs">
             <Icono nombre="cerrar" className="h-3.5 w-3.5" />
             Limpiar filtros
           </button>
@@ -106,7 +110,7 @@ export function DataTable<T>({
                     filtro={filtro} filtroActivo={!!filtro && filtroActivo(filtro)}
                     opciones={c.tipo === 'categoria' || c.tipo === 'texto' ? opcionesDeCategoria(filas, c) : []}
                     ancho={anchos[c.id]} minimo={minimoDe(c)} ultima={i === columnas.length - 1}
-                    alOrdenar={() => { setPagina(1); setOrden((o) => siguienteOrden(o, c.id)) }}
+                    alOrdenar={() => cambiarEstado({ orden: siguienteOrden(orden, c.id), pagina: 1 })}
                     alFiltrar={(f) => cambiarFiltro(c.id, f)}
                     alArrastrarAncho={(a) => arrastrarAncho(c, a)}
                     alConfirmarAncho={(a) => confirmarAncho(c, a)}
@@ -152,7 +156,8 @@ export function DataTable<T>({
       </div>
       {filas.length > 0 && (
         <ControlesPaginacion etiqueta={etiqueta} pagina={actual} tamano={tamano}
-          alTamano={(n) => { setPagina(1); setTamano(n) }} alPagina={setPagina} />
+          alTamano={(n) => { cambiarEstado({ pagina: 1 }); setTamano(n) }}
+          alPagina={(n) => cambiarEstado({ pagina: n })} />
       )}
     </div>
   )

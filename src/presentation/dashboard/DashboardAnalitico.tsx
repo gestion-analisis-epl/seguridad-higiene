@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { acumuladoAnual, comparativoCiudades, serieMensual } from '@/application/dashboard'
 import type { Accidente, Poblacion } from '@/domain/entidades'
 import { clasificarIli } from '@/domain/indicadores'
@@ -19,6 +19,8 @@ import { MESES } from './formato'
 import { filasMensuales } from './mensual'
 import { TarjetasIndicadores } from './TarjetasIndicadores'
 import { useFiltroCiudades } from './useFiltroCiudades'
+import { usePersistente } from '@/presentation/ui/usePersistente'
+import { CLAVE_ANIO, anioGuardadoValido } from './anio-guardado'
 
 export function DashboardAnalitico() {
   const cfg = useConfigIndicadores()
@@ -26,7 +28,8 @@ export function DashboardAnalitico() {
   const { ciudades, etiqueta } = filtro
   const accidentesFuente = useColeccion('accidentes')
   const poblacionesFuente = useColeccion('indicadores_mensuales')
-  const [anio, setAnio] = useState(new Date().getFullYear())
+  const [anioGuardado, setAnio] = usePersistente<number | null>(CLAVE_ANIO, null, anioGuardadoValido, 'sesion')
+  const anio = anioGuardado ?? new Date().getFullYear()
 
   const accidentes = accidentesFuente.registros as unknown as Accidente[]
   const poblaciones = poblacionesFuente.registros as unknown as Poblacion[]

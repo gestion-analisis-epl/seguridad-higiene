@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { anioDeTexto } from './formato'
 
 export function FiltrosAnaliticos({ anio, alCambiarAnio, children }: {
@@ -10,6 +10,10 @@ export function FiltrosAnaliticos({ anio, alCambiarAnio, children }: {
 }) {
   // Texto local para poder escribir el año; solo se publica cuando es válido.
   const [textoAnio, setTextoAnio] = useState(String(anio))
+  // El año restaurado llega tras montar: se refleja si el texto escrito no lo representa
+  useEffect(() => {
+    setTextoAnio((t) => (anioDeTexto(t) === anio ? t : String(anio)))
+  }, [anio])
   const cambiarAnio = (texto: string) => {
     setTextoAnio(texto)
     const n = anioDeTexto(texto)

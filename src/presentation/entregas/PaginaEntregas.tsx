@@ -1,15 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { filtrarFilas } from '@/application/entregas-agrupar'
 import { puede } from '@/domain/permisos'
 import { useSesion } from '@/presentation/auth/AuthProvider'
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
+import { usePersistente } from '@/presentation/ui/usePersistente'
 import type { ConfiguracionPagina } from './configuraciones'
 import { etiquetaDe } from './etiquetas'
-import { FiltrosEntregas, type FiltroEntregas } from './FiltrosEntregas'
+import { FiltrosEntregas } from './FiltrosEntregas'
+import {
+  claveFiltroEntregas, filtroEntregasEfectivo, filtroEntregasValido, filtroEntregasVacio,
+} from './filtro-guardado'
 import { PanelEntrega } from './PanelEntrega'
 import { TablaEntregas } from './TablaEntregas'
 import { useEntregas } from './useEntregas'
@@ -18,7 +22,12 @@ export function PaginaEntregas({ cfg }: { cfg: ConfiguracionPagina }) {
   const { usuario } = useSesion()
   const { cargando, error, registros, filas, items, ciudades } = useEntregas(cfg)
   const [abierto, setAbierto] = useState<string | null>(null)
-  const [filtro, setFiltro] = useState<FiltroEntregas>({ ciudad: '', texto: '' })
+  const [guardado, setFiltro] = usePersistente(
+    claveFiltroEntregas(cfg.catalogo), filtroEntregasVacio, filtroEntregasValido, 'sesion',
+  )
+  const filtro = useMemo(
+    () => filtroEntregasEfectivo(guardado, ciudades.map((c) => c.valor)), [guardado, ciudades],
+  )
   const visibles = filtrarFilas(filas, filtro)
   const fila = abierto ? filas.find((f) => f.colaborador.id === abierto) : undefined
   const capturista = puede(usuario, 'capturar')

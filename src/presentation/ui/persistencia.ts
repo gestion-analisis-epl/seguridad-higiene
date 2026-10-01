@@ -31,10 +31,13 @@ export function escribirJson(almacen: Almacen | null, clave: string, valor: unkn
   }
 }
 
-// El acceso a localStorage mismo puede lanzar (ventanas privadas, cookies bloqueadas)
-export function almacenLocal(): Almacen | null {
+export type TipoAlmacen = 'local' | 'sesion'
+
+// El acceso al almacenamiento mismo puede lanzar (ventanas privadas, cookies bloqueadas)
+export function almacenDe(tipo: TipoAlmacen): Almacen | null {
   try {
-    return typeof window === 'undefined' ? null : window.localStorage
+    if (typeof window === 'undefined') return null
+    return tipo === 'sesion' ? window.sessionStorage : window.localStorage
   } catch {
     return null
   }
