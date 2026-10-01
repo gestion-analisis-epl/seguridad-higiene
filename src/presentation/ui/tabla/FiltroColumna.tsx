@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { Icono } from '../Icono'
 import { Popover } from '../Popover'
 import type { OpcionSeleccion } from '../seleccion'
@@ -17,10 +17,11 @@ export function FiltroColumna({ tipo, encabezado, filtro, activo, opciones, alCa
 }) {
   const [abierto, setAbierto] = useState(false)
   const boton = useRef<HTMLButtonElement>(null)
+  const id = useId()
   return (
     <>
       <button
-        ref={boton} type="button" aria-haspopup="dialog" aria-expanded={abierto}
+        ref={boton} type="button" aria-haspopup="dialog" aria-expanded={abierto} aria-controls={abierto ? id : undefined}
         onClick={() => setAbierto((a) => !a)}
         className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded border ${activo
           ? 'border-primario bg-primario text-primario-texto'
@@ -30,7 +31,7 @@ export function FiltroColumna({ tipo, encabezado, filtro, activo, opciones, alCa
         <span className="sr-only">Filtrar {encabezado}{activo ? ' (filtro activo)' : ''}</span>
       </button>
       {abierto && (
-        <Popover ancla={boton} alCerrar={() => setAbierto(false)} etiqueta={`Filtrar ${encabezado}`} ancho={272}>
+        <Popover id={id} ancla={boton} alCerrar={() => setAbierto(false)} etiqueta={`Filtrar ${encabezado}`} ancho={272}>
           <ContenidoFiltro tipo={tipo} encabezado={encabezado} filtro={filtro} opciones={opciones} alCambiar={alCambiar} />
         </Popover>
       )}

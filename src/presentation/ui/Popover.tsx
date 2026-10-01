@@ -5,8 +5,13 @@ import { posicionarPanel, type PosicionPanel } from './posicion'
 
 const MARGEN = 8
 
+const igual = (a: PosicionPanel | null, b: PosicionPanel) =>
+  !!a && a.left === b.left && a.ancho === b.ancho && a.arriba === b.arriba
+  && a.top === b.top && a.bottom === b.bottom && a.maxHeight === b.maxHeight
+
 // Panel fijo en el viewport: no lo recorta el overflow del contenedor de la tabla
-export function Popover({ ancla, alCerrar, ancho = 288, altoMax = 340, etiqueta, children }: {
+export function Popover({ id, ancla, alCerrar, ancho = 288, altoMax = 340, etiqueta, children }: {
+  id?: string
   ancla: RefObject<HTMLElement>
   alCerrar: () => void
   ancho?: number
@@ -16,21 +21,24 @@ export function Popover({ ancla, alCerrar, ancho = 288, altoMax = 340, etiqueta,
 }) {
   const panel = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<PosicionPanel | null>(null)
+  const cierre = useRef(alCerrar)
+  cierre.current = alCerrar
 
   const cerrar = useCallback((devolverFoco: boolean) => {
-    alCerrar()
+    cierre.current()
     if (devolverFoco) ancla.current?.focus()
-  }, [alCerrar, ancla])
+  }, [ancla])
 
   const recolocar = useCallback(() => {
     const el = ancla.current
     if (!el) return
     const r = el.getBoundingClientRect()
-    setPos(posicionarPanel({
+    const nueva = posicionarPanel({
       ancla: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
       ancho, altoMax, margen: MARGEN,
       vista: { ancho: window.innerWidth, alto: window.innerHeight },
-    }))
+    })
+    setPos((previa) => (igual(previa, nueva) ? previa : nueva))
   }, [ancla, ancho, altoMax])
 
   useLayoutEffect(() => { recolocar() }, [recolocar])
@@ -43,15 +51,18 @@ export function Popover({ ancla, alCerrar, ancho = 288, altoMax = 340, etiqueta,
     const alTeclear = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.stopPropagation(); cerrar(true) }
     }
+    const alDesplazar = (e: Event) => {
+      if (!panel.current?.contains(e.target as Node)) recolocar()
+    }
     document.addEventListener('pointerdown', alPulsar)
     document.addEventListener('keydown', alTeclear)
     window.addEventListener('resize', recolocar)
-    window.addEventListener('scroll', recolocar, true)
+    window.addEventListener('scroll', alDesplazar, true)
     return () => {
       document.removeEventListener('pointerdown', alPulsar)
       document.removeEventListener('keydown', alTeclear)
       window.removeEventListener('resize', recolocar)
-      window.removeEventListener('scroll', recolocar, true)
+      window.removeEventListener('scroll', alDesplazar, true)
     }
   }, [ancla, cerrar, recolocar])
 
@@ -60,13 +71,14 @@ export function Popover({ ancla, alCerrar, ancho = 288, altoMax = 340, etiqueta,
     if (destino && !panel.current?.contains(destino) && !ancla.current?.contains(destino)) cerrar(false)
   }
 
+  // Antes de medir se oculta con opacidad: visibility:hidden impediria enfocar el contenido
   return (
     <div
-      ref={panel} role="dialog" aria-label={etiqueta} onBlur={alSalirFoco}
+      ref={panel} id={id} role="dialog" aria-label={etiqueta} onBlur={alSalirFoco}
       style={pos ? {
         position: 'fixed', left: pos.left, width: pos.ancho, maxHeight: pos.maxHeight,
         ...(pos.arriba ? { bottom: pos.bottom } : { top: pos.top }),
-      } : { position: 'fixed', visibility: 'hidden' }}
+      } : { position: 'fixed', left: 0, top: 0, opacity: 0, pointerEvents: 'none' }}
       className="aparecer z-40 flex flex-col overflow-hidden rounded-lg border border-borde-fuerte bg-superficie font-sans text-sm font-normal normal-case tracking-normal text-texto shadow-alta"
     >
       {children}

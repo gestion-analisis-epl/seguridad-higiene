@@ -19,6 +19,7 @@ export type Filtro =
   | { tipo: 'numero'; min: number | null; max: number | null }
   | { tipo: 'booleano'; valor: boolean }
 
+export const COLADOR = new Intl.Collator('es', { sensitivity: 'base' })
 export const VACIO = '\u0000vacio'
 export const ETIQUETA_VACIO = '(vacío)'
 export const ANCHO_BASE = 160
@@ -36,6 +37,8 @@ const comoTexto = (v: ValorCelda): string => {
   return typeof v === 'boolean' ? (v ? 'Sí' : 'No') : String(v)
 }
 
+const sinValor = (v: ValorCelda) => esNulo(v) || v === ''
+
 export function textoVisible(v: ValorCelda): string {
   if (esNulo(v)) return ''
   if (v instanceof Date) return formatearFecha(v)
@@ -46,7 +49,7 @@ export function compararValores(a: ValorCelda, b: ValorCelda, tipo: TipoColumna)
   if (tipo === 'numero') return Number(a) - Number(b)
   if (tipo === 'fecha') return Number(a instanceof Date ? a.getTime() : a) - Number(b instanceof Date ? b.getTime() : b)
   if (tipo === 'booleano') return Number(a) - Number(b)
-  return comoTexto(a).localeCompare(comoTexto(b), 'es', { sensitivity: 'base' })
+  return COLADOR.compare(comoTexto(a), comoTexto(b))
 }
 
 export function ordenarFilas<T>(filas: T[], columna: ColumnaLogica<T>, dir: Direccion): T[] {
@@ -54,7 +57,7 @@ export function ordenarFilas<T>(filas: T[], columna: ColumnaLogica<T>, dir: Dire
   return filas
     .map((fila, indice) => ({ fila, indice, valor: columna.valor(fila) }))
     .sort((x, y) => {
-      const nx = esNulo(x.valor), ny = esNulo(y.valor)
+      const nx = sinValor(x.valor), ny = sinValor(y.valor)
       if (nx || ny) return nx === ny ? x.indice - y.indice : nx ? 1 : -1
       return signo * compararValores(x.valor, y.valor, columna.tipo) || x.indice - y.indice
     })
@@ -111,7 +114,7 @@ export function opcionesDeCategoria<T>(filas: T[], columna: ColumnaLogica<T>): O
   const valores = new Set<string>()
   for (const fila of filas) valores.add(claveCategoria(columna.valor(fila)))
   const presentes = Array.from(valores).filter((k) => k !== VACIO)
-    .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+    .sort(COLADOR.compare)
   const opciones = presentes.map((k) => ({ valor: k, etiqueta: k }))
   return valores.has(VACIO) ? [...opciones, { valor: VACIO, etiqueta: ETIQUETA_VACIO }] : opciones
 }

@@ -42,6 +42,7 @@ export function ContenidoFiltro({ tipo, encabezado, filtro, opciones, alCambiar 
     return (
       <PanelOpciones
         etiqueta={encabezado} opciones={opciones} seleccion={visibles}
+        textoMarcar="Mostrar todo" textoDesmarcar="Ocultar todo"
         alCambiar={(sel) => alCambiar({ tipo: 'categoria', ocultos: opciones.filter((o) => !sel.includes(o.valor)).map((o) => o.valor) })}
       />
     )
@@ -91,12 +92,12 @@ export function ContenidoFiltro({ tipo, encabezado, filtro, opciones, alCambiar 
       {tipo === 'booleano' && (
         <fieldset className="flex flex-col gap-1">
           <legend className="etiqueta">Mostrar</legend>
-          {([['todos', 'Todos'], ['si', 'Sí'], ['no', 'No']] as const).map(([clave, texto], i) => {
+          {([['todos', 'Todos'], ['si', 'Sí'], ['no', 'No']] as const).map(([clave, texto]) => {
             const actual = filtro?.tipo === 'booleano' ? (filtro.valor ? 'si' : 'no') : 'todos'
             return (
               <label key={clave} className="flex min-h-[2.5rem] cursor-pointer items-center gap-3 rounded px-1 hover:bg-superficie-2">
                 <input
-                  type="radio" name={`${id}-b`} autoFocus={i === 0 && actual === 'todos'} className="casilla"
+                  type="radio" name={`${id}-b`} autoFocus={actual === clave} className="casilla"
                   checked={actual === clave}
                   onChange={() => alCambiar(clave === 'todos' ? null : { tipo: 'booleano', valor: clave === 'si' })}
                 />

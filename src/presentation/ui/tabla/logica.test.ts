@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ANCHO_BASE, ANCHO_MAXIMO, VACIO, anchosEfectivos, anchosValidos, aplicarFiltros, clamparAncho,
+  ANCHO_BASE, ANCHO_MAXIMO, COLADOR, VACIO, anchosEfectivos, anchosValidos, aplicarFiltros, clamparAncho,
   compararValores, filtroActivo, ordenarFilas, opcionesDeCategoria, pasaFiltro, siguienteOrden, textoVisible,
   type ColumnaLogica, type Filtro,
 } from './logica'
@@ -144,5 +144,21 @@ describe('anchos', () => {
   it('anchosEfectivos usa guardado, inicial o base e ignora columnas desconocidas', () => {
     const cols = [{ id: 'a', anchoInicial: 200, anchoMinimo: 100 }, { id: 'b' }, { id: 'c', anchoMinimo: 120 }]
     expect(anchosEfectivos(cols, { a: 50, c: 300, zzz: 99 })).toEqual({ a: 100, b: ANCHO_BASE, c: 300 })
+  })
+})
+
+describe('ordenar con cadena vacia', () => {
+  const filas = [f('1', { nombre: 'Beto' }), f('2', { nombre: '' }), f('3', { nombre: 'Ana' }), f('4', { nombre: null })]
+  it('la cadena vacia va al final en ambas direcciones', () => {
+    expect(ordenarFilas(filas, cNombre, 'asc').map((r) => r.id)).toEqual(['3', '1', '2', '4'])
+    expect(ordenarFilas(filas, cNombre, 'desc').map((r) => r.id)).toEqual(['1', '3', '2', '4'])
+  })
+  it('categoria tambien', () => {
+    const c = col('ciudad', 'categoria')
+    const r = [f('1', { ciudad: '' }), f('2', { ciudad: 'Ciudad A' })]
+    expect(ordenarFilas(r, c, 'desc').map((x) => x.id)).toEqual(['2', '1'])
+  })
+  it('el colador compartido ignora acentos y mayusculas', () => {
+    expect(COLADOR.compare('Árbol', 'arbol')).toBe(0)
   })
 })

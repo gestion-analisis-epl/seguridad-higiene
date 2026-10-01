@@ -26,7 +26,7 @@ export function MultiSelect({ etiqueta, opciones, seleccion, alCambiar, textoTod
     <div className="min-w-0">
       <span id={`${id}-et`} className="etiqueta">{etiqueta}</span>
       <button
-        ref={boton} type="button" aria-haspopup="listbox" aria-expanded={abierto} aria-labelledby={`${id}-et ${id}-res`}
+        ref={boton} type="button" aria-haspopup="dialog" aria-expanded={abierto} aria-controls={abierto ? `${id}-panel` : undefined} aria-labelledby={`${id}-et ${id}-res`}
         onClick={() => setAbierto((a) => !a)}
         onKeyDown={(e) => { if (e.key === 'ArrowDown' && !abierto) { e.preventDefault(); setAbierto(true) } }}
         className="control flex items-center justify-between gap-2 text-left"
@@ -35,7 +35,7 @@ export function MultiSelect({ etiqueta, opciones, seleccion, alCambiar, textoTod
         <Icono nombre="chevron" className={`h-4 w-4 text-texto-suave transition-transform ${abierto ? 'rotate-180' : ''}`} />
       </button>
       {abierto && (
-        <Popover ancla={boton} alCerrar={() => setAbierto(false)} etiqueta={etiqueta}>
+        <Popover id={`${id}-panel`} ancla={boton} alCerrar={() => setAbierto(false)} etiqueta={etiqueta}>
           <PanelOpciones etiqueta={etiqueta} opciones={opciones} seleccion={seleccion} alCambiar={alCambiar} buscable={buscable} />
         </Popover>
       )}

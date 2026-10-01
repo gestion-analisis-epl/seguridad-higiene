@@ -20,7 +20,8 @@ interface Props {
   minimo: number
   alOrdenar: () => void
   alFiltrar: (filtro: Filtro | null) => void
-  alAncho: (ancho: number) => void
+  alArrastrarAncho: (ancho: number) => void
+  alConfirmarAncho: (ancho: number) => void
   alRestablecerAncho: () => void
 }
 
@@ -33,7 +34,7 @@ export function EncabezadoColumna(p: Props) {
       aria-sort={p.dir ? (p.dir === 'asc' ? 'ascending' : 'descending') : p.ordenable ? 'none' : undefined}
       className="relative !p-0"
     >
-      <div className={`flex items-center gap-1 px-2 py-1 ${p.derecha ? 'flex-row-reverse' : ''}`}>
+      <div className={`flex items-center gap-1 pl-2 pr-3 py-1 ${p.derecha ? 'flex-row-reverse' : ''}`}>
         {p.ordenable ? (
           <button
             type="button" onClick={p.alOrdenar}
@@ -55,7 +56,7 @@ export function EncabezadoColumna(p: Props) {
       </div>
       <ManejadorAncho
         encabezado={p.encabezado} ancho={p.ancho} minimo={p.minimo}
-        alCambiar={p.alAncho} alRestablecer={p.alRestablecerAncho}
+        alArrastrar={p.alArrastrarAncho} alConfirmar={p.alConfirmarAncho} alRestablecer={p.alRestablecerAncho}
       />
     </th>
   )

@@ -8,12 +8,14 @@ export const UMBRAL_BUSQUEDA = 8
 
 const ACCION = 'rounded px-1 py-1.5 text-xs font-medium underline underline-offset-2 hover:bg-superficie-2'
 
-export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, buscable }: {
+export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, buscable, textoMarcar = 'Seleccionar todo', textoDesmarcar = 'Limpiar' }: {
   etiqueta: string
   opciones: OpcionSeleccion[]
   seleccion: string[]
   alCambiar: (seleccion: string[]) => void
   buscable?: boolean
+  textoMarcar?: string
+  textoDesmarcar?: string
 }) {
   const [texto, setTexto] = useState('')
   const lista = useRef<HTMLUListElement>(null)
@@ -24,8 +26,8 @@ export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, buscab
   const items = () => Array.from(lista.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])
 
   useEffect(() => {
-    if (conBusqueda) busqueda.current?.focus()
-    else (items().find((i) => i.getAttribute('aria-selected') === 'true') ?? items()[0])?.focus()
+    if (conBusqueda) busqueda.current?.focus({ preventScroll: true })
+    else (items().find((i) => i.getAttribute('aria-selected') === 'true') ?? items()[0])?.focus({ preventScroll: true })
     // Solo al abrir el panel
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -37,10 +39,10 @@ export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, buscab
   const alTeclear = (e: KeyboardEvent<HTMLUListElement>) => {
     const todas = items()
     const i = todas.indexOf(document.activeElement as HTMLElement)
-    const mover = (n: number) => { e.preventDefault(); todas[Math.max(0, Math.min(todas.length - 1, n))]?.focus() }
+    const mover = (n: number) => { e.preventDefault(); todas[Math.max(0, Math.min(todas.length - 1, n))]?.focus({ preventScroll: true }) }
     if (e.key === 'ArrowDown') mover(i + 1)
     else if (e.key === 'ArrowUp') {
-      if (i <= 0 && conBusqueda) { e.preventDefault(); busqueda.current?.focus() } else mover(i - 1)
+      if (i <= 0 && conBusqueda) { e.preventDefault(); busqueda.current?.focus({ preventScroll: true }) } else mover(i - 1)
     } else if (e.key === 'Home') mover(0)
     else if (e.key === 'End') mover(todas.length - 1)
     else if ((e.key === ' ' || e.key === 'Enter') && i >= 0) {
@@ -57,14 +59,14 @@ export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, buscab
           <input
             ref={busqueda} type="search" value={texto} onChange={(e) => setTexto(e.target.value)}
             aria-label={`Buscar en ${etiqueta}`} placeholder="Buscar" autoComplete="off"
-            onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); items()[0]?.focus() } }}
+            onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); items()[0]?.focus({ preventScroll: true }) } }}
             className="control pl-9"
           />
         </div>
       )}
       <div className="flex items-center justify-between gap-2 border-b border-borde px-3 py-1">
-        <button type="button" onClick={seleccionarVisibles} className={ACCION}>Seleccionar todo</button>
-        <button type="button" onClick={limpiarVisibles} className={ACCION}>Limpiar</button>
+        <button type="button" onClick={seleccionarVisibles} className={ACCION}>{textoMarcar}</button>
+        <button type="button" onClick={limpiarVisibles} className={ACCION}>{textoDesmarcar}</button>
       </div>
       <ul ref={lista} role="listbox" aria-multiselectable="true" aria-label={etiqueta} onKeyDown={alTeclear}
         className="min-h-0 flex-1 overflow-y-auto py-1">

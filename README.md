@@ -66,7 +66,7 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 ## Componentes de interfaz reutilizables
 
 - Se importan desde `@/presentation/ui`: `DataTable`, `MultiSelect` y `usePersistente`.
-- `DataTable` (basada en `@tanstack/react-table`, solo el núcleo) ordena, filtra por encabezado y redimensiona columnas; con `claveAnchos` guarda los anchos en el navegador.
+- `DataTable` ordena, filtra por encabezado y redimensiona columnas; con `claveAnchos` guarda los anchos en el navegador.
 - `MultiSelect` es un desplegable con casillas; su selección es controlada y puede persistirse con `usePersistente`.
 - `usePersistente` guarda en `localStorage` (clave `sh:v1:`), valida lo leído y no falla si el almacenamiento no está disponible.
 
