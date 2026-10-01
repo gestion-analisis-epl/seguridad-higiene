@@ -6,7 +6,6 @@ const PARES = [
   ['firebase.template.json', 'firebase.json'],
   ['firestore.rules.template', 'firestore.seguridad-higiene.rules'],
   ['storage.rules.template', 'storage.seguridad-higiene.rules'],
-  ['storage-cors.template.json', 'storage-cors.json'],
 ]
 const raiz = (nombre) => fileURLToPath(new URL(`../${nombre}`, import.meta.url))
 

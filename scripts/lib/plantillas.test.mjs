@@ -98,36 +98,6 @@ describe('plantillas del repositorio', () => {
   })
 })
 
-describe('origen de la app', () => {
-  const ORIGEN = 'ORIGEN_APP'
-  const conOrigen = { ...valida, [ORIGEN]: 'https://app.ejemplo.test' }
-
-  it('sin marcador no exige ORIGEN_APP', () => {
-    expect(renderizarPlantilla('{{BASE_DATOS}}', valida)).toBe('base-app')
-  })
-
-  it('con marcador exige un origen válido y no muestra su valor', () => {
-    expect(error('{{ORIGEN_APP}}', valida)).toContain(ORIGEN)
-    for (const origen of ['', 'app.ejemplo.test', 'https://app.ejemplo.test/ruta', 'ftp://x.test', 'https://a b.test', 'https://x.test/"']) {
-      const msg = error('{{ORIGEN_APP}}', { ...valida, [ORIGEN]: origen })
-      expect(msg).toContain(ORIGEN)
-      if (origen) expect(msg).not.toContain(origen)
-    }
-  })
-
-  it('sustituye el origen', () => {
-    expect(renderizarPlantilla('["{{ORIGEN_APP}}"]', conOrigen)).toBe('["https://app.ejemplo.test"]')
-    expect(renderizarPlantilla('{{ORIGEN_APP}}', { ...valida, [ORIGEN]: ' http://localhost:3000 ' })).toBe('http://localhost:3000')
-  })
-
-  it('storage-cors.template.json renderiza a JSON con ambos orígenes y solo GET', () => {
-    const cors = JSON.parse(renderizarPlantilla(readFileSync('storage-cors.template.json', 'utf8'), conOrigen))
-    expect(cors[0].origin).toEqual(['https://app.ejemplo.test', 'http://localhost:3000'])
-    expect(cors[0].method).toEqual(['GET'])
-    expect(cors[0].maxAgeSeconds).toBe(3600)
-  })
-})
-
 describe('reglas de storage', () => {
   it('renderiza sin marcadores, con la base con nombre y el dominio', () => {
     const reglas = renderizarPlantilla(readFileSync('storage.rules.template', 'utf8'), valida)

@@ -46,7 +46,6 @@ scripts/migracion/migracion.config.json
 firebase.json
 firestore.seguridad-higiene.rules
 storage.seguridad-higiene.rules
-storage-cors.json
 
 # lista local de valores prohibidos para el verificador de publicación
 .valores-sensibles.local

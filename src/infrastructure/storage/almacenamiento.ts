@@ -1,5 +1,7 @@
-import { deleteObject, getBlob, ref, uploadBytesResumable } from 'firebase/storage'
+import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage'
 import type { PuertoAlmacenamiento } from '@/application/adjuntos-subida'
+import { pedirUrlDescarga } from '@/application/adjuntos-descarga-cliente'
+import { auth } from '@/infrastructure/firebase/cliente'
 import { storage } from './cliente'
 
 export function crearAlmacenamientoStorage(): PuertoAlmacenamiento {
@@ -23,23 +25,20 @@ export function crearAlmacenamientoStorage(): PuertoAlmacenamiento {
 
 export const esNoEncontrado = (e: unknown): boolean => (e as { code?: string } | null)?.code === 'storage/object-not-found'
 
-async function obtenerBlob(ruta: string): Promise<Blob> {
-  try {
-    return await getBlob(ref(storage(), ruta))
-  } catch {
-    return getBlob(ref(storage(), ruta))
-  }
-}
-
-// Descarga con sesión y reglas (sin enlaces públicos); un reintento si falla.
-export async function descargarArchivo(ruta: string, nombre: string, tipo: string): Promise<void> {
-  const blob = await obtenerBlob(ruta)
-  const url = URL.createObjectURL(new Blob([blob], { type: tipo }))
+// La URL firmada la genera el servidor tras validar sesión y rol; se navega a ella sin leerla desde JS.
+export async function descargarArchivo(adjuntoId: string): Promise<void> {
+  const url = await pedirUrlDescarga(adjuntoId, {
+    token: async () => {
+      const u = auth.currentUser
+      if (!u) throw new Error('sin sesión')
+      return u.getIdToken()
+    },
+    fetch: (ruta, init) => fetch(ruta, init),
+  })
   const a = document.createElement('a')
   a.href = url
-  a.download = nombre
+  a.rel = 'noopener'
   document.body.appendChild(a)
   a.click()
   a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
