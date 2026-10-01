@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react'
 import {
-  validarRegistro, type ContextoModulo, type ModuloDef, type Valor, type Valores,
+  campoVisible, limpiarOcultos, validarRegistro, type ContextoModulo, type ModuloDef, type Valor, type Valores,
 } from '@/domain/modulos'
 import { admiteEliminar } from '@/domain/modulos-definiciones'
 import { puede } from '@/domain/permisos'
@@ -11,6 +11,7 @@ import { useSesion } from '@/presentation/auth/AuthProvider'
 import { AvisoError } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
 import { CampoEntrada } from './CampoEntrada'
+import { CampoLista } from './CampoLista'
 import { useColeccion } from './useColeccion'
 
 interface Props {
@@ -54,7 +55,8 @@ export function FormularioModulo({ def, registro, alTerminar }: Props) {
     setGuardando(true)
     setFallo(null)
     try {
-      const final = def.derivar ? def.derivar(valores, ctx, new Date()) : valores
+      const limpio = limpiarOcultos(def.campos, valores)
+      const final = def.derivar ? def.derivar(limpio, ctx, new Date()) : limpio
       await guardar(def.coleccion, final, uid, def.idFijo ? def.idFijo(final) : registro?.id)
       alTerminar()
     } catch (err) {
@@ -82,11 +84,16 @@ export function FormularioModulo({ def, registro, alTerminar }: Props) {
   return (
     <form onSubmit={enviar} noValidate className="tarjeta aparecer">
       <div className="grid gap-x-5 gap-y-4 p-4 sm:grid-cols-2 sm:p-6">
-        {def.campos.map((c) => (
-          <CampoEntrada key={c.nombre} campo={c} valor={valores[c.nombre]} error={errores[c.nombre]}
-            deshabilitado={!!registro && !!def.bloquearEnEdicion?.includes(c.nombre)}
-            alCambiar={(v) => setValores((prev) => ({ ...prev, [c.nombre]: v }))} />
-        ))}
+        {def.campos.filter((c) => campoVisible(c, valores)).map((c) => {
+          const alCambiar = (v: Valor) => setValores((prev) => ({ ...prev, [c.nombre]: v }))
+          if (c.tipo === 'lista') {
+            return <CampoLista key={c.nombre} campo={c} valor={valores[c.nombre]} errores={errores} alCambiar={alCambiar} />
+          }
+          return (
+            <CampoEntrada key={c.nombre} campo={c} valor={valores[c.nombre]} error={errores[c.nombre]}
+              deshabilitado={!!registro && !!def.bloquearEnEdicion?.includes(c.nombre)} alCambiar={alCambiar} />
+          )
+        })}
       </div>
       {fallo && <div className="px-4 pb-4 sm:px-6"><AvisoError>{fallo}</AvisoError></div>}
       <div className="flex flex-col-reverse gap-2 border-t border-borde bg-superficie-2 px-4 py-3 sm:flex-row sm:justify-end sm:px-6">

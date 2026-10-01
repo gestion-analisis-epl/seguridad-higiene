@@ -95,12 +95,13 @@ Base de datos con nombre propia. Las reglas se generan de `firestore.rules.templ
 | `entregas_uniforme` | `colaborador_id`, `ciudad`, `prenda`, `talla`, `cantidad`, `fecha`, `periodo` |
 | `entregas_epp` | `colaborador_id`, `ciudad`, `tipo`, `entregado`, `fecha`, `vencimiento` |
 | `accidentes` | `colaborador_id`, `ciudad`, `fecha`, `periodo`, `tipo` (`trayecto` o `laboral`), `dias_incapacidad` |
-| `oficinas_equipo` | `ciudad`, `tipo` (`extintor`, `botiquin`, `senaletica`), `detalle`, `fecha_recarga`, `vencimiento` |
-| `vehiculos` | `ciudad`, `placa`, `extintor_vencimiento`, `botiquin_caducidad` |
+| `oficinas_equipo` | `ciudad`, `tipo` (`extintor`, `botiquin`, `senaletica`), `detalle`, `items` (botiquín), `fecha_recarga`, `vencimiento` |
+| `vehiculos` | `ciudad`, `placa`, `extintor_vencimiento`, `botiquin_items`, `botiquin_caducidad` |
 | `indicadores_mensuales/{ciudad}_{periodo}` | `ciudad`, `periodo`, `poblacion` |
 
 Notas:
 - `estado` de capacitación toma `pendiente`, `vigente` o `vencido`. Se calcula al guardar a partir de `fecha` y `vencimiento`.
+- `items` y `botiquin_items` son listas de `{ nombre, cantidad, caducidad }`; con ítems, `vencimiento` y `botiquin_caducidad` se derivan de la caducidad más próxima y cada ítem alerta por separado; sin ítems rige la fecha única (registros antiguos).
 - `detalle` en `oficinas_equipo` es texto libre (por ejemplo `CO2 6.8 kg` o el contenido del botiquín).
 - Una ciudad con áreas se guarda como una sola ciudad y el área va en `area`.
 - `indicadores_mensuales` usa ID fijo `{ciudad}_{periodo}` (por ejemplo `ciudad-a_2026-08`) para garantizar un solo registro por ciudad y mes.

@@ -43,6 +43,13 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 - `/datos/<modulo>`: captura y consulta. Módulos: `colaboradores`, `capacitaciones`, `entregas_uniforme`, `entregas_epp`, `accidentes`, `oficinas_equipo`, `vehiculos`, `indicadores_mensuales`.
 - Administración: `/admin/usuarios`, `/admin/catalogos`, `/admin/configuracion`.
 
+## Botiquín por ítems
+
+- En `oficinas_equipo` (tipo botiquín) y en `vehiculos` el contenido se captura ítem por ítem: nombre, cantidad y caducidad opcional (campos `items` y `botiquin_items`).
+- Cada ítem con caducidad vencida o en ventana genera su propia alerta ("Botiquín: Gasas", "ABC-1 - Botiquín: Gasas").
+- `vencimiento` y `botiquin_caducidad` se derivan de la caducidad más próxima; sin ítems se capturan a mano.
+- Los registros antiguos (`detalle`, fecha única) siguen abriéndose, mostrándose y alertando igual.
+
 ## Captura de entregas
 
 `/datos/entregas_uniforme` y `/datos/entregas_epp` se listan por colaborador: una fila por persona activa, con la última entrega de cada artículo del catálogo (`prendas` o `tipos_epp`) y, en EPP, el estado de vigencia en texto.
