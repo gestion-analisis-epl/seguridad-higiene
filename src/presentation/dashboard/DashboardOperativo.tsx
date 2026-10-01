@@ -45,10 +45,10 @@ export function DashboardOperativo() {
   return (
     <div className="aparecer">
       <EncabezadoPagina rotulo="Operativo" titulo="Estado operativo" />
-      {!sinCiudades && <TarjetasResumen resumen={resumen} />}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <FiltroCiudades opciones={filtro.opciones} seleccion={filtro.seleccion} alCambiar={filtro.cambiar} />
       </div>
+      {!sinCiudades && <TarjetasResumen resumen={resumen} />}
       {sinCiudades ? <AvisoSinCiudades /> : (
         <>
           <Seccion titulo="Vencimientos en los próximos 30 días">

@@ -64,7 +64,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <div className="mb-2 flex min-h-[2.5rem] flex-wrap items-center justify-between gap-2">
         <p role="status" className="text-sm text-texto-suave">Mostrando {visibles.length} de {filas.length}</p>
         {hayFiltros && (
@@ -77,8 +77,8 @@ export function DataTable<T>({
       <div className="contenedor-tabla">
         <table
           aria-label={etiqueta} aria-rowcount={visibles.length + 1} aria-colcount={columnas.length}
-          className={`tabla !w-auto table-fixed ${densidad === 'compacta' ? '[&_td]:!py-1' : ''}`}
-          style={{ width: anchoTotal }}
+          className={`tabla table-fixed ${densidad === 'compacta' ? '[&_td]:!py-1' : ''}`}
+          style={{ width: '100%', minWidth: anchoTotal }}
         >
           <colgroup>
             {columnas.map((c) => <col key={c.id} style={{ width: anchos[c.id] }} />)}
