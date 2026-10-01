@@ -8,7 +8,7 @@ Subir archivos a cada registro de accidente y a cada constancia de capacitación
 
 ## Fuera de alcance
 
-Vista previa de PDF e imágenes, miniaturas, antivirus. Segunda fase si se piden.
+Vista previa de imágenes, miniaturas, antivirus. Segunda fase si se piden.
 
 ## Modelo de datos
 
@@ -48,6 +48,8 @@ Tipos permitidos: PDF, JPG, PNG, WebP, Word (doc, docx), Excel (xls, xlsx), Powe
 Registro nuevo: se reserva el id del documento al abrir el formulario y los archivos se suben contra ese id; el registro se crea al guardar. Si se cancela el formulario, se borran los archivos subidos.
 
 Descarga: al hacer clic, el cliente obtiene el enlace con `getDownloadURL` (solo lo logra un usuario permitido por las reglas de Storage) y lo abre en otra pestaña sin guardarlo ni registrarlo; un reintento ante fallo de red. El enlace lleva un token que no vence (riesgo aceptado, documentado en el README). Nota: una versión anterior firmaba URLs en el servidor (commit 52a8bbd) y se retiró por simplicidad.
+
+Visor de PDF: los adjuntos PDF tienen un botón "Ver" que abre un diálogo modal con el visor nativo del navegador en un `<iframe>` (sin `sandbox`, que rompe el visor de Chrome; `referrerPolicy="no-referrer"`), con el mismo enlace de `getDownloadURL` pedido al abrir y solo en el estado del componente. Siempre muestra "Abrir en pestaña nueva" y "Descargar", porque iOS y algunos navegadores móviles no pintan PDF incrustados. Los demás tipos solo se descargan.
 
 Borrado: elimina archivo y documento. Los registros de accidente y capacitación no se borran, así que no quedan huérfanos.
 

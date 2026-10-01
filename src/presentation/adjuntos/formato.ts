@@ -12,3 +12,5 @@ export function etiquetaTipo(mime: string): string {
   if (mime.includes('powerpoint') || mime.includes('presentation')) return 'PowerPoint'
   return 'Archivo'
 }
+
+export const esPdf = (mime: string): boolean => mime === 'application/pdf'

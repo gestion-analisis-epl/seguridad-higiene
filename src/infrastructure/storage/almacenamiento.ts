@@ -24,12 +24,12 @@ export function crearAlmacenamientoStorage(): PuertoAlmacenamiento {
 
 export const esNoEncontrado = (e: unknown): boolean => (e as { code?: string } | null)?.code === 'storage/object-not-found'
 
-// El enlace se genera al hacer clic y se abre sin guardarlo ni registrarlo.
+// El enlace se pide al usarlo y quien lo llama no debe guardarlo ni registrarlo.
+export const obtenerUrlArchivo = (ruta: string): Promise<string> =>
+  pedirUrlDescarga(ruta, { obtenerUrl: (r) => getDownloadURL(ref(storage(), r)), esNoEncontrado })
+
 export async function descargarArchivo(ruta: string): Promise<void> {
-  const url = await pedirUrlDescarga(ruta, {
-    obtenerUrl: (r) => getDownloadURL(ref(storage(), r)),
-    esNoEncontrado,
-  })
+  const url = await obtenerUrlArchivo(ruta)
   const a = document.createElement('a')
   a.href = url
   a.target = '_blank'

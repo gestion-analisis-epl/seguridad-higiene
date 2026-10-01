@@ -3,17 +3,18 @@
 import { useState } from 'react'
 import type { Adjunto } from '@/domain/adjuntos'
 import { Icono } from '@/presentation/ui/Icono'
-import { etiquetaTipo, tamanoLegible } from './formato'
+import { esPdf, etiquetaTipo, tamanoLegible } from './formato'
 
 interface Props {
   adjuntos: Adjunto[]
   soloLectura: boolean
   ocupado: string | null
+  alVer: (a: Adjunto, disparador: HTMLElement) => void
   alDescargar: (a: Adjunto) => void
   alBorrar: (a: Adjunto) => void
 }
 
-export function ListaAdjuntos({ adjuntos, soloLectura, ocupado, alDescargar, alBorrar }: Props) {
+export function ListaAdjuntos({ adjuntos, soloLectura, ocupado, alVer, alDescargar, alBorrar }: Props) {
   const [confirmando, setConfirmando] = useState<string | null>(null)
 
   if (adjuntos.length === 0) return <p className="text-sm text-texto-suave">Sin archivos adjuntos.</p>
@@ -26,6 +27,13 @@ export function ListaAdjuntos({ adjuntos, soloLectura, ocupado, alDescargar, alB
             <p className="font-mono text-xs text-texto-suave">{etiquetaTipo(a.tipo)} · {tamanoLegible(a.tamano)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {esPdf(a.tipo) && (
+              <button type="button" onClick={(e) => alVer(a, e.currentTarget)} aria-label={`Ver ${a.nombre}`}
+                className="boton-secundario min-h-[2.25rem] px-3">
+                <Icono nombre="ver" />
+                Ver
+              </button>
+            )}
             <button type="button" onClick={() => alDescargar(a)} disabled={ocupado === a.id}
               aria-label={`Descargar ${a.nombre}`} className="boton-secundario min-h-[2.25rem] px-3">
               <Icono nombre="descargar" />

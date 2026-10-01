@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ItemSubida } from '@/application/adjuntos-subida'
 import { MAX_POR_REGISTRO, rutaAdjunto, type Adjunto, type ModuloAdjunto } from '@/domain/adjuntos'
 import { mensajeDescarga } from '@/application/adjuntos-descarga-cliente'
@@ -12,6 +12,7 @@ import { tamanoLegible } from './formato'
 import { ListaAdjuntos } from './ListaAdjuntos'
 import { useAdjuntos, useBorrarAdjunto } from './useAdjuntos'
 import { useSubidor } from './useSubidor'
+import { VisorPdf } from './VisorPdf'
 import { ZonaSubida } from './ZonaSubida'
 
 interface Props {
@@ -71,6 +72,8 @@ export function Adjuntos({ modulo, registroId, colaboradorId, soloLectura = fals
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [fallo, setFallo] = useState<string | null>(null)
   const [anuncio, setAnuncio] = useState('')
+  const [viendo, setViendo] = useState<Adjunto | null>(null)
+  const disparador = useRef<HTMLElement | null>(null)
 
   useEffect(() => { alCambiarConteo?.(adjuntos.length) }, [adjuntos.length, alCambiarConteo])
 
@@ -127,8 +130,9 @@ export function Adjuntos({ modulo, registroId, colaboradorId, soloLectura = fals
       {fallo && <AvisoError>{fallo}</AvisoError>}
       {cargando ? <p className="text-sm text-texto-suave">Cargando archivos...</p> : (
         <ListaAdjuntos adjuntos={adjuntos} soloLectura={lectura} ocupado={ocupado}
-          alDescargar={(a) => void descargar(a)} alBorrar={(a) => void eliminar(a)} />
+          alVer={(a, el) => { disparador.current = el; setViendo(a) }} alDescargar={(a) => void descargar(a)} alBorrar={(a) => void eliminar(a)} />
       )}
+      {viendo && <VisorPdf adjunto={viendo} retorno={disparador} alCerrar={() => setViendo(null)} alDescargar={() => void descargar(viendo)} />}
       <p role="status" aria-live="polite" className="sr-only">{anuncio}</p>
     </section>
   )

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { etiquetaTipo, tamanoLegible } from './formato'
+import { esPdf, etiquetaTipo, tamanoLegible } from './formato'
 
 describe('formato de adjuntos', () => {
   it('muestra el tamaño en la unidad adecuada', () => {
@@ -17,5 +17,13 @@ describe('formato de adjuntos', () => {
     expect(etiquetaTipo('application/vnd.ms-powerpoint')).toBe('PowerPoint')
     expect(etiquetaTipo('application/vnd.openxmlformats-officedocument.presentationml.presentation')).toBe('PowerPoint')
     expect(etiquetaTipo('application/x-otro')).toBe('Archivo')
+  })
+})
+
+describe('esPdf', () => {
+  it('solo el MIME de PDF abre el visor', () => {
+    expect(esPdf('application/pdf')).toBe(true)
+    expect(esPdf('image/png')).toBe(false)
+    expect(esPdf('application/msword')).toBe(false)
   })
 })
