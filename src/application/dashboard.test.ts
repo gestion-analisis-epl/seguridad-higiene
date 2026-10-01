@@ -282,3 +282,27 @@ describe('series con varias ciudades', () => {
     expect(serieMensual(acc, pob, cfg, 2026, [])[7]).toMatchObject({ eventos: 0, poblacion: 0 })
   })
 })
+
+describe('requisitos desde catálogos', () => {
+  const requisitos = { prendas: ['gorra'], tiposEpp: ['mascarilla', 'guantes'] }
+  const extra: DatosOperativos = {
+    ...datos,
+    entregasUniforme: [{ colaborador_id: 'c1', prenda: 'gorra' }, { colaborador_id: 'c2', prenda: 'botas' }],
+    entregasEpp: [{ colaborador_id: 'c1', tipo: 'mascarilla', entregado: true, vencimiento: null }],
+  }
+  it('pendientes usa las listas recibidas', () => {
+    const p = pendientesPorColaborador(extra, hoy, requisitos)
+    expect(p.find((x) => x.colaborador.id === 'c1')?.prendasFaltantes).toEqual([])
+    expect(p.find((x) => x.colaborador.id === 'c1')?.eppFaltantes).toEqual(['guantes'])
+    expect(p.find((x) => x.colaborador.id === 'c2')?.prendasFaltantes).toEqual(['gorra'])
+  })
+  it('resumen global y por ciudad usan las listas recibidas', () => {
+    expect(resumenGlobal(extra, hoy, requisitos).pctUniforme).toBeCloseTo(0.5)
+    expect(resumenGlobal(extra, hoy, requisitos).pctEpp).toBe(0)
+    expect(resumenPorCiudad(extra, hoy, requisitos)[0].pctUniforme).toBeCloseTo(0.5)
+  })
+  it('sin listas o con listas vacías usa las constantes', () => {
+    expect(pendientesPorColaborador(datos, hoy, { prendas: [], tiposEpp: [] })).toEqual(pendientesPorColaborador(datos, hoy))
+    expect(resumenGlobal(datos, hoy, undefined).pctUniforme).toBeCloseTo(0.5)
+  })
+})

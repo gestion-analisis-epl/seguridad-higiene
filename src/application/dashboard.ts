@@ -26,11 +26,16 @@ function capacitacionVigente(id: string, caps: Capacitacion[], hoy: Date): boole
   return caps.some((c) => c.colaborador_id === id && c.cumple && estadoVencimiento(c.vencimiento, hoy) !== 'vencido')
 }
 
-function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date) {
+// Listas exigidas para uniforme y EPP completos; sin valores rige la constante del código.
+export interface Requisitos { prendas: string[]; tiposEpp: string[] }
+
+function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date, req?: Requisitos) {
+  const prendas: readonly string[] = req?.prendas.length ? req.prendas : PRENDAS
+  const tiposEpp: readonly string[] = req?.tiposEpp.length ? req.tiposEpp : TIPOS_EPP
   return {
     capacitacionOk: capacitacionVigente(c.id, d.capacitaciones, hoy),
-    prendasFaltantes: PRENDAS.filter((p) => !d.entregasUniforme.some((e) => e.colaborador_id === c.id && e.prenda === p)),
-    eppFaltantes: TIPOS_EPP.filter((t) => !d.entregasEpp.some((e) => e.colaborador_id === c.id && e.tipo === t && e.entregado)),
+    prendasFaltantes: prendas.filter((p) => !d.entregasUniforme.some((e) => e.colaborador_id === c.id && e.prenda === p)),
+    eppFaltantes: tiposEpp.filter((t) => !d.entregasEpp.some((e) => e.colaborador_id === c.id && e.tipo === t && e.entregado)),
   }
 }
 
@@ -42,11 +47,11 @@ export interface ResumenCiudad {
   pctEpp: number
 }
 
-export function resumenPorCiudad(d: DatosOperativos, hoy: Date): ResumenCiudad[] {
+export function resumenPorCiudad(d: DatosOperativos, hoy: Date, req?: Requisitos): ResumenCiudad[] {
   const ciudades = Array.from(new Set(d.colaboradores.filter(esActivo).map((c) => c.ciudad)))
   return ciudades.sort().map((ciudad) => {
     const activos = d.colaboradores.filter((c) => esActivo(c) && c.ciudad === ciudad)
-    const evaluados = activos.map((c) => evaluar(c, d, hoy))
+    const evaluados = activos.map((c) => evaluar(c, d, hoy, req))
     const pct = (n: number) => n / activos.length
     return {
       ciudad,
@@ -68,8 +73,8 @@ export interface ResumenGlobal {
 }
 
 // Porcentajes como suma de numeradores sobre suma de activos; d ya viene filtrado por ciudad.
-export function resumenGlobal(d: DatosOperativos, hoy: Date): ResumenGlobal {
-  const evaluados = d.colaboradores.filter(esActivo).map((c) => evaluar(c, d, hoy))
+export function resumenGlobal(d: DatosOperativos, hoy: Date, req?: Requisitos): ResumenGlobal {
+  const evaluados = d.colaboradores.filter(esActivo).map((c) => evaluar(c, d, hoy, req))
   const pct = (n: number) => (evaluados.length === 0 ? 0 : n / evaluados.length)
   const alertas = alertasVencimiento(d, hoy)
   return {
@@ -89,11 +94,11 @@ export interface Pendiente {
   eppFaltantes: string[]
 }
 
-export function pendientesPorColaborador(d: DatosOperativos, hoy: Date): Pendiente[] {
+export function pendientesPorColaborador(d: DatosOperativos, hoy: Date, req?: Requisitos): Pendiente[] {
   return d.colaboradores
     .filter(esActivo)
     .map((colaborador) => {
-      const e = evaluar(colaborador, d, hoy)
+      const e = evaluar(colaborador, d, hoy, req)
       return {
         colaborador,
         capacitacionPendiente: !e.capacitacionOk,

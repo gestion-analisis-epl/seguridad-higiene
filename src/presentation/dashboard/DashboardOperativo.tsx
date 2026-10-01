@@ -10,6 +10,7 @@ import { columnasAlertas, atributosAlerta, columnasPendientes, columnasPorCiudad
 import { celdasAlertas, celdasPendientes, conCeldas } from './celdas'
 import { AvisoSinCiudades, FiltroCiudades } from './FiltroCiudades'
 import { TarjetasResumen } from './TarjetasResumen'
+import { useRequisitos } from './useRequisitos'
 import { useDatosOperativos } from './useDatosOperativos'
 import { useFiltroCiudades } from './useFiltroCiudades'
 
@@ -26,13 +27,14 @@ export function DashboardOperativo() {
   const { cargando, error, datos: todos } = useDatosOperativos()
   const filtro = useFiltroCiudades()
   const { etiqueta, ciudades } = filtro
+  const requisitos = useRequisitos()
   const hoy = useMemo(() => new Date(), [])
 
   const datos = useMemo(() => filtrarPorCiudades(todos, ciudades), [todos, ciudades])
-  const resumen = useMemo(() => resumenGlobal(datos, hoy), [datos, hoy])
-  const porCiudad = useMemo(() => resumenPorCiudad(datos, hoy), [datos, hoy])
+  const resumen = useMemo(() => resumenGlobal(datos, hoy, requisitos), [datos, hoy, requisitos])
+  const porCiudad = useMemo(() => resumenPorCiudad(datos, hoy, requisitos), [datos, hoy, requisitos])
   const alertas = useMemo(() => alertasVencimiento(datos, hoy).map((a, i) => ({ ...a, id: String(i) })), [datos, hoy])
-  const pendientes = useMemo(() => pendientesPorColaborador(datos, hoy), [datos, hoy])
+  const pendientes = useMemo(() => pendientesPorColaborador(datos, hoy, requisitos), [datos, hoy, requisitos])
   const colsAlertas = useMemo(() => conCeldas(columnasAlertas<Alerta & { id: string }>(etiqueta), celdasAlertas), [etiqueta])
   const colsPendientes = useMemo(() => conCeldas(columnasPendientes(etiqueta), celdasPendientes), [etiqueta])
   const colsCiudad = useMemo(() => columnasPorCiudad(etiqueta), [etiqueta])
