@@ -21,6 +21,6 @@ export function columnasDeEntregas(
       id: i.valor, encabezado: i.etiqueta, tipo: 'categoria',
       valor: (f) => etiquetaEstadoEntrega(config, f.ultimas[i.valor], hoy),
     })),
-    { id: 'acciones', encabezado: 'Acciones', tipo: 'texto', ordenable: false, filtrable: false, valor: () => '' },
+    { id: 'acciones', encabezado: 'Acciones', tipo: 'texto', anchoInicial: 190, anchoMinimo: 170, sinTruncar: true, ordenable: false, filtrable: false, valor: () => '' },
   ]
 }

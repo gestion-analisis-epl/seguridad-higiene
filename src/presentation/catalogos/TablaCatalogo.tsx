@@ -13,7 +13,7 @@ export function TablaCatalogo({ filas, control, catalogo }: { filas: FilaCatalog
     { id: 'valor', encabezado: 'Valor interno (solo lectura)', tipo: 'texto', valor: (f) => f.valor, anchoInicial: 220 },
     { id: 'uso', encabezado: 'Uso', tipo: 'numero', alinear: 'derecha', valor: (f) => f.uso.total, anchoInicial: 90 },
     {
-      id: 'acciones', encabezado: 'Acciones', tipo: 'texto', valor: () => '', anchoInicial: 300, anchoMinimo: 220,
+      id: 'acciones', encabezado: 'Acciones', tipo: 'texto', valor: () => '', anchoInicial: 300, anchoMinimo: 220, sinTruncar: true,
       ordenable: false, filtrable: false, celda: (f) => <CeldaAcciones fila={f} control={control} />,
     },
   ]

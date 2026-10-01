@@ -40,3 +40,11 @@ describe('columnasDeEntregas', () => {
     expect(cols[4].filtrable).toBe(false)
   })
 })
+
+describe('columna de acciones', () => {
+  it('no se trunca porque contiene controles', () => {
+    const acciones = columnasDeEntregas(CONFIG_EPP, items, ciudades, hoy).find((c) => c.id === 'acciones')
+    expect(acciones?.sinTruncar).toBe(true)
+    expect(acciones?.anchoMinimo).toBeGreaterThanOrEqual(150)
+  })
+})

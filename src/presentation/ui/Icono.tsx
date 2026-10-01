@@ -21,6 +21,10 @@ const TRAZOS = {
   'orden-asc': 'M12 19V6M6.5 11.5L12 6l5.5 5.5',
   'orden-desc': 'M12 5v13M6.5 12.5L12 18l5.5-5.5',
   'orden-sin': 'M8 9.5L12 5.5l4 4M8 14.5l4 4 4-4',
+  'pag-primera': 'M18 6l-6 6 6 6M7 5v14',
+  'pag-anterior': 'M15 6l-6 6 6 6',
+  'pag-siguiente': 'M9 6l6 6-6 6',
+  'pag-ultima': 'M6 6l6 6-6 6M17 5v14',
   buscar: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13M20 20l-4.9-4.9',
 } as const
 

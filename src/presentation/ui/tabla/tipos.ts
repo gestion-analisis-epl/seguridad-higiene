@@ -11,6 +11,8 @@ export interface ColumnaTabla<T> extends ColumnaLogica<T> {
   ordenable?: boolean
   filtrable?: boolean
   alinear?: 'izquierda' | 'derecha'
+  // Celdas con controles: no se truncan con puntos suspensivos
+  sinTruncar?: boolean
 }
 
 export interface PropsDataTable<T> {

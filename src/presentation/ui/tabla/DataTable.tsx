@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 import { Icono } from '../Icono'
 import { usePersistente } from '../usePersistente'
 import { EncabezadoColumna } from './EncabezadoColumna'
+import { ControlesPaginacion } from './ControlesPaginacion'
+import { TAMANO_PAGINA_INICIAL, paginar, resumenPagina, tamanoValido } from './paginacion'
 import { esControlInteractivo } from './interaccion'
 import {
   ANCHO_MINIMO, anchosEfectivos, anchosValidos, aplicarFiltros, clamparAncho, filtroActivo,
@@ -18,6 +20,10 @@ export function DataTable<T>({
 }: PropsDataTable<T>) {
   const [orden, setOrden] = useState<Orden | null>(null)
   const [filtros, setFiltros] = useState<Record<string, Filtro>>({})
+  const [pagina, setPagina] = useState(1)
+  const [tamano, setTamano] = usePersistente<number>(
+    claveAnchos ? `tamano:${claveAnchos}` : null, TAMANO_PAGINA_INICIAL, tamanoValido,
+  )
   const [enVivo, setEnVivo] = useState<{ id: string; ancho: number } | null>(null)
   const [guardados, setGuardados] = usePersistente<Record<string, number>>(
     claveAnchos ? `anchos:${claveAnchos}` : null, {}, anchosValidos,
@@ -39,13 +45,17 @@ export function DataTable<T>({
     return col && orden ? ordenarFilas(filtradas, col, orden.dir) : filtradas
   }, [filas, columnas, filtros, orden])
 
-  const cambiarFiltro = (id: string, filtro: Filtro | null) =>
+  const cambiarFiltro = (id: string, filtro: Filtro | null) => {
+    setPagina(1)
     setFiltros((previos) => {
       const siguientes = { ...previos }
       if (filtro && filtroActivo(filtro)) siguientes[id] = filtro
       else delete siguientes[id]
       return siguientes
     })
+  }
+
+  const actual = useMemo(() => paginar(visibles, pagina, tamano), [visibles, pagina, tamano])
 
   const minimoDe = (c: ColumnaTabla<T>) => c.anchoMinimo ?? ANCHO_MINIMO
   const arrastrarAncho = (c: ColumnaTabla<T>, ancho: number) =>
@@ -66,9 +76,9 @@ export function DataTable<T>({
   return (
     <div className="min-w-0">
       <div className="mb-2 flex min-h-[2.5rem] flex-wrap items-center justify-between gap-2">
-        <p role="status" className="text-sm text-texto-suave">Mostrando {visibles.length} de {filas.length}</p>
+        <p role="status" className="text-sm text-texto-suave">{resumenPagina(actual, filas.length)}</p>
         {hayFiltros && (
-          <button type="button" onClick={() => setFiltros({})} className="boton-secundario min-h-[2rem] px-3 text-xs">
+          <button type="button" onClick={() => { setPagina(1); setFiltros({}) }} className="boton-secundario min-h-[2rem] px-3 text-xs">
             <Icono nombre="cerrar" className="h-3.5 w-3.5" />
             Limpiar filtros
           </button>
@@ -96,7 +106,7 @@ export function DataTable<T>({
                     filtro={filtro} filtroActivo={!!filtro && filtroActivo(filtro)}
                     opciones={c.tipo === 'categoria' || c.tipo === 'texto' ? opcionesDeCategoria(filas, c) : []}
                     ancho={anchos[c.id]} minimo={minimoDe(c)} ultima={i === columnas.length - 1}
-                    alOrdenar={() => setOrden((o) => siguienteOrden(o, c.id))}
+                    alOrdenar={() => { setPagina(1); setOrden((o) => siguienteOrden(o, c.id)) }}
                     alFiltrar={(f) => cambiarFiltro(c.id, f)}
                     alArrastrarAncho={(a) => arrastrarAncho(c, a)}
                     alConfirmarAncho={(a) => confirmarAncho(c, a)}
@@ -110,7 +120,7 @@ export function DataTable<T>({
             {visibles.length === 0 && (
               <tr><td colSpan={columnas.length} className="py-10 text-center text-texto-suave">{vacio}</td></tr>
             )}
-            {visibles.map((fila) => (
+            {actual.filas.map((fila) => (
               <tr
                 key={idFila(fila)}
                 {...atributosFila?.(fila)}
@@ -120,7 +130,8 @@ export function DataTable<T>({
                 {columnas.map((c, i) => {
                   const contenido = c.celda ? c.celda(fila) : textoVisible(c.valor(fila))
                   return (
-                    <td key={c.id} title={textoVisible(c.valor(fila)) || undefined} className={`truncate ${c.alinear === 'derecha' ? 'text-right' : ''}`}>
+                    <td key={c.id} title={c.sinTruncar ? undefined : textoVisible(c.valor(fila)) || undefined}
+                      className={`${c.sinTruncar ? 'whitespace-nowrap' : 'truncate'} ${c.alinear === 'derecha' ? 'text-right' : ''}`}>
                       {alSeleccionarFila && i === 0 ? (
                         <button
                           type="button" onClick={(e) => { e.stopPropagation(); alSeleccionarFila(fila) }}
@@ -139,6 +150,10 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
+      {filas.length > 0 && (
+        <ControlesPaginacion etiqueta={etiqueta} pagina={actual} tamano={tamano}
+          alTamano={(n) => { setPagina(1); setTamano(n) }} alPagina={setPagina} />
+      )}
     </div>
   )
 }
