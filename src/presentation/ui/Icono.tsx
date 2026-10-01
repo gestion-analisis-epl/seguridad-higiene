@@ -25,6 +25,9 @@ const TRAZOS = {
   'pag-anterior': 'M15 6l-6 6 6 6',
   'pag-siguiente': 'M9 6l6 6-6 6',
   'pag-ultima': 'M6 6l6 6-6 6M17 5v14',
+  subir: 'M12 16V4M7 9l5-5 5 5M4 20h16',
+  descargar: 'M12 4v12M7 11l5 5 5-5M4 20h16',
+  clip: 'M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.2a1.7 1.7 0 0 1-2.4-2.4L15 7',
   buscar: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13M20 20l-4.9-4.9',
 } as const
 
