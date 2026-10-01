@@ -18,6 +18,7 @@ interface Props {
   opciones: OpcionSeleccion[]
   ancho: number
   minimo: number
+  ultima: boolean
   alOrdenar: () => void
   alFiltrar: (filtro: Filtro | null) => void
   alArrastrarAncho: (ancho: number) => void
@@ -55,7 +56,7 @@ export function EncabezadoColumna(p: Props) {
         )}
       </div>
       <ManejadorAncho
-        encabezado={p.encabezado} ancho={p.ancho} minimo={p.minimo}
+        encabezado={p.encabezado} ancho={p.ancho} minimo={p.minimo} ultima={p.ultima}
         alArrastrar={p.alArrastrarAncho} alConfirmar={p.alConfirmarAncho} alRestablecer={p.alRestablecerAncho}
       />
     </th>

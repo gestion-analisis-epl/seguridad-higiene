@@ -3,10 +3,11 @@
 import { useRef, type KeyboardEvent, type PointerEvent } from 'react'
 import { ANCHO_MAXIMO, PASO_TECLADO, PASO_TECLADO_GRANDE } from './logica'
 
-export function ManejadorAncho({ encabezado, ancho, minimo, alArrastrar, alConfirmar, alRestablecer }: {
+export function ManejadorAncho({ encabezado, ancho, minimo, ultima, alArrastrar, alConfirmar, alRestablecer }: {
   encabezado: string
   ancho: number
   minimo: number
+  ultima: boolean
   alArrastrar: (ancho: number) => void
   alConfirmar: (ancho: number) => void
   alRestablecer: () => void
@@ -44,7 +45,7 @@ export function ManejadorAncho({ encabezado, ancho, minimo, alArrastrar, alConfi
       title="Arrastre para cambiar el ancho; doble clic para restablecer"
       onPointerDown={alPulsar} onPointerMove={alMover} onPointerUp={alSoltar} onPointerCancel={alSoltar}
       onKeyDown={alTeclear} onDoubleClick={alRestablecer}
-      className="group absolute -right-1.5 top-0 z-10 flex h-full w-3 cursor-col-resize touch-none select-none items-stretch justify-center before:absolute before:inset-y-0 before:-inset-x-1.5 before:content-[''] focus-visible:outline-offset-[-2px]"
+      className={`group absolute top-0 z-10 flex h-full w-3 cursor-col-resize touch-none select-none items-stretch justify-center before:absolute before:inset-y-0 before:content-[''] focus-visible:outline-offset-[-2px] ${ultima ? 'right-0 before:inset-x-0' : '-right-1.5 before:-inset-x-1.5'}`}
     >
       <span aria-hidden="true" className="my-1.5 w-px bg-borde-fuerte transition-[width,background-color] group-hover:w-0.5 group-hover:bg-primario group-focus-visible:w-0.5 group-focus-visible:bg-primario group-active:w-0.5 group-active:bg-primario" />
     </div>

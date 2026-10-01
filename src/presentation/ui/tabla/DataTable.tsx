@@ -85,7 +85,7 @@ export function DataTable<T>({
           </colgroup>
           <thead>
             <tr>
-              {columnas.map((c) => {
+              {columnas.map((c, i) => {
                 const filtro = filtros[c.id]
                 return (
                   <EncabezadoColumna
@@ -95,7 +95,7 @@ export function DataTable<T>({
                     ordenable={c.ordenable !== false} filtrable={c.filtrable !== false}
                     filtro={filtro} filtroActivo={!!filtro && filtroActivo(filtro)}
                     opciones={c.tipo === 'categoria' ? opcionesDeCategoria(filas, c) : []}
-                    ancho={anchos[c.id]} minimo={minimoDe(c)}
+                    ancho={anchos[c.id]} minimo={minimoDe(c)} ultima={i === columnas.length - 1}
                     alOrdenar={() => setOrden((o) => siguienteOrden(o, c.id))}
                     alFiltrar={(f) => cambiarFiltro(c.id, f)}
                     alArrastrarAncho={(a) => arrastrarAncho(c, a)}
