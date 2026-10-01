@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { leerConfiguracion } from './configuracion'
+import { leerBucket, leerConfiguracion } from './configuracion'
 
 const valida = { NEXT_PUBLIC_FIRESTORE_DATABASE: 'base-app', NEXT_PUBLIC_DOMINIO_PERMITIDO: 'ejemplo.test' }
 
@@ -44,6 +44,24 @@ describe('leerConfiguracion', () => {
       expect(msg).toContain('NEXT_PUBLIC_DOMINIO_PERMITIDO')
       expect(msg).not.toContain('NEXT_PUBLIC_FIRESTORE_DATABASE')
       if (dominio) expect(msg).not.toContain(dominio)
+    }
+  })
+})
+
+describe('leerBucket', () => {
+  const VAR = 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'
+
+  it('devuelve el nombre recortado', () => {
+    expect(leerBucket({ [VAR]: ' bucket-prueba ' })).toBe('bucket-prueba')
+    expect(leerBucket({ [VAR]: 'mi-proyecto.firebasestorage.app' })).toBe('mi-proyecto.firebasestorage.app')
+  })
+
+  it('rechaza vacío, gs:// y nombres inválidos nombrando la variable sin su valor', () => {
+    for (const valor of [undefined, '', '   ', 'gs://bucket-prueba', 'Bucket', 'a b', 'bucket/ruta', 'x']) {
+      let msg = ''
+      try { leerBucket({ [VAR]: valor }) } catch (e) { msg = (e as Error).message }
+      expect(msg).toContain(VAR)
+      if (valor?.trim()) expect(msg).not.toContain(valor.trim())
     }
   })
 })

@@ -9,7 +9,7 @@ const { baseDatos, dominioPermitido } = leerConfiguracion({
   NEXT_PUBLIC_DOMINIO_PERMITIDO: process.env.NEXT_PUBLIC_DOMINIO_PERMITIDO,
 })
 
-const app = getApps().length
+export const app = getApps().length
   ? getApp()
   : initializeApp({
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
