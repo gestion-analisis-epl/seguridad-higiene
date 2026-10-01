@@ -26,7 +26,7 @@ const DESCRIPCIONES = {
   'valor-sensible': 'coincide con la lista local de valores sensibles',
 }
 
-const ARCHIVOS_LOCALES = new Set(['.firebaserc', 'firebase.json', 'firestore.seguridad-higiene.rules', '.valores-sensibles.local'])
+const ARCHIVOS_LOCALES = new Set(['.firebaserc', 'firebase.json', 'firestore.rules', 'storage.rules', 'firestore.seguridad-higiene.rules', 'storage.seguridad-higiene.rules', '.valores-sensibles.local'])
 
 const plegar = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 

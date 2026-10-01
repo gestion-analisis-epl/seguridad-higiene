@@ -4,8 +4,8 @@ import { renderizarPlantilla } from './lib/plantillas.mjs'
 
 const PARES = [
   ['firebase.template.json', 'firebase.json'],
-  ['firestore.rules.template', 'firestore.seguridad-higiene.rules'],
-  ['storage.rules.template', 'storage.seguridad-higiene.rules'],
+  ['firestore.rules.template', 'firestore.rules'],
+  ['storage.rules.template', 'storage.rules'],
 ]
 const raiz = (nombre) => fileURLToPath(new URL(`../${nombre}`, import.meta.url))
 

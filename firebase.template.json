@@ -2,14 +2,14 @@
   "firestore": [
     {
       "database": "{{BASE_DATOS}}",
-      "rules": "firestore.seguridad-higiene.rules",
+      "rules": "firestore.rules",
       "indexes": "firestore.seguridad-higiene.indexes.json"
     }
   ],
   "storage": [
     {
       "bucket": "{{BUCKET}}",
-      "rules": "storage.seguridad-higiene.rules"
+      "rules": "storage.rules"
     }
   ],
   "emulators": {

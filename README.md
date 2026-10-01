@@ -16,10 +16,10 @@ Ningún valor de la organización vive en el código. La app los toma de variabl
 Firebase no lee variables de entorno en su configuración ni en sus reglas, así que se generan a partir de plantillas versionadas:
 
 1. Define `NEXT_PUBLIC_FIRESTORE_DATABASE` y `NEXT_PUBLIC_DOMINIO_PERMITIDO` (en el shell o en `.env.local`).
-2. Corre `pnpm config:firebase` (exige que `.env.local` exista, aunque sea vacío si las variables ya están en el shell; las variables ya definidas en el shell tienen prioridad sobre las de `.env.local`): escribe `firebase.json` (desde `firebase.template.json`), `firestore.seguridad-higiene.rules` (desde `firestore.rules.template`, con el dominio como regex), `storage.seguridad-higiene.rules` sin imprimir los valores (para este último hace falta `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`). Si falta o es inválida una variable, el error la nombra.
+2. Corre `pnpm config:firebase` (exige que `.env.local` exista, aunque sea vacío si las variables ya están en el shell; las variables ya definidas en el shell tienen prioridad sobre las de `.env.local`): escribe `firebase.json` (desde `firebase.template.json`), `firestore.rules` (desde `firestore.rules.template`, con el dominio como regex), `storage.rules` sin imprimir los valores (para este último hace falta `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`). Si falta o es inválida una variable, el error la nombra.
 3. Copia `.firebaserc.example` a `.firebaserc` y pon el id del proyecto.
 
-`firebase.json`, `firestore.seguridad-higiene.rules` y `.firebaserc` son archivos locales ignorados por git: nunca se versionan, y hay que regenerarlos al cambiar de máquina o de valores. Las pruebas de reglas no los usan: renderizan la plantilla con un dominio ficticio.
+`firebase.json`, `firestore.rules` y `.firebaserc` son archivos locales ignorados por git: nunca se versionan, y hay que regenerarlos al cambiar de máquina o de valores. Las pruebas de reglas no los usan: renderizan la plantilla con un dominio ficticio.
 
 En los comandos, `<PROYECTO>`, `<BASE>` y `<REGION>` son el proyecto de Firebase, el id de la base y su región.
 
@@ -191,7 +191,7 @@ El tope de 10 archivos por registro no es expresable de forma fiable en las regl
 
 ## Reglas de seguridad
 
-Se versionan como `firestore.rules.template` y `storage.rules.template` y se generan en `firestore.seguridad-higiene.rules` y `storage.seguridad-higiene.rules` con `pnpm config:firebase`. El `firebase.json` generado solo declara la base de esta app, así que un despliegue desde aquí no toca las reglas de otras apps de la organización que comparten el proyecto.
+Se versionan como `firestore.rules.template` y `storage.rules.template` y se generan en `firestore.rules` y `storage.rules` con `pnpm config:firebase`. El `firebase.json` generado solo declara la base de esta app, así que un despliegue desde aquí no toca las reglas de otras apps de la organización que comparten el proyecto.
 
 ## Antes de publicar
 

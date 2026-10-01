@@ -44,6 +44,8 @@ scripts/migracion/migracion.config.json
 
 # generados por pnpm config:firebase (contienen valores de la organización)
 firebase.json
+firestore.rules
+storage.rules
 firestore.seguridad-higiene.rules
 storage.seguridad-higiene.rules
 

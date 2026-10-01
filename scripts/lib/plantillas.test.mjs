@@ -108,7 +108,7 @@ describe('reglas de storage', () => {
 
   it('firebase.template.json declara las reglas de storage', () => {
     const json = JSON.parse(renderizarPlantilla(readFileSync('firebase.template.json', 'utf8'), { ...valida, [VAR_BUCKET]: 'bucket-prueba' }))
-    expect(json.storage).toEqual([{ bucket: 'bucket-prueba', rules: 'storage.seguridad-higiene.rules' }])
+    expect(json.storage).toEqual([{ bucket: 'bucket-prueba', rules: 'storage.rules' }])
   })
 
   it('firebase.template.json sin bucket falla nombrando la variable', () => {

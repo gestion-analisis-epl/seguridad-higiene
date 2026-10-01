@@ -70,7 +70,7 @@ describe('nombres de archivo', () => {
     ['mi-serviceAccount-prod.json', 'archivo-secreto'],
     ['.firebaserc', 'archivo-local'],
     ['firebase.json', 'archivo-local'],
-    ['firestore.seguridad-higiene.rules', 'archivo-local'],
+    ['firestore.rules', 'archivo-local'],
     ['.valores-sensibles.local', 'archivo-local'],
   ])('%s -> %s', (ruta, regla) => {
     expect(reglas(escanearNombre(ruta))).toEqual([regla])
