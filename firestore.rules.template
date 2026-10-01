@@ -49,6 +49,38 @@ service cloud.firestore {
       allow write: if esAdmin();
     }
 
+    // Un documento por archivo; la forma es inmutable y el tope de 10 por registro se refuerza en el cliente.
+    match /adjuntos/{id} {
+      function adjuntoValido(d) {
+        return d.keys().hasOnly([
+            'colaborador_id', 'modulo', 'registro_id', 'archivo_id', 'nombre', 'tipo', 'tamano', 'subido_por', 'subido_en'
+          ])
+          && d.keys().hasAll([
+            'colaborador_id', 'modulo', 'registro_id', 'archivo_id', 'nombre', 'tipo', 'tamano', 'subido_por', 'subido_en'
+          ])
+          && d.colaborador_id is string && d.colaborador_id.size() > 0 && d.colaborador_id.size() <= 128
+          && d.modulo in ['accidentes', 'capacitaciones']
+          && d.registro_id is string && d.registro_id.size() > 0 && d.registro_id.size() <= 128
+          && d.archivo_id is string && d.archivo_id.matches('[0-9a-f]{32}')
+          && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 120
+          && d.tipo in [
+          'application/pdf', 'image/jpeg', 'image/png', 'image/webp',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ]
+          && d.tamano is number && d.tamano > 0 && d.tamano <= 10485760
+          && d.subido_por == request.auth.uid
+          && d.subido_en == request.time;
+      }
+
+      allow read: if puedeLeer();
+      allow create: if puedeCapturar() && adjuntoValido(request.resource.data);
+      allow update: if false;
+      allow delete: if puedeCapturar();
+    }
+
     function esOperativa(c) {
       return c in [
         'colaboradores', 'capacitaciones', 'entregas_uniforme', 'entregas_epp',

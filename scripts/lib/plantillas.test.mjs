@@ -5,6 +5,7 @@ import { regexDeDominio, renderizarPlantilla } from './plantillas.mjs'
 
 const BASE = 'NEXT_PUBLIC_FIRESTORE_DATABASE'
 const DOMINIO = 'NEXT_PUBLIC_DOMINIO_PERMITIDO'
+const VAR_BUCKET = 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'
 const valida = { [BASE]: 'base-app', [DOMINIO]: 'ejemplo.test' }
 
 const error = (texto, env) => {
@@ -86,7 +87,7 @@ describe('renderizarPlantilla', () => {
 
 describe('plantillas del repositorio', () => {
   it('firebase.template.json renderiza a JSON con la base indicada', () => {
-    const json = JSON.parse(renderizarPlantilla(readFileSync('firebase.template.json', 'utf8'), valida))
+    const json = JSON.parse(renderizarPlantilla(readFileSync('firebase.template.json', 'utf8'), { ...valida, [VAR_BUCKET]: 'bucket-prueba' }))
     expect(json.firestore[0].database).toBe('base-app')
   })
 
@@ -94,6 +95,64 @@ describe('plantillas del repositorio', () => {
     const reglas = renderizarPlantilla(readFileSync('firestore.rules.template', 'utf8'), valida)
     expect(reglas).toContain("matches('.*@ejemplo[.]test')")
     expect(reglas).not.toContain('{{')
+  })
+})
+
+describe('origen de la app', () => {
+  const ORIGEN = 'ORIGEN_APP'
+  const conOrigen = { ...valida, [ORIGEN]: 'https://app.ejemplo.test' }
+
+  it('sin marcador no exige ORIGEN_APP', () => {
+    expect(renderizarPlantilla('{{BASE_DATOS}}', valida)).toBe('base-app')
+  })
+
+  it('con marcador exige un origen válido y no muestra su valor', () => {
+    expect(error('{{ORIGEN_APP}}', valida)).toContain(ORIGEN)
+    for (const origen of ['', 'app.ejemplo.test', 'https://app.ejemplo.test/ruta', 'ftp://x.test', 'https://a b.test', 'https://x.test/"']) {
+      const msg = error('{{ORIGEN_APP}}', { ...valida, [ORIGEN]: origen })
+      expect(msg).toContain(ORIGEN)
+      if (origen) expect(msg).not.toContain(origen)
+    }
+  })
+
+  it('sustituye el origen', () => {
+    expect(renderizarPlantilla('["{{ORIGEN_APP}}"]', conOrigen)).toBe('["https://app.ejemplo.test"]')
+    expect(renderizarPlantilla('{{ORIGEN_APP}}', { ...valida, [ORIGEN]: ' http://localhost:3000 ' })).toBe('http://localhost:3000')
+  })
+
+  it('storage-cors.template.json renderiza a JSON con ambos orígenes y solo GET', () => {
+    const cors = JSON.parse(renderizarPlantilla(readFileSync('storage-cors.template.json', 'utf8'), conOrigen))
+    expect(cors[0].origin).toEqual(['https://app.ejemplo.test', 'http://localhost:3000'])
+    expect(cors[0].method).toEqual(['GET'])
+    expect(cors[0].maxAgeSeconds).toBe(3600)
+  })
+})
+
+describe('reglas de storage', () => {
+  it('renderiza sin marcadores, con la base con nombre y el dominio', () => {
+    const reglas = renderizarPlantilla(readFileSync('storage.rules.template', 'utf8'), valida)
+    expect(reglas).toContain('/databases/base-app/documents/usuarios/')
+    expect(reglas).toContain("matches('.*@ejemplo[.]test')")
+    expect(reglas).not.toContain('{{')
+  })
+
+  it('firebase.template.json declara las reglas de storage', () => {
+    const json = JSON.parse(renderizarPlantilla(readFileSync('firebase.template.json', 'utf8'), { ...valida, [VAR_BUCKET]: 'bucket-prueba' }))
+    expect(json.storage).toEqual([{ bucket: 'bucket-prueba', rules: 'storage.seguridad-higiene.rules' }])
+  })
+
+  it('firebase.template.json sin bucket falla nombrando la variable', () => {
+    const msg = error(readFileSync('firebase.template.json', 'utf8'), valida)
+    expect(msg).toContain(VAR_BUCKET)
+    expect(msg).not.toContain(BASE)
+  })
+
+  it('un bucket con gs:// o inválido se rechaza sin mostrarlo', () => {
+    for (const b of ['gs://bucket-prueba', 'Bucket', 'a b', '']) {
+      const msg = error('{{BUCKET}}', { ...valida, [VAR_BUCKET]: b })
+      expect(msg).toContain(VAR_BUCKET)
+      if (b) expect(msg).not.toContain(b)
+    }
   })
 })
 

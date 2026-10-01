@@ -12,7 +12,7 @@
     "config:firebase": "node --env-file=.env.local scripts/generar-config-firebase.mjs",
     "verificar:publicable": "node scripts/verificar-publicable.mjs",
     "verificar:historial": "node scripts/verificar-publicable.mjs --historial",
-    "test:rules": "firebase emulators:exec --config firebase.test.json --only firestore --project demo-seguridad-higiene \"vitest run --config vitest.rules.config.ts\""
+    "test:rules": "firebase emulators:exec --config firebase.test.json --only firestore,storage --project demo-seguridad-higiene \"vitest run --config vitest.rules.config.ts\""
   },
   "dependencies": {
     "firebase": "^12.19.0",

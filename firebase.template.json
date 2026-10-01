@@ -6,6 +6,12 @@
       "indexes": "firestore.seguridad-higiene.indexes.json"
     }
   ],
+  "storage": [
+    {
+      "bucket": "{{BUCKET}}",
+      "rules": "storage.seguridad-higiene.rules"
+    }
+  ],
   "emulators": {
     "firestore": { "host": "127.0.0.1", "port": 8080 },
     "ui": { "enabled": false },

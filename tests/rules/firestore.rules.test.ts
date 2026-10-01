@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 import {
   assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { deleteDoc, doc, getDoc, getDocs, collection, setDoc, updateDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, getDocs, collection, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 
 let env: RulesTestEnvironment
 
@@ -157,5 +157,55 @@ describe('catálogos y configuración', () => {
     await assertSucceeds(getDoc(doc(como('cons1'), 'catalogos/ciudades')))
     await assertFails(setDoc(doc(como('capt1'), 'catalogos/ciudades'), { items: [] }))
     await assertSucceeds(setDoc(doc(como('admin1'), 'configuracion/indicadores'), { k_mensual: 20000 }))
+  })
+})
+
+describe('adjuntos', () => {
+  const valido = (uid: string) => ({
+    colaborador_id: 'c1', modulo: 'accidentes', registro_id: 'a0', archivo_id: 'a'.repeat(32),
+    nombre: 'informe.pdf', tipo: 'application/pdf', tamano: 1024, subido_por: uid, subido_en: serverTimestamp(),
+  })
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'adjuntos/existente'), { ...valido('capt1'), subido_en: new Date() })
+    })
+  })
+
+  it('capturista y admin crean, consulta y sin sesión no', async () => {
+    await assertSucceeds(setDoc(doc(como('capt1'), 'adjuntos/n1'), valido('capt1')))
+    await assertSucceeds(setDoc(doc(como('admin1'), 'adjuntos/n2'), valido('admin1')))
+    await assertFails(setDoc(doc(como('cons1'), 'adjuntos/n3'), valido('cons1')))
+    await assertFails(setDoc(doc(env.unauthenticatedContext().firestore(), 'adjuntos/n4'), valido('x')))
+  })
+
+  it('todos los roles activos leen', async () => {
+    for (const uid of ['cons1', 'capt1', 'admin1']) await assertSucceeds(getDoc(doc(como(uid), 'adjuntos/existente')))
+    await assertFails(getDoc(doc(como('inact1'), 'adjuntos/existente')))
+  })
+
+  it('rechaza tipo, tamaño, módulo y forma inválidos', async () => {
+    const db = como('capt1')
+    const malos = [
+      { tipo: 'application/x-msdownload' }, { tamano: 0 }, { tamano: 10 * 1024 * 1024 + 1 }, { tamano: '5' },
+      { modulo: 'otro' }, { archivo_id: '../x' }, { nombre: '' }, { nombre: 'x'.repeat(121) },
+      { colaborador_id: '' }, { extra: 1 },
+    ]
+    for (let i = 0; i < malos.length; i++) {
+      const cambio = malos[i]
+      await assertFails(setDoc(doc(db, `adjuntos/m${i}`), { ...valido('capt1'), ...cambio }))
+    }
+  })
+
+  it('subido_por y subido_en deben ser los del servidor', async () => {
+    const db = como('capt1')
+    await assertFails(setDoc(doc(db, 'adjuntos/p1'), valido('admin1')))
+    await assertFails(setDoc(doc(db, 'adjuntos/p2'), { ...valido('capt1'), subido_en: new Date(0) }))
+  })
+
+  it('nadie actualiza; capturista y admin borran, consulta no', async () => {
+    await assertFails(updateDoc(doc(como('admin1'), 'adjuntos/existente'), { nombre: 'otro.pdf' }))
+    await assertFails(deleteDoc(doc(como('cons1'), 'adjuntos/existente')))
+    await assertSucceeds(deleteDoc(doc(como('capt1'), 'adjuntos/existente')))
   })
 })
