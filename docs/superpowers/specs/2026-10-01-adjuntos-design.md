@@ -47,7 +47,7 @@ Tipos permitidos: PDF, JPG, PNG, WebP, Word (doc, docx), Excel (xls, xlsx). Máx
 
 Registro nuevo: se reserva el id del documento al abrir el formulario y los archivos se suben contra ese id; el registro se crea al guardar. Si se cancela el formulario, se borran los archivos subidos.
 
-Descarga: la URL firmada de corta duración se pide al hacer clic, con un reintento si falla. Sin enlaces públicos permanentes.
+Descarga: al hacer clic, el cliente envía su ID token a `/api/adjuntos/{id}`; el servidor valida token, dominio y rol, lee el documento `adjuntos` (nunca la ruta del cliente) y responde una URL firmada V4 de 60 segundos con `Content-Disposition: attachment`. El navegador navega a esa URL (sin CORS); un reintento ante error de red o 5xx. Sin enlaces públicos permanentes.
 
 Borrado: elimina archivo y documento. Los registros de accidente y capacitación no se borran, así que no quedan huérfanos.
 
@@ -59,6 +59,7 @@ Cambio de colaborador en un registro con archivos: bloqueado en el formulario co
 - Reglas de Storage: crear solo si el usuario es admin o capturista activo, el tipo está permitido y el tamaño es de 1 byte a 10 MB; leer a cualquier rol activo; borrar solo admin y capturista; sin actualizar.
 - Reglas de Firestore para `adjuntos`: leer a roles activos; crear y borrar solo admin y capturista; campos inmutables; validar forma y tope de 10 por registro.
 - Rol consulta: componente solo lectura, sin zona de subida ni borrar.
+- Descarga: `firebase-admin` solo en servidor con credenciales por defecto del entorno (sin llaves); la cuenta de servicio del backend necesita `roles/iam.serviceAccountTokenCreator` sobre sí misma, `roles/storage.objectViewer` en el bucket y acceso a Firestore. Errores genéricos en español; no se registran tokens, correos ni nombres.
 - Variable `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` documentada en `.env.example` y en el generador; el valor lo coloca el usuario en `.env.local`. Región del bucket: `us-east1` (el usuario indicó US-EAST-1).
 - Errores de reglas se muestran como mensaje genérico "No se pudo subir el archivo".
 - El escáner de publicación (`verificar:publicable`) debe cubrir la plantilla nueva.

@@ -16,7 +16,7 @@ Ningún valor de la organización vive en el código. La app los toma de variabl
 Firebase no lee variables de entorno en su configuración ni en sus reglas, así que se generan a partir de plantillas versionadas:
 
 1. Define `NEXT_PUBLIC_FIRESTORE_DATABASE` y `NEXT_PUBLIC_DOMINIO_PERMITIDO` (en el shell o en `.env.local`).
-2. Corre `pnpm config:firebase` (exige que `.env.local` exista, aunque sea vacío si las variables ya están en el shell; las variables ya definidas en el shell tienen prioridad sobre las de `.env.local`): escribe `firebase.json` (desde `firebase.template.json`), `firestore.seguridad-higiene.rules` (desde `firestore.rules.template`, con el dominio como regex), `storage.seguridad-higiene.rules` y `storage-cors.json` sin imprimir los valores (para estos dos hacen falta `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` y `ORIGEN_APP`). Si falta o es inválida una variable, el error la nombra.
+2. Corre `pnpm config:firebase` (exige que `.env.local` exista, aunque sea vacío si las variables ya están en el shell; las variables ya definidas en el shell tienen prioridad sobre las de `.env.local`): escribe `firebase.json` (desde `firebase.template.json`), `firestore.seguridad-higiene.rules` (desde `firestore.rules.template`, con el dominio como regex), `storage.seguridad-higiene.rules` sin imprimir los valores (para este último hace falta `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`). Si falta o es inválida una variable, el error la nombra.
 3. Copia `.firebaserc.example` a `.firebaserc` y pon el id del proyecto.
 
 `firebase.json`, `firestore.seguridad-higiene.rules` y `.firebaserc` son archivos locales ignorados por git: nunca se versionan, y hay que regenerarlos al cambiar de máquina o de valores. Las pruebas de reglas no los usan: renderizan la plantilla con un dominio ficticio.
@@ -162,18 +162,30 @@ gcloud firestore backups schedules create --database=<BASE> --recurrence=daily -
 
 ## Archivos adjuntos
 
-Cada accidente y capacitación admite hasta 10 archivos (PDF, JPG, PNG, WebP, Word, Excel; 10 MB c/u) ligados al registro y al colaborador, en Firebase Storage con la ruta `adjuntos/{colaborador}/{modulo}/{registro}/{archivo}`. Admin y capturista suben y borran; consulta solo lee y descarga. La descarga usa la sesión y las reglas (sin enlaces públicos), por lo que el bucket necesita CORS.
+Cada accidente y capacitación admite hasta 10 archivos (PDF, JPG, PNG, WebP, Word, Excel; 10 MB c/u) ligados al registro y al colaborador, en Firebase Storage con la ruta `adjuntos/{colaborador}/{modulo}/{registro}/{archivo}`. Admin y capturista suben y borran; consulta solo lee y descarga. La descarga no usa enlaces públicos: el servidor (`/api/adjuntos/{id}`) valida el ID token, el dominio y el rol, y devuelve una URL firmada que vence a los 60 segundos; no requiere CORS.
 
 Variables en `.env.local` (ver `.env.example`):
 
 - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`: nombre del bucket sin `gs://`; solo se valida al usar Storage.
-- `ORIGEN_APP`: origen público de la app (`https://...`); solo lo usa `pnpm config:firebase` para el CORS.
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` y `NEXT_PUBLIC_FIRESTORE_DATABASE` también los lee el servidor para verificar el token y leer Firestore.
 
 Puesta en marcha (acciones del administrador):
 
 1. Crear un bucket propio de esta app en la región `us-east1`: `gcloud storage buckets create gs://<BUCKET> --location=us-east1 --project <PROYECTO>`
 2. `pnpm config:firebase`, y publicar las reglas de Storage: `firebase deploy --only storage --project <PROYECTO>`. Las reglas leen el rol de `usuarios` en la base con nombre; el servicio de reglas de Storage necesita permiso para leer Firestore (el despliegue con la CLI lo ofrece conceder).
-3. Aplicar el CORS generado: `gcloud storage buckets update gs://<BUCKET> --cors-file=storage-cors.json --project <PROYECTO>`. Sin CORS la descarga falla.
+3. IAM de la descarga (una sola vez). El servidor usa `firebase-admin` con las credenciales por defecto de la cuenta de servicio del backend de App Hosting (sin llaves) y firma sin llave a través de IAM:
+
+   ```
+   gcloud iam service-accounts add-iam-policy-binding <cuenta-de-servicio-del-backend> --member="serviceAccount:<cuenta-de-servicio-del-backend>" --role="roles/iam.serviceAccountTokenCreator" --project <proyecto>
+   gcloud storage buckets add-iam-policy-binding gs://<bucket> --member="serviceAccount:<cuenta-de-servicio-del-backend>" --role="roles/storage.objectViewer"
+   gcloud projects add-iam-policy-binding <proyecto> --member="serviceAccount:<cuenta-de-servicio-del-backend>" --role="roles/datastore.user"
+   ```
+
+   El último comando solo hace falta si la cuenta aún no lee Firestore: el SDK de administración accede por IAM, no por las reglas. Sin estos permisos la descarga responde el mensaje de "no disponible".
+
+Desarrollo local: la descarga necesita credenciales; corre `gcloud auth application-default login --impersonate-service-account=<cuenta-de-servicio-del-backend>`; tu usuario necesita `roles/iam.serviceAccountTokenCreator` sobre esa cuenta. Sin eso, localmente la descarga solo devuelve el aviso de que no está disponible; el resto de los adjuntos funciona igual.
+
+La URL firmada vence a los 60 segundos: el clic en "Descargar" la pide y la usa de inmediato; no se guarda ni se comparte.
 
 El tope de 10 archivos por registro no es expresable de forma fiable en las reglas: se refuerza solo en el cliente. Las reglas sí validan tipo, tamaño, rol y forma del documento `adjuntos`.
 
