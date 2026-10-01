@@ -28,7 +28,7 @@ Colección `adjuntos` (Firestore, BD con nombre propia), un documento por archiv
 
 Ruta en Storage: `adjuntos/{colaborador_id}/{modulo}/{registro_id}/{archivo_id}`. El nombre original nunca forma parte de la ruta.
 
-Tipos permitidos: PDF, JPG, PNG, WebP, Word (doc, docx), Excel (xls, xlsx). Máximo 10 MB por archivo y 10 archivos por registro.
+Tipos permitidos: PDF, JPG, PNG, WebP, Word (doc, docx), Excel (xls, xlsx), PowerPoint (ppt, pptx). Máximo 10 MB por archivo y 10 archivos por registro.
 
 ## Capas (Clean Architecture)
 

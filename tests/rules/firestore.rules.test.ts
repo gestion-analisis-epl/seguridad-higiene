@@ -184,6 +184,14 @@ describe('adjuntos', () => {
     await assertFails(getDoc(doc(como('inact1'), 'adjuntos/existente')))
   })
 
+  it('admite los tipos de PowerPoint', async () => {
+    const db = como('capt1')
+    await assertSucceeds(setDoc(doc(db, 'adjuntos/p1'), { ...valido('capt1'), nombre: 'a.ppt', tipo: 'application/vnd.ms-powerpoint' }))
+    await assertSucceeds(setDoc(doc(db, 'adjuntos/p2'), {
+      ...valido('capt1'), nombre: 'a.pptx', tipo: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    }))
+  })
+
   it('rechaza tipo, tamaño, módulo y forma inválidos', async () => {
     const db = como('capt1')
     const malos = [

@@ -14,6 +14,8 @@ describe('formato de adjuntos', () => {
     expect(etiquetaTipo('image/jpeg')).toBe('Imagen')
     expect(etiquetaTipo('application/msword')).toBe('Word')
     expect(etiquetaTipo('application/vnd.ms-excel')).toBe('Excel')
+    expect(etiquetaTipo('application/vnd.ms-powerpoint')).toBe('PowerPoint')
+    expect(etiquetaTipo('application/vnd.openxmlformats-officedocument.presentationml.presentation')).toBe('PowerPoint')
     expect(etiquetaTipo('application/x-otro')).toBe('Archivo')
   })
 })

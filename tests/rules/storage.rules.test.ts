@@ -57,6 +57,16 @@ describe('storage: subir', () => {
     await assertFails(uploadBytes(ref(como('inact1'), destino), bytes(10), PDF))
     await assertFails(uploadBytes(ref(como('ext1', 'ext1@gmail.com'), destino), bytes(10), PDF))
   })
+  it('admite PowerPoint y rechaza un tipo de Office no listado', async () => {
+    const st = como('capt1')
+    await assertSucceeds(uploadBytes(ref(st, `adjuntos/c1/accidentes/r1/${'f'.repeat(32)}`), bytes(10), { contentType: 'application/vnd.ms-powerpoint' }))
+    await assertSucceeds(uploadBytes(ref(st, `adjuntos/c1/accidentes/r1/${'1'.repeat(32)}`), bytes(10), {
+      contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    }))
+    await assertFails(uploadBytes(ref(st, `adjuntos/c1/accidentes/r1/${'2'.repeat(32)}`), bytes(10), {
+      contentType: 'application/vnd.ms-outlook',
+    }))
+  })
   it('rechaza tipo, tamaño y ruta inválidos', async () => {
     const st = como('capt1')
     const destino = `adjuntos/c1/accidentes/r1/${'e'.repeat(32)}`

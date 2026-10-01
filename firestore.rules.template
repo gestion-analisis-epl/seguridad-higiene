@@ -68,7 +68,9 @@ service cloud.firestore {
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           'application/vnd.ms-excel',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation'
         ]
           && d.tamano is number && d.tamano > 0 && d.tamano <= 10485760
           && d.subido_por == request.auth.uid

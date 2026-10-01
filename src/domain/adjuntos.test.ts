@@ -3,6 +3,8 @@ import { MAX_BYTES, MAX_POR_REGISTRO, nombreSeguro, nuevoArchivoId, rutaAdjunto,
 
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+const PPT = 'application/vnd.ms-powerpoint'
+const PPTX = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 
 describe('validarArchivo', () => {
   it('acepta los tipos permitidos', () => {
@@ -10,6 +12,7 @@ describe('validarArchivo', () => {
       ['a.pdf', 'application/pdf'], ['a.jpg', 'image/jpeg'], ['a.jpeg', 'image/jpeg'], ['a.PNG', 'image/png'],
       ['a.webp', 'image/webp'], ['a.doc', 'application/msword'], ['a.docx', DOCX],
       ['a.xls', 'application/vnd.ms-excel'], ['a.xlsx', XLSX],
+      ['a.ppt', PPT], ['a.PPTX', PPTX],
     ]
     for (const [nombre, tipo] of validos) expect(validarArchivo({ nombre, tipo, tamano: 100 }, 0)).toBeNull()
   })
@@ -22,6 +25,12 @@ describe('validarArchivo', () => {
   it('rechaza un MIME que no corresponde a la extensión', () => {
     expect(validarArchivo({ nombre: 'a.pdf', tipo: 'image/png', tamano: 100 }, 0)).toEqual(expect.any(String))
     expect(validarArchivo({ nombre: 'a.pdf', tipo: '', tamano: 100 }, 0)).toEqual(expect.any(String))
+  })
+
+  it('rechaza un MIME de PowerPoint que no corresponde a la extensión', () => {
+    expect(validarArchivo({ nombre: 'a.pptx', tipo: PPT, tamano: 100 }, 0)).toEqual(expect.any(String))
+    expect(validarArchivo({ nombre: 'a.ppt', tipo: PPTX, tamano: 100 }, 0)).toEqual(expect.any(String))
+    expect(validarArchivo({ nombre: 'a.pptx', tipo: 'application/pdf', tamano: 100 }, 0)).toEqual(expect.any(String))
   })
 
   it('valida el tamaño', () => {

@@ -37,7 +37,7 @@ export function ZonaSubida({ alElegir, deshabilitada }: { alElegir: (archivos: F
         className="sr-only" disabled={deshabilitada}
         onChange={(e) => { alElegir(Array.from(e.target.files ?? [])); e.target.value = '' }} />
       <p id={idAyuda} className="text-xs text-texto-suave">
-        PDF, imágenes, Word o Excel. Hasta 10 MB por archivo y {MAX_POR_REGISTRO} por registro.
+        PDF, imágenes, Word, Excel o PowerPoint. Hasta 10 MB por archivo y {MAX_POR_REGISTRO} por registro.
       </p>
     </div>
   )

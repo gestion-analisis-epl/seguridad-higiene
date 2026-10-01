@@ -9,5 +9,6 @@ export function etiquetaTipo(mime: string): string {
   if (mime.startsWith('image/')) return 'Imagen'
   if (mime.includes('word')) return 'Word'
   if (mime.includes('excel') || mime.includes('spreadsheet')) return 'Excel'
+  if (mime.includes('powerpoint') || mime.includes('presentation')) return 'PowerPoint'
   return 'Archivo'
 }

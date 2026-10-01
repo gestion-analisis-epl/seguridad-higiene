@@ -20,6 +20,7 @@ const MAX_NOMBRE = 120
 
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+const PPTX = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 
 // Extensión permitida -> MIME esperado; debe coincidir con las reglas de Storage y Firestore.
 const TIPOS: Record<string, string> = {
@@ -32,6 +33,8 @@ const TIPOS: Record<string, string> = {
   docx: DOCX,
   xls: 'application/vnd.ms-excel',
   xlsx: XLSX,
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: PPTX,
 }
 
 export const TIPOS_MIME: readonly string[] = Array.from(new Set(Object.values(TIPOS)))
