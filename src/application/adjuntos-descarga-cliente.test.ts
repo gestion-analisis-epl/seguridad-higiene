@@ -1,56 +1,55 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorDescarga, mensajeDescarga, pedirUrlDescarga } from './adjuntos-descarga-cliente'
 
-const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cuerpo), { status: estado })
+const conCodigo = (code: string) => Object.assign(new Error(code), { code })
 
-function montar(respuestas: Array<Response | Error>) {
-  const llamadas: Array<{ ruta: string; auth: string | null }> = []
-  const cola = [...respuestas]
-  const pedir = () => pedirUrlDescarga('abc', {
-    token: async () => 'tok',
-    fetch: async (ruta, init) => {
-      llamadas.push({ ruta, auth: new Headers(init?.headers).get('Authorization') })
+function montar(resultados: Array<string | Error>) {
+  const rutas: string[] = []
+  const cola = [...resultados]
+  const pedir = () => pedirUrlDescarga('adjuntos/c/accidentes/r/a', {
+    obtenerUrl: async (ruta) => {
+      rutas.push(ruta)
       const r = cola.shift()
-      if (!r) throw new Error('sin respuesta')
+      if (r === undefined) throw new Error('sin resultado')
       if (r instanceof Error) throw r
       return r
     },
+    esNoEncontrado: (e) => (e as { code?: string }).code === 'storage/object-not-found',
   })
-  return { pedir, llamadas }
+  return { pedir, rutas }
 }
 
 describe('pedirUrlDescarga', () => {
-  it('pide al mismo origen con el token y devuelve la url', async () => {
-    const { pedir, llamadas } = montar([json(200, { url: 'https://f.test/x' })])
+  it('pide la ruta y devuelve la url', async () => {
+    const { pedir, rutas } = montar(['https://f.test/x'])
     expect(await pedir()).toBe('https://f.test/x')
-    expect(llamadas).toEqual([{ ruta: '/api/adjuntos/abc', auth: 'Bearer tok' }])
+    expect(rutas).toEqual(['adjuntos/c/accidentes/r/a'])
   })
 
-  it('reintenta una vez ante error de red o 5xx', async () => {
-    const red = montar([new Error('red'), json(200, { url: 'https://f.test/u' })])
-    expect(await red.pedir()).toBe('https://f.test/u')
-    const s5 = montar([json(503, {}), json(200, { url: 'https://f.test/u' })])
-    expect(await s5.pedir()).toBe('https://f.test/u')
-    expect(s5.llamadas).toHaveLength(2)
+  it('reintenta una vez ante fallo de red', async () => {
+    const m = montar([new Error('red'), 'https://f.test/u'])
+    expect(await m.pedir()).toBe('https://f.test/u')
+    expect(m.rutas).toHaveLength(2)
   })
 
   it('falla genérico tras dos fallos', async () => {
-    const m = montar([json(500, {}), json(500, {})])
+    const m = montar([new Error('a'), new Error('b')])
     await expect(m.pedir()).rejects.toMatchObject({ tipo: 'generico' })
-    expect(m.llamadas).toHaveLength(2)
+    expect(m.rutas).toHaveLength(2)
   })
 
-  it('no reintenta 401, 403 ni 404 y los clasifica', async () => {
-    for (const [estado, tipo] of [[401, 'permiso'], [403, 'permiso'], [404, 'no-encontrado']] as const) {
-      const m = montar([json(estado, {}), json(200, { url: 'https://f.test/u' })])
+  it('no reintenta permiso ni no encontrado y los clasifica', async () => {
+    for (const [code, tipo] of [
+      ['storage/unauthorized', 'permiso'], ['storage/unauthenticated', 'permiso'], ['storage/object-not-found', 'no-encontrado'],
+    ] as const) {
+      const m = montar([conCodigo(code), 'https://f.test/u'])
       await expect(m.pedir()).rejects.toMatchObject({ tipo })
-      expect(m.llamadas).toHaveLength(1)
+      expect(m.rutas).toHaveLength(1)
     }
   })
 
-  it('rechaza una respuesta sin url válida', async () => {
-    await expect(montar([json(200, {}), json(200, {})]).pedir()).rejects.toBeInstanceOf(ErrorDescarga)
-    await expect(montar([json(200, { url: 'javascript:alert(1)' }), json(200, {})]).pedir()).rejects.toBeInstanceOf(ErrorDescarga)
+  it('rechaza una url que no sea https', async () => {
+    await expect(montar(['javascript:alert(1)', 'javascript:alert(1)']).pedir()).rejects.toBeInstanceOf(ErrorDescarga)
   })
 })
 

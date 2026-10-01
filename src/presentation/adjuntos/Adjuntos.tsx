@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { ItemSubida } from '@/application/adjuntos-subida'
-import { MAX_POR_REGISTRO, type Adjunto, type ModuloAdjunto } from '@/domain/adjuntos'
+import { MAX_POR_REGISTRO, rutaAdjunto, type Adjunto, type ModuloAdjunto } from '@/domain/adjuntos'
 import { mensajeDescarga } from '@/application/adjuntos-descarga-cliente'
 import { descargarArchivo } from '@/infrastructure/storage/almacenamiento'
 import { storage } from '@/infrastructure/storage/cliente'
@@ -84,7 +84,7 @@ export function Adjuntos({ modulo, registroId, colaboradorId, soloLectura = fals
     setOcupado(a.id)
     setFallo(null)
     try {
-      await descargarArchivo(a.id)
+      await descargarArchivo(rutaAdjunto(a))
     } catch (e) {
       setFallo(mensajeDescarga(e))
     } finally {

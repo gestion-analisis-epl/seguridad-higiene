@@ -7,8 +7,8 @@ export class ErrorDescarga extends Error {
 }
 
 export interface PuertosPeticion {
-  token: () => Promise<string>
-  fetch: (ruta: string, init?: RequestInit) => Promise<Response>
+  obtenerUrl: (ruta: string) => Promise<string>
+  esNoEncontrado: (e: unknown) => boolean
 }
 
 const MENSAJES: Record<TipoErrorDescarga, string> = {
@@ -19,30 +19,31 @@ const MENSAJES: Record<TipoErrorDescarga, string> = {
 
 export const mensajeDescarga = (e: unknown): string => MENSAJES[e instanceof ErrorDescarga ? e.tipo : 'generico']
 
-async function intentar(adjuntoId: string, p: PuertosPeticion): Promise<string> {
-  let r: Response
+const CODIGOS_PERMISO = ['storage/unauthorized', 'storage/unauthenticated']
+
+function clasificar(e: unknown, p: PuertosPeticion): ErrorDescarga {
+  if (p.esNoEncontrado(e)) return new ErrorDescarga('no-encontrado')
+  const code = (e as { code?: unknown } | null)?.code
+  return new ErrorDescarga(typeof code === 'string' && CODIGOS_PERMISO.includes(code) ? 'permiso' : 'generico')
+}
+
+async function intentar(ruta: string, p: PuertosPeticion): Promise<string> {
+  let url: string
   try {
-    r = await p.fetch(`/api/adjuntos/${encodeURIComponent(adjuntoId)}`, {
-      headers: { Authorization: `Bearer ${await p.token()}` },
-      cache: 'no-store',
-    })
-  } catch {
-    throw new ErrorDescarga('generico')
+    url = await p.obtenerUrl(ruta)
+  } catch (e) {
+    throw clasificar(e, p)
   }
-  if (r.status === 401 || r.status === 403) throw new ErrorDescarga('permiso')
-  if (r.status === 404) throw new ErrorDescarga('no-encontrado')
-  if (!r.ok) throw new ErrorDescarga('generico')
-  const url = ((await r.json().catch(() => null)) as { url?: unknown } | null)?.url
-  if (typeof url !== 'string' || !/^https:\/\//.test(url)) throw new ErrorDescarga('generico')
+  if (!/^https:\/\//.test(url)) throw new ErrorDescarga('generico')
   return url
 }
 
-// Un reintento solo ante fallo de red o 5xx; 401/403/404 son definitivos.
-export async function pedirUrlDescarga(adjuntoId: string, p: PuertosPeticion): Promise<string> {
+// Un reintento solo ante fallo genérico; permiso y no encontrado son definitivos.
+export async function pedirUrlDescarga(ruta: string, p: PuertosPeticion): Promise<string> {
   try {
-    return await intentar(adjuntoId, p)
+    return await intentar(ruta, p)
   } catch (e) {
     if (e instanceof ErrorDescarga && e.tipo !== 'generico') throw e
-    return intentar(adjuntoId, p)
+    return intentar(ruta, p)
   }
 }

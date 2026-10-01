@@ -1,7 +1,6 @@
-import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage'
+import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage'
 import type { PuertoAlmacenamiento } from '@/application/adjuntos-subida'
 import { pedirUrlDescarga } from '@/application/adjuntos-descarga-cliente'
-import { auth } from '@/infrastructure/firebase/cliente'
 import { storage } from './cliente'
 
 export function crearAlmacenamientoStorage(): PuertoAlmacenamiento {
@@ -25,19 +24,16 @@ export function crearAlmacenamientoStorage(): PuertoAlmacenamiento {
 
 export const esNoEncontrado = (e: unknown): boolean => (e as { code?: string } | null)?.code === 'storage/object-not-found'
 
-// La URL firmada la genera el servidor tras validar sesión y rol; se navega a ella sin leerla desde JS.
-export async function descargarArchivo(adjuntoId: string): Promise<void> {
-  const url = await pedirUrlDescarga(adjuntoId, {
-    token: async () => {
-      const u = auth.currentUser
-      if (!u) throw new Error('sin sesión')
-      return u.getIdToken()
-    },
-    fetch: (ruta, init) => fetch(ruta, init),
+// El enlace se genera al hacer clic y se abre sin guardarlo ni registrarlo.
+export async function descargarArchivo(ruta: string): Promise<void> {
+  const url = await pedirUrlDescarga(ruta, {
+    obtenerUrl: (r) => getDownloadURL(ref(storage(), r)),
+    esNoEncontrado,
   })
   const a = document.createElement('a')
   a.href = url
-  a.rel = 'noopener'
+  a.target = '_blank'
+  a.rel = 'noopener noreferrer'
   document.body.appendChild(a)
   a.click()
   a.remove()
