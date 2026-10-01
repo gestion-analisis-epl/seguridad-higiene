@@ -77,4 +77,9 @@ describe('definiciones', () => {
     expect(admiteEliminar(MODULOS.accidentes)).toBe(true)
     expect(admiteEliminar(MODULOS.indicadores_mensuales)).toBe(true)
   })
+
+  it('solo accidentes y capacitaciones admiten adjuntos', () => {
+    const con = Object.values(MODULOS).filter((m) => m.adjuntos).map((m) => `${m.id}:${m.adjuntos}`)
+    expect(con.sort()).toEqual(['accidentes:accidentes', 'capacitaciones:capacitaciones'])
+  })
 })

@@ -1,3 +1,4 @@
+import type { ModuloAdjunto } from './adjuntos'
 import { formatearFecha, periodoDe } from './fechas'
 import { aPlaca, aTitulo, limpiarLibre, limpiarTexto } from './texto'
 
@@ -36,6 +37,7 @@ export interface ModuloDef {
   derivar?: (valores: Valores, ctx: ContextoModulo, hoy: Date) => Valores
   idFijo?: (valores: Valores) => string
   bloquearEnEdicion?: string[]
+  adjuntos?: ModuloAdjunto
 }
 
 export function validarRegistro(def: ModuloDef, valores: Valores): Record<string, string> {

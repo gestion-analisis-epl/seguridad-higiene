@@ -30,7 +30,7 @@ const colaboradores: ModuloDef = {
 }
 
 const capacitaciones: ModuloDef = {
-  id: 'capacitaciones', coleccion: 'capacitaciones', titulo: 'Capacitaciones',
+  id: 'capacitaciones', coleccion: 'capacitaciones', titulo: 'Capacitaciones', adjuntos: 'capacitaciones',
   inicial: { cumple: true },
   campos: [
     colaborador,
@@ -76,7 +76,7 @@ const entregasEpp: ModuloDef = {
 }
 
 const accidentes: ModuloDef = {
-  id: 'accidentes', coleccion: 'accidentes', titulo: 'Accidentes',
+  id: 'accidentes', coleccion: 'accidentes', titulo: 'Accidentes', adjuntos: 'accidentes',
   inicial: { dias_incapacidad: 0 },
   campos: [
     colaborador,
