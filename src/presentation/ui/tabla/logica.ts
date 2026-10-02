@@ -123,6 +123,19 @@ export function opcionesDeCategoria<T>(filas: T[], columna: ColumnaLogica<T>): O
   return valores.has(VACIO) ? [...opciones, { valor: VACIO, etiqueta: ETIQUETA_VACIO }] : opciones
 }
 
+// Las opciones de cada columna salen de las filas que pasan los filtros de las demas columnas
+export function opcionesPorColumna<T>(
+  filas: T[], columnas: (ColumnaLogica<T> & { filtrable?: boolean })[], filtros: Record<string, Filtro>,
+): Record<string, OpcionSeleccion[]> {
+  const salida: Record<string, OpcionSeleccion[]> = {}
+  for (const c of columnas) {
+    if (c.tipo !== 'categoria' && c.tipo !== 'texto') continue
+    const otras = columnas.filter((o) => o.id !== c.id)
+    salida[c.id] = opcionesDeCategoria(aplicarFiltros(filas, otras, filtros), c)
+  }
+  return salida
+}
+
 export const clamparAncho = (ancho: number, minimo: number) =>
   Math.min(ANCHO_MAXIMO, Math.max(minimo, ancho))
 

@@ -50,8 +50,25 @@ export function filtrosInicialesDeModulo(def: ModuloDef): Record<string, Filtro>
   return def.id === 'colaboradores' ? { activo: FILTRO_ACTIVO_BOOLEANO } : undefined
 }
 
+export const ID_COLUMNA_CIUDAD = 'ciudad_colaborador'
+const MODULOS_CON_CIUDAD = new Set(['capacitaciones', 'accidentes'])
+
+export const muestraCiudad = (def: ModuloDef) => MODULOS_CON_CIUDAD.has(def.id) && tieneColaborador(def)
+
+// Etiqueta de la ciudad del colaborador referenciado; sin dato actual, la guardada en el registro
+export function ciudadDeRegistro(
+  ciudades: Opcion[], ciudadPorColaborador: Map<string, string>,
+): (r: Registro) => string | null {
+  return (r) => {
+    const id = typeof r[CAMPO_COLABORADOR] === 'string' ? ciudadPorColaborador.get(r[CAMPO_COLABORADOR] as string) : undefined
+    const valor = id ?? (typeof r.ciudad === 'string' ? r.ciudad : null)
+    return valor ? (ciudades.find((o) => o.valor === valor)?.etiqueta ?? valor) : null
+  }
+}
+
 export function columnasDeModulo(
   def: ModuloDef, opciones: Record<string, Opcion[]>, activos?: Map<string, boolean>,
+  ciudadDe?: (r: Registro) => string | null,
 ): ColumnaTabla<Registro>[] {
   const columnas = def.columnas.map((nombre): ColumnaTabla<Registro> => {
     const campo = def.campos.find((c) => c.nombre === nombre)!
@@ -65,8 +82,10 @@ export function columnasDeModulo(
       valor: (r: Registro) => (def.id === 'colaboradores' && nombre === 'activo' ? r[nombre] !== false : valorDe(campo, ops, r[nombre])),
     }
   })
-  if (!activos) return columnas
   const i = columnas.findIndex((c) => c.id === CAMPO_COLABORADOR)
   if (i < 0) return columnas
-  return [...columnas.slice(0, i + 1), columnaEstado(activos), ...columnas.slice(i + 1)]
+  const extra: ColumnaTabla<Registro>[] = []
+  if (activos) extra.push(columnaEstado(activos))
+  if (ciudadDe) extra.push({ id: ID_COLUMNA_CIUDAD, encabezado: 'Ciudad', tipo: 'categoria', valor: ciudadDe })
+  return [...columnas.slice(0, i + 1), ...extra, ...columnas.slice(i + 1)]
 }

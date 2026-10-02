@@ -13,7 +13,7 @@ import {
 } from './estado'
 import {
   ANCHO_MINIMO, anchosEfectivos, anchosValidos, aplicarFiltros, clamparAncho, filtroActivo,
-  opcionesDeCategoria, ordenarFilas, siguienteOrden, textoVisible, type Filtro,
+  opcionesPorColumna, ordenarFilas, siguienteOrden, textoVisible, type Filtro,
 } from './logica'
 import type { ColumnaTabla, PropsDataTable } from './tipos'
 
@@ -56,6 +56,8 @@ export function DataTable<T>({
     const col = orden && columnas.find((c) => c.id === orden.id)
     return col && orden ? ordenarFilas(filtradas, col, orden.dir) : filtradas
   }, [filas, columnas, filtros, orden])
+
+  const opcionesColumnas = useMemo(() => opcionesPorColumna(filas, columnas, filtros), [filas, columnas, filtros])
 
   const cambiarFiltro = (id: string, filtro: Filtro | null) => {
     const siguientes = { ...filtros }
@@ -113,7 +115,7 @@ export function DataTable<T>({
                     dir={orden?.id === c.id ? orden.dir : null}
                     ordenable={c.ordenable !== false} filtrable={c.filtrable !== false}
                     filtro={filtro} filtroActivo={!!filtro && filtroActivo(filtro)}
-                    opciones={c.tipo === 'categoria' || c.tipo === 'texto' ? opcionesDeCategoria(filas, c) : []}
+                    opciones={opcionesColumnas[c.id] ?? []}
                     ancho={anchos[c.id]} minimo={minimoDe(c)} ultima={i === columnas.length - 1}
                     alOrdenar={() => cambiarEstado({ orden: siguienteOrden(orden, c.id), pagina: 1 })}
                     alFiltrar={(f) => cambiarFiltro(c.id, f)}

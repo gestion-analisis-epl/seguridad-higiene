@@ -42,7 +42,7 @@ export function ContenidoFiltro({ tipo, encabezado, filtro, opciones, alCambiar 
     <PanelOpciones
       etiqueta={encabezado} opciones={opciones}
       seleccion={opciones.filter((o) => !ocultos.includes(o.valor)).map((o) => o.valor)}
-      textoMarcar="Mostrar todo" textoDesmarcar="Ocultar todo" enfocar={enfocar}
+      buscarSelecciona textoMarcar="Mostrar todo" textoDesmarcar="Ocultar todo" enfocar={enfocar}
       alCambiar={(sel) => {
         const nuevos = opciones.filter((o) => !sel.includes(o.valor)).map((o) => o.valor)
         alCambiar(tipo === 'texto'

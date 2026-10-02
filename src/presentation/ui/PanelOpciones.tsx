@@ -6,7 +6,8 @@ import { alternar, filtrarOpciones, type OpcionSeleccion } from './seleccion'
 
 const ACCION = 'rounded px-1 py-1.5 text-xs font-medium underline underline-offset-2 hover:bg-superficie-2'
 
-export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, enfocar = true, textoMarcar = 'Seleccionar todo', textoDesmarcar = 'Limpiar' }: {
+export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, enfocar = true, textoMarcar = 'Seleccionar todo', textoDesmarcar = 'Limpiar', buscarSelecciona = false }: {
+  buscarSelecciona?: boolean
   etiqueta: string
   opciones: OpcionSeleccion[]
   seleccion: string[]
@@ -32,6 +33,12 @@ export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, enfoca
   const seleccionarVisibles = () => alCambiar([...seleccion, ...valoresVisibles.filter((v) => !seleccion.includes(v))])
   const limpiarVisibles = () => alCambiar(seleccion.filter((v) => !valoresVisibles.includes(v)))
 
+  // Al buscar, la seleccion pasa a ser lo encontrado; sin texto vuelven todas
+  const buscar = (nuevo: string) => {
+    setTexto(nuevo)
+    if (buscarSelecciona) alCambiar(filtrarOpciones(opciones, nuevo).map((o) => o.valor))
+  }
+
   const alTeclear = (e: KeyboardEvent<HTMLUListElement>) => {
     const todas = items()
     const i = todas.indexOf(document.activeElement as HTMLElement)
@@ -52,7 +59,7 @@ export function PanelOpciones({ etiqueta, opciones, seleccion, alCambiar, enfoca
       <div className="relative border-b border-borde p-2">
         <Icono nombre="buscar" className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-texto-suave" />
         <input
-          ref={busqueda} type="search" value={texto} onChange={(e) => setTexto(e.target.value)}
+          ref={busqueda} type="search" value={texto} onChange={(e) => buscar(e.target.value)}
           aria-label={`Buscar en ${etiqueta}`} placeholder="Buscar" autoComplete="off"
           onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); items()[0]?.focus({ preventScroll: true }) } }}
           className="control pl-9"

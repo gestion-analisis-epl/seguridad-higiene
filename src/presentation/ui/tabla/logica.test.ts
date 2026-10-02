@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  opcionesPorColumna,
   ANCHO_BASE, ANCHO_MAXIMO, COLADOR, VACIO, anchosEfectivos, anchosValidos, aplicarFiltros, clamparAncho,
   compararValores, filtroActivo, ordenarFilas, opcionesDeCategoria, pasaFiltro, siguienteOrden, textoVisible,
   type ColumnaLogica, type Filtro,
@@ -181,5 +182,19 @@ describe('filtro de texto combinado con lista de valores', () => {
   })
   it('los vacios se ocultan con la clave VACIO', () => {
     expect(ids(aplicarFiltros(filas, [cNombre], { nombre: { tipo: 'texto', texto: '', ocultos: [VACIO] } }))).toEqual(['1', '2', '3'])
+  })
+})
+
+describe('opcionesPorColumna', () => {
+  type F = { n: string; e: string }
+  const cols = [
+    { id: 'n', tipo: 'categoria' as const, valor: (f: F) => f.n },
+    { id: 'e', tipo: 'categoria' as const, valor: (f: F) => f.e },
+  ]
+  const filas: F[] = [{ n: 'Ana', e: 'Activo' }, { n: 'Beto', e: 'Inactivo' }]
+  it('omite valores que otros filtros ya excluyen, sin afectar la propia columna', () => {
+    const o = opcionesPorColumna(filas, cols, { e: { tipo: 'categoria', ocultos: ['Inactivo'] } })
+    expect(o.n.map((x) => x.valor)).toEqual(['Ana'])
+    expect(o.e.map((x) => x.valor)).toEqual(['Activo', 'Inactivo'])
   })
 })
