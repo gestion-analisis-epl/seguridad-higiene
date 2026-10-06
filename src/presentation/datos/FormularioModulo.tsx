@@ -10,6 +10,7 @@ import type { Adjunto } from '@/domain/adjuntos'
 import { borrarAdjuntosDeRegistro, reservarId } from '@/infrastructure/firestore/adjuntos'
 import { eliminar, guardar, type Registro } from '@/infrastructure/firestore/repositorio'
 import { Adjuntos } from '@/presentation/adjuntos/Adjuntos'
+import { ArchivosDeColaborador } from '@/presentation/adjuntos/ArchivosDeColaborador'
 import { useSesion } from '@/presentation/auth/AuthProvider'
 import { AvisoError } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
@@ -140,6 +141,11 @@ export function FormularioModulo({ def, registro, alTerminar }: Props) {
                 Elige un colaborador para adjuntar archivos
               </p>
             )}
+          </div>
+        )}
+        {def.id === 'colaboradores' && registro && (
+          <div className="sm:col-span-2">
+            <ArchivosDeColaborador colaboradorId={registro.id} />
           </div>
         )}
       </div>
