@@ -27,6 +27,7 @@ export function gruposDeNavegacion(usuario: UsuarioDoc | null): GrupoEnlaces[] {
       enlaces: [
         { href: '/admin/usuarios', titulo: 'Usuarios', icono: 'usuarios' },
         { href: '/admin/catalogos', titulo: 'Catálogos', icono: 'catalogos' },
+        { href: '/admin/colaboradores', titulo: 'Enlace de colaboradores', icono: 'usuarios' },
         { href: '/admin/configuracion', titulo: 'Configuración', icono: 'configuracion' },
       ],
     })

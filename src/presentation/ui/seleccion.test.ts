@@ -48,6 +48,11 @@ describe('seleccion', () => {
     expect(filtrarOpciones(opciones, '  ').length).toBe(3)
     expect(filtrarOpciones(opciones, 'ciudad').length).toBe(2)
   })
+
+  it('filtrarOpciones exige todas las palabras sin importar el orden', () => {
+    const ops = [{ valor: '1', etiqueta: 'Carlos Alberto Torres' }, { valor: '2', etiqueta: 'María Torres' }]
+    expect(filtrarOpciones(ops, 'torres carlos').map((o) => o.valor)).toEqual(['1'])
+  })
 })
 
 describe('ordenarOpciones', () => {

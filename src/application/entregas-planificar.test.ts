@@ -12,6 +12,19 @@ const uniforme = (parcial: Partial<EntradaEntrega>): EntradaEntrega =>
 const epp = (parcial: Partial<EntradaEntrega>): EntradaEntrega =>
   ({ ...base, claves: ['casco', 'lentes'], config: CONFIG_EPP, modo: 'nueva', fecha: f1, items: {}, ...parcial })
 
+describe('copia del colaborador', () => {
+  it('copia nombre, plaza y puesto en cada operación', () => {
+    const copia = { colaborador_nombre: 'Ana', colaborador_plaza: 'LEON', colaborador_puesto: 'SOLDADOR A' }
+    const r = planificarEntrega(uniforme({ copia, items: { botas: { talla: '27', cantidad: 1 }, playera: { talla: 'M', cantidad: 2 } } }))
+    expect(r.operaciones).toHaveLength(2)
+    for (const op of r.operaciones) expect(op.valores).toMatchObject(copia)
+  })
+  it('sin copia no agrega esos campos', () => {
+    const r = planificarEntrega(uniforme({ items: { botas: { talla: '27', cantidad: 1 } } }))
+    expect(Object.keys(r.operaciones[0].valores)).not.toContain('colaborador_nombre')
+  })
+})
+
 describe('uniforme, nueva entrega', () => {
   it('crea un documento por prenda capturada con la forma del formulario anterior', () => {
     const r = planificarEntrega(uniforme({ items: { botas: { talla: '27', cantidad: 1 }, playera: { talla: 'M', cantidad: 2 } } }))

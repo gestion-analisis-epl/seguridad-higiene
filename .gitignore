@@ -51,3 +51,6 @@ storage.seguridad-higiene.rules
 
 # lista local de valores prohibidos para el verificador de publicación
 .valores-sensibles.local
+
+# configuración local de App Hosting (se copia de apphosting.example.yaml)
+apphosting.yaml

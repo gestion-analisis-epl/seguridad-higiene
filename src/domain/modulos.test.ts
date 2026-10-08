@@ -74,6 +74,22 @@ const botiquin: CampoDef[] = [
   { nombre: 'notas', etiqueta: 'Notas', tipo: 'texto', requerido: true, visibleSi: (v) => v.tipo !== 'botiquin' },
 ]
 
+describe('derivarCiudad con copia del colaborador', () => {
+  it('agrega la copia cuando el contexto la provee y conserva la ciudad', () => {
+    const ctx = {
+      ciudadDeColaborador: () => 'leon',
+      copiaDeColaborador: () => ({ colaborador_nombre: 'Ana', colaborador_plaza: 'LEON', colaborador_puesto: null }),
+    }
+    expect(derivarCiudad({ colaborador_id: 'a' }, ctx)).toEqual({
+      colaborador_id: 'a', ciudad: 'leon', colaborador_nombre: 'Ana', colaborador_plaza: 'LEON', colaborador_puesto: null,
+    })
+  })
+
+  it('sin copia en el contexto solo agrega la ciudad', () => {
+    expect(derivarCiudad({ colaborador_id: 'a' }, { ciudadDeColaborador: () => 'leon' })).toEqual({ colaborador_id: 'a', ciudad: 'leon' })
+  })
+})
+
 describe('validarCampos con listas', () => {
   it('direcciona errores por fila y subcampo', () => {
     const e = validarCampos(botiquin, {

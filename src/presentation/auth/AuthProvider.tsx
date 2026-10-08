@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { esCorreoPermitido, resolverAcceso, type EstadoAcceso, type UsuarioDoc } from '@/domain/permisos'
+import { clienteHoja } from '@/infrastructure/api/colaboradores'
 import { cerrarSesion, dominioPermitido, iniciarConGoogle, observarSesion, type CuentaSesion } from '@/infrastructure/firebase/sesion'
 import { almacenLecturas } from '@/infrastructure/firestore/almacen'
 import { suscribirDoc } from '@/infrastructure/firestore/repositorio'
@@ -32,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cancelarAuth = observarSesion((u) => {
       cancelarDoc()
       // Al cerrar sesion o cambiar de usuario no queda en memoria nada del anterior
-      if ((u?.uid ?? null) !== uidPrevio) almacenLecturas.vaciar()
+      if ((u?.uid ?? null) !== uidPrevio) { almacenLecturas.vaciar(); clienteHoja.vaciar() }
       uidPrevio = u?.uid ?? null
       cancelarDoc = () => {}
       setUser(u)

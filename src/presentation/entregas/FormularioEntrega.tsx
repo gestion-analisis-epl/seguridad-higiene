@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react'
 import type { FilaEntrega } from '@/application/entregas-agrupar'
 import { planificarEntrega, valoresIniciales } from '@/application/entregas-planificar'
 import type { ErroresEntrega, Modo } from '@/application/entregas-tipos'
+import { copiaDeColaborador } from '@/domain/colaboradores-hoja'
 import { fechaCalendario } from '@/domain/fechas'
 import type { CampoDef, Opcion, Valores } from '@/domain/modulos'
 import { guardarLote } from '@/infrastructure/firestore/repositorio'
@@ -53,7 +54,7 @@ export function FormularioEntrega({ cfg, fila, items, alTerminar, alCancelar }: 
     if (!uid) return
     const plan = planificarEntrega({
       config: cfg.config, modo, colaboradorId: fila.colaborador.id, ciudad: fila.colaborador.ciudad,
-      claves, fecha, items: valores, ultimas: fila.ultimas,
+      claves, fecha, items: valores, ultimas: fila.ultimas, copia: copiaDeColaborador({ ...fila.colaborador }),
     })
     setErrores(plan.errores)
     setFallo(null)

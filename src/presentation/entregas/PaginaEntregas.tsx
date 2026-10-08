@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { filtrarFilas } from '@/application/entregas-agrupar'
 import { puede } from '@/domain/permisos'
 import { useSesion } from '@/presentation/auth/AuthProvider'
+import { SelectorColaboradorHoja } from '@/presentation/colaboradores/SelectorColaboradorHoja'
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
@@ -59,6 +60,15 @@ export function PaginaEntregas({ cfg }: { cfg: ConfiguracionPagina }) {
         {error && <AvisoError>{error}</AvisoError>}
         {cargando ? <Cargando /> : (
           <>
+            {capturista && (
+              <div className="tarjeta max-w-xl p-4">
+                <label id="entrega-colaborador-et" htmlFor="entrega-colaborador" className="etiqueta">
+                  Registrar a un colaborador de la hoja
+                </label>
+                <SelectorColaboradorHoja id="entrega-colaborador" etiquetaId="entrega-colaborador-et" valor=""
+                  alCambiar={(uid) => { if (uid) setAbierto(uid) }} />
+              </div>
+            )}
             <FiltrosEntregas filtro={filtro} ciudades={ciudades} alCambiar={setFiltro} />
             <TablaEntregas cfg={cfg} filas={visibles} items={items} ciudades={ciudades}
               alAbrir={setAbierto} alNueva={capturista ? setAbierto : undefined} />

@@ -4,14 +4,17 @@ import { useMemo, useState, type FormEvent } from 'react'
 import {
   campoVisible, limpiarOcultos, sanitizarValores, validarRegistro, type ContextoModulo, type ModuloDef, type Valor, type Valores,
 } from '@/domain/modulos'
+import { copiaDeColaborador, type ColaboradorHoja } from '@/domain/colaboradores-hoja'
 import { admiteEliminar } from '@/domain/modulos-definiciones'
 import { puede } from '@/domain/permisos'
 import type { Adjunto } from '@/domain/adjuntos'
 import { borrarAdjuntosDeRegistro, reservarId } from '@/infrastructure/firestore/adjuntos'
+import { vincular } from '@/infrastructure/api/colaboradores'
 import { eliminar, guardar, type Registro } from '@/infrastructure/firestore/repositorio'
 import { Adjuntos } from '@/presentation/adjuntos/Adjuntos'
 import { ArchivosDeColaborador } from '@/presentation/adjuntos/ArchivosDeColaborador'
 import { useSesion } from '@/presentation/auth/AuthProvider'
+import { VinculoHoja } from '@/presentation/colaboradores/VinculoHoja'
 import { AvisoError } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
 import { CampoEntrada } from './CampoEntrada'
@@ -53,24 +56,41 @@ export function FormularioModulo({ def, registro, alTerminar }: Props) {
   const tieneAdjuntos = adjuntosDelRegistro.length > 0
   const colaboradorElegido = typeof valores.colaborador_id === 'string' ? valores.colaborador_id : ''
   const puedeEliminar = !!registro && admiteEliminar(def) && puede(usuario, 'administrar')
+  const edicionColaborador = def.id === 'colaboradores' && !!registro
+  const [filaHoja, setFilaHoja] = useState<ColaboradorHoja | null>(null)
 
   const ctx = useMemo<ContextoModulo>(() => ({
     ciudadDeColaborador: (id) => {
       const c = colaboradores.find((x) => x.id === id)
       return typeof c?.ciudad === 'string' ? c.ciudad : null
     },
+    copiaDeColaborador: (id) => {
+      const c = colaboradores.find((x) => x.id === id)
+      return c ? copiaDeColaborador(c) : {}
+    },
   }), [colaboradores])
+
+  function elegirFila(fila: ColaboradorHoja | null) {
+    setFilaHoja(fila)
+    if (fila?.fecha_baja) setValores((prev) => ({ ...prev, activo: false }))
+  }
 
   async function enviar(e: FormEvent) {
     e.preventDefault()
     const saneados = sanitizarValores(def.campos, valores)
     setValores(saneados)
     const errs = validarRegistro(def, saneados)
+    if (edicionColaborador) for (const n of def.bloquearEnEdicion ?? []) delete errs[n]
     setErrores(errs)
     if (Object.keys(errs).length || !uid) return
     setGuardando(true)
     setFallo(null)
     try {
+      if (edicionColaborador && registro) {
+        if (filaHoja && filaHoja.id_interno !== registro.id_interno) await vincular(registro.id, filaHoja.id_interno, true)
+        await guardar(def.coleccion, { cuadrilla: saneados.cuadrilla ?? null, activo: saneados.activo === true }, uid, registro.id)
+        return alTerminar()
+      }
       const limpio = limpiarOcultos(def.campos, saneados)
       const final = def.derivar ? def.derivar(limpio, ctx, new Date()) : limpio
       await guardar(def.coleccion, final, uid, def.idFijo ? def.idFijo(final) : registro?.id ?? idReservado)
@@ -115,7 +135,10 @@ export function FormularioModulo({ def, registro, alTerminar }: Props) {
   return (
     <form onSubmit={enviar} noValidate className="tarjeta aparecer">
       <div className="grid gap-x-5 gap-y-4 p-4 sm:grid-cols-2 sm:p-6">
-        {def.campos.filter((c) => campoVisible(c, valores)).map((c) => {
+        {edicionColaborador && registro && (
+          <VinculoHoja registro={registro} colaboradores={colaboradores} elegida={filaHoja} alElegir={elegirFila} />
+        )}
+        {def.campos.filter((c) => campoVisible(c, valores) && !(edicionColaborador && def.bloquearEnEdicion?.includes(c.nombre))).map((c) => {
           const alCambiar = (v: Valor) => setValores((prev) => ({ ...prev, [c.nombre]: v }))
           if (c.tipo === 'lista') {
             return <CampoLista key={c.nombre} campo={c} valor={valores[c.nombre]} errores={errores} alCambiar={alCambiar} />

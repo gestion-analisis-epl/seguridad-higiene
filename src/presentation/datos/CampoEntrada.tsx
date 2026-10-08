@@ -2,6 +2,7 @@
 
 import { aTextoIso, deTextoIso } from '@/domain/fechas'
 import type { CampoDef, Valor } from '@/domain/modulos'
+import { SelectorColaboradorHoja } from '@/presentation/colaboradores/SelectorColaboradorHoja'
 import { Icono } from '@/presentation/ui/Icono'
 import { SelectBuscable } from '@/presentation/ui/SelectBuscable'
 import { InputFecha } from '@/presentation/ui/InputFecha'
@@ -39,7 +40,12 @@ export function CampoEntrada({ campo, valor, error, deshabilitado = false, prefi
     )
   }
   let control
-  if (campo.tipo === 'seleccion') {
+  if (campo.tipo === 'seleccion' && campo.origen?.tipo === 'colaboradores') {
+    control = (
+      <SelectorColaboradorHoja id={id} etiquetaId={`${id}-et`} valor={typeof valor === 'string' ? valor : ''}
+        deshabilitado={deshabilitado} alCambiar={(v) => alCambiar(v || null)} {...aria} />
+    )
+  } else if (campo.tipo === 'seleccion') {
     control = (
       <SelectBuscable id={id} etiqueta={campo.etiqueta} etiquetaId={`${id}-et`} opciones={opciones}
         valor={typeof valor === 'string' ? valor : ''} textoVacio="Selecciona" deshabilitado={deshabilitado}

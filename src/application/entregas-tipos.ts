@@ -2,7 +2,14 @@ import type { Valores } from '@/domain/modulos'
 
 export type RegistroEntrega = { id: string } & Record<string, unknown>
 
-export interface ColaboradorEntrega { id: string; nombre: string; ciudad: string; activo?: boolean }
+export interface ColaboradorEntrega {
+  id: string
+  nombre: string
+  ciudad: string
+  activo?: boolean
+  plaza?: string | null
+  puesto?: string | null
+}
 
 export type Modo = 'nueva' | 'corregir'
 

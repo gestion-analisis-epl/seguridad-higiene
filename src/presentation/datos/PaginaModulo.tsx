@@ -5,6 +5,7 @@ import { puede } from '@/domain/permisos'
 import type { ModuloDef } from '@/domain/modulos'
 import type { Registro } from '@/infrastructure/firestore/repositorio'
 import { useSesion } from '@/presentation/auth/AuthProvider'
+import { AltaColaborador } from '@/presentation/colaboradores/AltaColaborador'
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
@@ -35,7 +36,9 @@ export function PaginaModulo({ def }: { def: ModuloDef }) {
             Nuevo
           </button>
         )} />
-      {editando !== null ? (
+      {editando === 'nuevo' && def.id === 'colaboradores' ? (
+        <AltaColaborador alTerminar={() => setEditando(null)} alCancelar={() => setEditando(null)} />
+      ) : editando !== null ? (
         <FormularioModulo def={def} registro={editando === 'nuevo' ? undefined : editando}
           alTerminar={() => setEditando(null)} />
       ) : (

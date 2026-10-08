@@ -19,6 +19,8 @@ const colaboradores: ModuloDef = {
   inicial: { activo: true },
   campos: [
     { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true, formato: 'titulo' },
+    { nombre: 'numero_colaborador', etiqueta: 'No. de colaborador', tipo: 'texto' },
+    { nombre: 'puesto', etiqueta: 'Puesto', tipo: 'texto' },
     { nombre: 'ciudad', etiqueta: 'Ciudad', tipo: 'seleccion', requerido: true, origen: catalogo('ciudades') },
     { nombre: 'area', etiqueta: 'Área', tipo: 'seleccion', origen: catalogo('areas') },
     { nombre: 'linea_negocio', etiqueta: 'Línea de negocio', tipo: 'seleccion', requerido: true, origen: catalogo('lineas_negocio') },
@@ -26,7 +28,8 @@ const colaboradores: ModuloDef = {
     { nombre: 'fecha_ingreso', etiqueta: 'Fecha de ingreso', tipo: 'fecha' },
     { nombre: 'activo', etiqueta: 'Activo', tipo: 'booleano' },
   ],
-  columnas: ['nombre', 'ciudad', 'area', 'cuadrilla', 'fecha_ingreso', 'activo'],
+  columnas: ['nombre', 'numero_colaborador', 'puesto', 'ciudad', 'area', 'cuadrilla', 'fecha_ingreso', 'activo'],
+  bloquearEnEdicion: ['nombre', 'numero_colaborador', 'puesto', 'ciudad', 'area', 'linea_negocio', 'fecha_ingreso'],
 }
 
 const capacitaciones: ModuloDef = {

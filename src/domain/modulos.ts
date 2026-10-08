@@ -25,7 +25,10 @@ export interface CampoDef {
   visibleSi?: (valores: Valores) => boolean
 }
 
-export interface ContextoModulo { ciudadDeColaborador(id: string): string | null }
+export interface ContextoModulo {
+  ciudadDeColaborador(id: string): string | null
+  copiaDeColaborador?(id: string): Valores
+}
 
 export interface ModuloDef {
   id: string
@@ -138,7 +141,8 @@ export function derivarCaducidad(v: Valores, campoItems: string, campoFecha: str
 
 export function derivarCiudad(v: Valores, ctx: ContextoModulo): Valores {
   const id = v.colaborador_id
-  return { ...v, ciudad: typeof id === 'string' ? ctx.ciudadDeColaborador(id) : null }
+  const copia = typeof id === 'string' ? ctx.copiaDeColaborador?.(id) : undefined
+  return { ...v, ...copia, ciudad: typeof id === 'string' ? ctx.ciudadDeColaborador(id) : null }
 }
 
 export function derivarPeriodo(v: Valores, campoFecha: string): Valores {

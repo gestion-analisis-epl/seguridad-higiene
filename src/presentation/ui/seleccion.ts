@@ -24,8 +24,12 @@ export function resumenSeleccion(
 }
 
 export function filtrarOpciones(opciones: OpcionSeleccion[], texto: string): OpcionSeleccion[] {
-  const q = plegar(texto.trim())
-  return q ? opciones.filter((o) => plegar(o.etiqueta).includes(q)) : opciones
+  const palabras = plegar(texto.trim()).split(/\s+/).filter(Boolean)
+  if (!palabras.length) return opciones
+  return opciones.filter((o) => {
+    const etiqueta = plegar(o.etiqueta)
+    return palabras.every((p) => etiqueta.includes(p))
+  })
 }
 
 const COLADOR_OPCIONES = new Intl.Collator('es', { sensitivity: 'base' })

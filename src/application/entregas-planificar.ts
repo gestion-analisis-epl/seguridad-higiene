@@ -11,6 +11,7 @@ export interface EntradaEntrega {
   fecha: Date | null
   items: Record<string, Valores>
   ultimas: Record<string, RegistroEntrega>
+  copia?: Valores
 }
 
 export interface PlanEntrega { errores: ErroresEntrega; operaciones: Operacion[] }
@@ -38,7 +39,7 @@ export function valoresIniciales(config: ConfigEntrega, registro: RegistroEntreg
 function armarValores(e: EntradaEntrega, clave: string, v: Valores): Valores {
   const base: Valores = { colaborador_id: e.colaboradorId, [e.config.campoItem]: clave }
   for (const c of e.config.campos) base[c.nombre] = normalizar(c, v[c.nombre])
-  const conCiudad = derivarCiudad(base, { ciudadDeColaborador: () => e.ciudad })
+  const conCiudad = derivarCiudad(base, { ciudadDeColaborador: () => e.ciudad, copiaDeColaborador: () => e.copia ?? {} })
   return e.config.derivaPeriodo ? derivarPeriodo(conCiudad, 'fecha') : conCiudad
 }
 
