@@ -12,7 +12,7 @@ describe('gruposDeNavegacion', () => {
     expect(h).toContain('/')
     expect(h).toContain('/analitico')
     for (const id of Object.keys(MODULOS)) expect(h).toContain(`/datos/${id}`)
-    expect(h).toEqual(expect.arrayContaining(['/admin/usuarios', '/admin/catalogos', '/admin/configuracion']))
+    expect(h).toEqual(expect.arrayContaining(['/admin/usuarios', '/admin/catalogos', '/admin/reglas-dotacion', '/admin/configuracion']))
   })
 
   it('capturista y consulta ven módulos pero no administración', () => {

@@ -28,6 +28,9 @@ export function gruposDeNavegacion(usuario: UsuarioDoc | null): GrupoEnlaces[] {
         { href: '/admin/usuarios', titulo: 'Usuarios', icono: 'usuarios' },
         { href: '/admin/catalogos', titulo: 'Catálogos', icono: 'catalogos' },
         { href: '/admin/colaboradores', titulo: 'Enlace de colaboradores', icono: 'usuarios' },
+        { href: '/admin/entregas-hoja', titulo: 'Sincronizar entregas', icono: 'catalogos' },
+        { href: '/admin/articulos-hoja', titulo: 'Artículos de la hoja', icono: 'catalogos' },
+        { href: '/admin/reglas-dotacion', titulo: 'Reglas de dotación', icono: 'catalogos' },
         { href: '/admin/configuracion', titulo: 'Configuración', icono: 'configuracion' },
       ],
     })
