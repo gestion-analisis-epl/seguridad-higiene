@@ -54,3 +54,6 @@ storage.seguridad-higiene.rules
 
 # configuración local de App Hosting (se copia de apphosting.example.yaml)
 apphosting.yaml
+
+# respaldos locales de datos
+respaldos/
