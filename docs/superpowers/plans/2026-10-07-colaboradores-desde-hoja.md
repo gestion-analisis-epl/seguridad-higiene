@@ -18,7 +18,7 @@
 - `CorreoEmpresa`, `TipoNomina`, `Empresa Alta`, `Función Área`, `ApellidoPaterno`, `ApellidoMaterno` y `Nombre` no salen del servidor.
 - No tocar los 6 archivos que el usuario ya tenía modificados salvo donde la tarea lo indica (`firestore.rules.template`, `README.md`, `tests/rules/firestore.rules.test.ts`), y solo en las líneas de la tarea.
 - Sin commits.
-- Rutas de comando: ejecutar desde la raíz `C:\Users\gestionyanalisis\Documents\Trabajo\ProyectosTrabajo\EPL\Seguridad\seguridad-higiene`.
+- Rutas de comando: ejecutar desde la raíz del repositorio.
 
 ## Estructura de archivos
 
@@ -140,7 +140,7 @@ describe('resolverEntradaCatalogo', () => {
     expect(resolverEntradaCatalogo(items, 'león')).toEqual({ valor: 'leon', etiqueta: 'León', nueva: false })
   })
   it('propone una entrada nueva con valor normalizado', () => {
-    expect(resolverEntradaCatalogo(items, 'CIUDAD JUAREZ')).toEqual({ valor: 'ciudad-juarez', etiqueta: 'Ciudad Juarez', nueva: true })
+    expect(resolverEntradaCatalogo(items, 'CIUDAD NUEVA')).toEqual({ valor: 'ciudad-nueva', etiqueta: 'Ciudad Nueva', nueva: true })
   })
   it('devuelve null con texto vacío', () => expect(resolverEntradaCatalogo(items, '  ')).toBeNull())
 })
@@ -648,26 +648,26 @@ export function crearClienteHoja(
 import { describe, expect, it } from 'vitest'
 import { decidirAcceso } from './acceso-api'
 
-const ok = { email: 'a@grupoepl.com.mx', email_verified: true }
-const usuario = (rol: 'admin' | 'capturista' | 'consulta', activo = true) => ({ email: 'a@grupoepl.com.mx', rol, activo })
+const ok = { email: 'a@ejemplo.test', email_verified: true }
+const usuario = (rol: 'admin' | 'capturista' | 'consulta', activo = true) => ({ email: 'a@ejemplo.test', rol, activo })
 
 describe('decidirAcceso', () => {
   it('rechaza sin sesión con 401', () => {
-    expect(decidirAcceso(null, null, 'grupoepl.com.mx', 'leer')?.estado).toBe(401)
+    expect(decidirAcceso(null, null, 'ejemplo.test', 'leer')?.estado).toBe(401)
   })
   it('rechaza correo no verificado o de otro dominio con 403', () => {
-    expect(decidirAcceso({ ...ok, email_verified: false }, usuario('admin'), 'grupoepl.com.mx', 'leer')?.estado).toBe(403)
-    expect(decidirAcceso({ email: 'a@otro.com', email_verified: true }, usuario('admin'), 'grupoepl.com.mx', 'leer')?.estado).toBe(403)
+    expect(decidirAcceso({ ...ok, email_verified: false }, usuario('admin'), 'ejemplo.test', 'leer')?.estado).toBe(403)
+    expect(decidirAcceso({ email: 'a@otro.com', email_verified: true }, usuario('admin'), 'ejemplo.test', 'leer')?.estado).toBe(403)
   })
   it('exige rol activo con permiso para la acción', () => {
-    expect(decidirAcceso(ok, null, 'grupoepl.com.mx', 'leer')?.estado).toBe(403)
-    expect(decidirAcceso(ok, usuario('consulta'), 'grupoepl.com.mx', 'capturar')?.estado).toBe(403)
-    expect(decidirAcceso(ok, usuario('capturista'), 'grupoepl.com.mx', 'administrar')?.estado).toBe(403)
-    expect(decidirAcceso(ok, usuario('admin', false), 'grupoepl.com.mx', 'leer')?.estado).toBe(403)
+    expect(decidirAcceso(ok, null, 'ejemplo.test', 'leer')?.estado).toBe(403)
+    expect(decidirAcceso(ok, usuario('consulta'), 'ejemplo.test', 'capturar')?.estado).toBe(403)
+    expect(decidirAcceso(ok, usuario('capturista'), 'ejemplo.test', 'administrar')?.estado).toBe(403)
+    expect(decidirAcceso(ok, usuario('admin', false), 'ejemplo.test', 'leer')?.estado).toBe(403)
   })
   it('permite cuando todo cumple', () => {
-    expect(decidirAcceso(ok, usuario('capturista'), 'grupoepl.com.mx', 'capturar')).toBeNull()
-    expect(decidirAcceso(ok, usuario('admin'), 'grupoepl.com.mx', 'administrar')).toBeNull()
+    expect(decidirAcceso(ok, usuario('capturista'), 'ejemplo.test', 'capturar')).toBeNull()
+    expect(decidirAcceso(ok, usuario('admin'), 'ejemplo.test', 'administrar')).toBeNull()
   })
 })
 ```

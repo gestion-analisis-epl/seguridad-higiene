@@ -18,16 +18,19 @@ export interface ColaboradorHoja {
   gerente: string
   fecha_baja: string | null
   motivo_baja: string
+  // Viene de la pestaña de inactivos o trae fecha de baja
+  inactivo: boolean
 }
 
-type TextoHoja = Exclude<keyof ColaboradorHoja, 'fecha_ingreso' | 'fecha_baja'>
+type CampoHoja = Exclude<keyof ColaboradorHoja, 'inactivo'>
+type TextoHoja = Exclude<CampoHoja, 'fecha_ingreso' | 'fecha_baja'>
 
-const ENCABEZADOS: Record<keyof ColaboradorHoja, string> = {
+const ENCABEZADOS: Record<CampoHoja, string> = {
   id_interno: 'id', numero: 'no.colaborador', nombre: 'nombrecompleto', plaza: 'plaza', departamento: 'departamento',
   empresa: 'empresa', puesto: 'puesto', fecha_ingreso: 'fechaingreso', zona: 'zona', jefe: 'jefe', gerente: 'gerente',
   fecha_baja: 'fechabaja', motivo_baja: 'motivobaja',
 }
-const OBLIGATORIAS: (keyof ColaboradorHoja)[] = ['id_interno', 'nombre', 'plaza', 'departamento', 'empresa', 'puesto', 'fecha_ingreso']
+const OBLIGATORIAS: CampoHoja[] = ['id_interno', 'nombre', 'plaza', 'departamento', 'empresa', 'puesto', 'fecha_ingreso']
 const ID_VALIDO = /^[0-9A-Za-z_-]{1,64}$/
 
 const sinAcentos = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -49,10 +52,10 @@ export function fechaDeHoja(texto: string): string | null {
   return aTextoIso(fechaCalendario(Number(a), Number(m), Number(d))) === normal ? normal : null
 }
 
-export function parsearFilasHoja(valores: string[][]): { colaboradores: ColaboradorHoja[]; descartadas: number } {
+export function parsearFilasHoja(valores: string[][], { inactivos = false } = {}): { colaboradores: ColaboradorHoja[]; descartadas: number } {
   if (valores.length === 0) return { colaboradores: [], descartadas: 0 }
   const columnas = valores[0].map(claveEncabezado)
-  const indice = (campo: keyof ColaboradorHoja) => columnas.indexOf(ENCABEZADOS[campo])
+  const indice = (campo: CampoHoja) => columnas.indexOf(ENCABEZADOS[campo])
   const faltan = OBLIGATORIAS.filter((c) => indice(c) < 0)
   if (faltan.length) throw new Error(`La hoja no tiene las columnas: ${faltan.map((c) => ENCABEZADOS[c]).join(', ')}`)
 
@@ -68,11 +71,12 @@ export function parsearFilasHoja(valores: string[][]): { colaboradores: Colabora
       continue
     }
     vistos.add(id)
+    const fechaBaja = fecha('fecha_baja')
     colaboradores.push({
       id_interno: id, numero: texto('numero'), nombre: texto('nombre'), plaza: texto('plaza'),
       departamento: texto('departamento'), empresa: texto('empresa'), puesto: texto('puesto'),
       fecha_ingreso: fecha('fecha_ingreso'), zona: texto('zona'), jefe: texto('jefe'), gerente: texto('gerente'),
-      fecha_baja: fecha('fecha_baja'), motivo_baja: texto('motivo_baja'),
+      fecha_baja: fechaBaja, motivo_baja: texto('motivo_baja'), inactivo: inactivos || fechaBaja !== null,
     })
   }
   return { colaboradores, descartadas }
@@ -88,7 +92,7 @@ export function buscarColaboradores(filas: ColaboradorHoja[], texto: string): Co
 }
 
 export const etiquetaColaboradorHoja = (f: ColaboradorHoja): string =>
-  [aTitulo(f.nombre), f.numero, aTitulo(f.puesto), f.fecha_baja ? '(baja)' : ''].filter(Boolean).join(' · ')
+  [aTitulo(f.nombre), f.numero, aTitulo(f.puesto), f.inactivo ? '(inactivo)' : ''].filter(Boolean).join(' · ')
 
 export interface EntradaResuelta { valor: string; etiqueta: string; nueva: boolean }
 
@@ -123,6 +127,19 @@ export function planearEnlace(existentes: ExistenteEnlace[], hoja: ColaboradorHo
       : candidatos.length > 1 || (repetidos.get(clave) ?? 0) > 1 ? 'ambigua' : 'exacta'
     return { ...e, sugerencia: { estado, candidatos } }
   })
+}
+
+// Filas de la hoja sin colaborador; las que coinciden en nombre con uno sin vincular se omiten para enlazarlas a mano
+export function planearImportacion(existentes: ExistenteEnlace[], hoja: ColaboradorHoja[]): { crear: ColaboradorHoja[]; omitidas: ColaboradorHoja[] } {
+  const vinculados = new Set(existentes.flatMap((e) => (e.id_interno ? [e.id_interno] : [])))
+  const sinVincular = new Set(existentes.filter((e) => !e.id_interno).map((e) => normalizarNombre(e.nombre)))
+  const crear: ColaboradorHoja[] = []
+  const omitidas: ColaboradorHoja[] = []
+  for (const f of hoja) {
+    if (vinculados.has(f.id_interno)) continue
+    ;(sinVincular.has(normalizarNombre(f.nombre)) ? omitidas : crear).push(f)
+  }
+  return { crear, omitidas }
 }
 
 // Datos del colaborador que se copian a cada registro para conservar el histórico

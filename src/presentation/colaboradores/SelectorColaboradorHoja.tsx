@@ -28,7 +28,7 @@ export function SelectorColaboradorHoja({ id, etiquetaId, valor, deshabilitado =
   const idActual = typeof actual?.id_interno === 'string' ? actual.id_interno : null
 
   const { opciones, seleccionado } = useMemo(() => {
-    const lista = filas.filter((f) => !f.fecha_baja).map((f) => ({ valor: f.id_interno, etiqueta: etiquetaColaboradorHoja(f) }))
+    const lista = filas.filter((f) => !f.inactivo).map((f) => ({ valor: f.id_interno, etiqueta: etiquetaColaboradorHoja(f) }))
     if (!actual) return { opciones: lista, seleccionado: '' }
     if (idActual && lista.some((o) => o.valor === idActual)) return { opciones: lista, seleccionado: idActual }
     const sufijo = cargando ? '' : idActual ? ' (baja)' : ' (sin enlazar)'

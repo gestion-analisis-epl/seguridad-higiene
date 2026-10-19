@@ -17,7 +17,7 @@ function datosDelRegistro(r: Registro): ColaboradorHoja {
     id_interno: texto(r.id_interno), numero: texto(r.numero_colaborador), nombre: texto(r.nombre), plaza: texto(r.ciudad),
     departamento: texto(r.area), empresa: texto(r.linea_negocio), puesto: texto(r.puesto),
     fecha_ingreso: ingreso instanceof Date ? ingreso.toISOString().slice(0, 10) : null,
-    zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '',
+    zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', inactivo: r.activo === false,
   }
 }
 
@@ -51,7 +51,7 @@ export function VinculoHoja({ registro, colaboradores, elegida, alElegir }: {
           alCambiar={(v) => alElegir(filas.find((f) => f.id_interno === v) ?? null)} />
         <div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-texto-suave">
           {elegida && elegida.id_interno !== idActual && <span>Al guardar se actualizarán los datos con los de la hoja</span>}
-          {elegida?.fecha_baja && <span className="font-medium text-error">Está de baja en la hoja: se marcará como inactivo</span>}
+          {elegida?.inactivo && <span className="font-medium text-error">Está inactivo en la hoja: se marcará como inactivo</span>}
           {!idActual && !elegida && <span>Sin vincular: elige a la persona para actualizar sus datos</span>}
           {desactualizado && <span>La lista puede estar desactualizada</span>}
           <button type="button" onClick={actualizar} disabled={cargando} className="underline">Actualizar lista</button>

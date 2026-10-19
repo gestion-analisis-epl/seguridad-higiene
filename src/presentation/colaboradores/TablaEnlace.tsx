@@ -1,10 +1,12 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { etiquetaColaboradorHoja, normalizarNombre, type ColaboradorHoja, type FilaEnlace } from '@/domain/colaboradores-hoja'
+import type { ResultadoImportacion } from '@/application/colaboradores-servidor'
+import { etiquetaColaboradorHoja, normalizarNombre, planearImportacion, type ColaboradorHoja, type FilaEnlace } from '@/domain/colaboradores-hoja'
 import { AvisoError } from '@/presentation/ui/Estado'
 import { SelectBuscable } from '@/presentation/ui/SelectBuscable'
 
+const LOTE = 25
 const ETIQUETA_ESTADO = { exacta: 'Coincidencia exacta', ambigua: 'Ambigua', sin_coincidencia: 'Sin coincidencia' } as const
 
 interface Props {
@@ -12,19 +14,22 @@ interface Props {
   hoja: ColaboradorHoja[]
   vincular: (uid: string, idInterno: string) => Promise<string | null>
   desvincular: (uid: string) => Promise<string | null>
+  importar: (ids: string[]) => Promise<ResultadoImportacion>
   alCambiar: () => void
 }
 
-export function TablaEnlace({ filas, hoja, vincular, desvincular, alCambiar }: Props) {
+export function TablaEnlace({ filas, hoja, vincular, desvincular, importar, alCambiar }: Props) {
   const [texto, setTexto] = useState('')
   const [soloPendientes, setSoloPendientes] = useState(true)
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [elegidos, setElegidos] = useState<Record<string, string>>({})
+  const [importacion, setImportacion] = useState<ResultadoImportacion | null>(null)
 
   const vinculadas = useMemo(() => new Set(filas.flatMap((f) => (f.id_interno ? [f.id_interno] : []))), [filas])
   const libres = useMemo(() => hoja.filter((h) => !vinculadas.has(h.id_interno)), [hoja, vinculadas])
   const opciones = useMemo(() => libres.map((h) => ({ valor: h.id_interno, etiqueta: etiquetaColaboradorHoja(h) })), [libres])
+  const plan = useMemo(() => planearImportacion(filas, hoja), [filas, hoja])
   const resumen = useMemo(() => ({
     vinculados: filas.filter((f) => f.id_interno).length,
     exactas: filas.filter((f) => f.sugerencia?.estado === 'exacta').length,
@@ -49,6 +54,24 @@ export function TablaEnlace({ filas, hoja, vincular, desvincular, alCambiar }: P
     if (!fallo) alCambiar()
   }
 
+  async function importarFaltantes() {
+    setOcupado('importar')
+    setImportacion(null)
+    const total: ResultadoImportacion = { creados: 0, errores: [] }
+    try {
+      for (let i = 0; i < plan.crear.length; i += LOTE) {
+        const r = await importar(plan.crear.slice(i, i + LOTE).map((f) => f.id_interno))
+        total.creados += r.creados
+        total.errores.push(...r.errores)
+      }
+    } catch (e) {
+      total.errores.push({ id_interno: '', nombre: 'Importación interrumpida', error: e instanceof Error ? e.message : 'Error de red' })
+    }
+    setImportacion(total)
+    setOcupado(null)
+    alCambiar()
+  }
+
   async function confirmarExactas() {
     setOcupado('todas')
     const nuevos: Record<string, string> = {}
@@ -66,6 +89,27 @@ export function TablaEnlace({ filas, hoja, vincular, desvincular, alCambiar }: P
       <p className="text-sm text-texto-suave">
         {resumen.vinculados} vinculados · {resumen.exactas} con coincidencia exacta · {resumen.ambiguas} ambiguos · {resumen.sin} sin coincidencia
       </p>
+      <div className="tarjeta flex flex-wrap items-center gap-3 p-4">
+        <p className="min-w-0 flex-1 text-sm">
+          {plan.crear.length} de la hoja sin colaborador ({plan.crear.filter((f) => f.inactivo).length} inactivos)
+          {plan.omitidas.length > 0 && ` · ${plan.omitidas.length} omitidos por coincidir en nombre con alguien sin vincular`}
+        </p>
+        <button type="button" onClick={() => void importarFaltantes()} disabled={plan.crear.length === 0 || ocupado !== null}
+          className="boton-primario">
+          {ocupado === 'importar' ? 'Importando...' : `Importar faltantes (${plan.crear.length})`}
+        </button>
+        {importacion && (
+          <div className="basis-full space-y-1 text-sm">
+            <p>{importacion.creados} colaboradores creados{importacion.errores.length > 0 && `, ${importacion.errores.length} con error`}</p>
+            {importacion.errores.length > 0 && (
+              <AvisoError>
+                {importacion.errores.slice(0, 10).map((x) => `${x.nombre}: ${x.error}`).join(' · ')}
+                {importacion.errores.length > 10 && ` · y ${importacion.errores.length - 10} más`}
+              </AvisoError>
+            )}
+          </div>
+        )}
+      </div>
       <div className="flex flex-wrap items-center gap-3">
         <input type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar colaborador"
           aria-label="Buscar colaborador" className="control max-w-xs" />

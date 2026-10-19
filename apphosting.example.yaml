@@ -31,3 +31,9 @@ env:
   - variable: COLABORADORES_SHEET_TAB
     value: Colaboradores
     availability: [RUNTIME]
+  - variable: COLABORADORES_SHEET_TAB_INACTIVOS
+    value: Colaboradores Inactivos
+    availability: [RUNTIME]
+  - variable: COLABORADORES_SHEET_TAB_UNIFORMES
+    value: Uniformes
+    availability: [RUNTIME]

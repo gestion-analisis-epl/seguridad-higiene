@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buscarColaboradores, copiaDeColaborador, etiquetaColaboradorHoja, fechaDeHoja, normalizarNombre, parsearFilasHoja,
-  planearEnlace, resolverEntradaCatalogo, type ColaboradorHoja,
+  planearEnlace, planearImportacion, resolverEntradaCatalogo, type ColaboradorHoja,
 } from './colaboradores-hoja'
 
 const ENCABEZADO = [
@@ -17,16 +17,26 @@ const base = {
 const hoja = (...filas: Record<string, string>[]) => [ENCABEZADO, ...filas.map(fila)]
 const col = (o: Partial<ColaboradorHoja>): ColaboradorHoja => ({
   id_interno: '1', numero: '1', nombre: 'ANA PEREZ', plaza: 'LEON', departamento: 'OPERACIONES', empresa: 'X', puesto: 'P',
-  fecha_ingreso: null, zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', ...o,
+  fecha_ingreso: null, zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', inactivo: false, ...o,
 })
 
 describe('parsearFilasHoja', () => {
+  it('una fila con fecha de baja queda inactiva aunque venga de la pestaña de activos', () => {
+    const conBaja = hoja({ ...base, FechaBaja: '2026-10-01' })
+    expect(parsearFilasHoja(conBaja).colaboradores[0]).toMatchObject({ fecha_baja: '2026-10-01', inactivo: true })
+  })
+
+  it('marca como inactivos a todas las filas de la pestaña de inactivos', () => {
+    expect(parsearFilasHoja(hoja(base), { inactivos: true }).colaboradores[0].inactivo).toBe(true)
+    expect(parsearFilasHoja(hoja(base)).colaboradores[0].inactivo).toBe(false)
+  })
+
   it('lee por nombre de encabezado, limpia espacios y convierte la fecha', () => {
     const { colaboradores } = parsearFilasHoja(hoja(base))
     expect(colaboradores).toEqual([{
       id_interno: '12066', numero: '2120', nombre: 'ADALBERTO GUTIERREZ MIRANDA', plaza: 'LEON', departamento: 'SEGURIDAD',
       empresa: 'SICMART SA DE CV', puesto: 'GUARDIA DE SEGURIDAD', fecha_ingreso: '2026-09-28', zona: 'Bajío Centro',
-      jefe: 'JOSE CHAGOYA', gerente: 'ALFONSO ORDAZ OCAÑA', fecha_baja: null, motivo_baja: '',
+      jefe: 'JOSE CHAGOYA', gerente: 'ALFONSO ORDAZ OCAÑA', fecha_baja: null, motivo_baja: '', inactivo: false,
     }])
   })
 
@@ -80,6 +90,9 @@ describe('etiquetaColaboradorHoja', () => {
     expect(etiquetaColaboradorHoja(col({ nombre: 'ANA PEREZ', numero: '9', puesto: 'SOLDADOR A' }))).toBe('Ana Perez · 9 · Soldador A')
     expect(etiquetaColaboradorHoja(col({ nombre: 'ANA PEREZ', numero: '', puesto: '' }))).toBe('Ana Perez')
   })
+  it('marca a los inactivos', () => {
+    expect(etiquetaColaboradorHoja(col({ nombre: 'ANA PEREZ', numero: '9', puesto: '', inactivo: true }))).toBe('Ana Perez · 9 · (inactivo)')
+  })
 })
 
 describe('resolverEntradaCatalogo', () => {
@@ -89,7 +102,7 @@ describe('resolverEntradaCatalogo', () => {
     expect(resolverEntradaCatalogo(items, 'león')).toEqual({ valor: 'leon', etiqueta: 'León', nueva: false })
   })
   it('propone una entrada nueva con valor normalizado', () => {
-    expect(resolverEntradaCatalogo(items, 'CIUDAD JUAREZ')).toEqual({ valor: 'ciudad-juarez', etiqueta: 'Ciudad Juarez', nueva: true })
+    expect(resolverEntradaCatalogo(items, 'CIUDAD NUEVA')).toEqual({ valor: 'ciudad-nueva', etiqueta: 'Ciudad Nueva', nueva: true })
   })
   it('devuelve null con texto vacío', () => expect(resolverEntradaCatalogo(items, '  ')).toBeNull())
 })
@@ -118,6 +131,26 @@ describe('planearEnlace', () => {
       { id: 'a', nombre: 'Ana Perez', id_interno: null }, { id: 'b', nombre: 'ANA PEREZ', id_interno: null },
     ], hojaCols)
     expect(r.map((f) => f.sugerencia?.estado)).toEqual(['ambigua', 'ambigua'])
+  })
+})
+
+describe('planearImportacion', () => {
+  const hojaImp = [
+    col({ id_interno: '1', nombre: 'ANA PEREZ' }), col({ id_interno: '2', nombre: 'LUIS RUIZ', inactivo: true }),
+    col({ id_interno: '3', nombre: 'ZOE NUEVA' }), col({ id_interno: '4', nombre: 'MARTA VINCULADA' }),
+  ]
+  it('crea las filas sin dueño y omite las que coinciden en nombre con un colaborador sin vincular', () => {
+    const r = planearImportacion([
+      { id: 'a', nombre: 'Ana Pérez', id_interno: null },
+      { id: 'b', nombre: 'Marta Vinculada', id_interno: '4' },
+    ], hojaImp)
+    expect(r.crear.map((f) => f.id_interno)).toEqual(['2', '3'])
+    expect(r.omitidas.map((f) => f.id_interno)).toEqual(['1'])
+  })
+  it('incluye activos e inactivos y no repite lo ya vinculado', () => {
+    const r = planearImportacion([], hojaImp)
+    expect(r.crear).toHaveLength(4)
+    expect(r.crear.filter((f) => f.inactivo)).toHaveLength(1)
   })
 })
 

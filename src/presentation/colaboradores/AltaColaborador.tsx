@@ -21,7 +21,7 @@ export function AltaColaborador({ alTerminar, alCancelar }: { alTerminar: () => 
   const [cuadrilla, setCuadrilla] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
-  const vigentes = useMemo(() => filas.filter((f) => !f.fecha_baja), [filas])
+  const vigentes = useMemo(() => filas.filter((f) => !f.inactivo), [filas])
   const opciones = useMemo(() => vigentes.map((f) => ({ valor: f.id_interno, etiqueta: etiquetaColaboradorHoja(f) })), [vigentes])
   const elegido = vigentes.find((f) => f.id_interno === idInterno)
 

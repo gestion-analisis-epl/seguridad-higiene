@@ -4,6 +4,7 @@ export interface Colaborador {
   ciudad: string
   area?: string | null
   linea_negocio: string
+  puesto?: string | null
   cuadrilla?: string | null
   activo?: boolean
 }
@@ -17,7 +18,7 @@ export interface Capacitacion {
   vencimiento: Date | null
 }
 
-export interface EntregaUniforme { colaborador_id: string; prenda: string }
+export interface EntregaUniforme { colaborador_id: string; prenda: string; entregado?: boolean }
 
 export interface EntregaEpp {
   colaborador_id: string

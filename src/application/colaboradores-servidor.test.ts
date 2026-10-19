@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ItemCatalogo } from '@/domain/catalogos-iniciales'
 import type { ColaboradorHoja } from '@/domain/colaboradores-hoja'
 import {
-  asegurarColaborador, desvincularColaborador, ErrorColaborador, vincularColaborador,
+  asegurarColaborador, desvincularColaborador, ErrorColaborador, importarColaboradores, vincularColaborador,
   type AlmacenColaboradores, type TxColaboradores,
 } from './colaboradores-servidor'
 
@@ -39,7 +39,20 @@ function almacenMemoria(inicial: { colaboradores?: Record<string, Record<string,
 const fila = (o: Partial<ColaboradorHoja> = {}): ColaboradorHoja => ({
   id_interno: '12066', numero: '2120', nombre: 'ADALBERTO GUTIERREZ MIRANDA', plaza: 'LEON', departamento: 'SEGURIDAD',
   empresa: 'SICMART SA DE CV', puesto: 'GUARDIA DE SEGURIDAD', fecha_ingreso: '2026-09-28', zona: 'Bajío Centro',
-  jefe: 'JOSE', gerente: 'ALFONSO', fecha_baja: null, motivo_baja: '', ...o,
+  jefe: 'JOSE', gerente: 'ALFONSO', fecha_baja: null, motivo_baja: '', inactivo: false, ...o,
+})
+
+describe('importarColaboradores', () => {
+  it('crea activos e inactivos y reporta los que fallan sin detener al resto', async () => {
+    const m = almacenMemoria()
+    const r = await importarColaboradores(m.almacen, [
+      fila({ id_interno: '1', nombre: 'ANA PEREZ' }), fila({ id_interno: '2', nombre: 'LUIS RUIZ', inactivo: true }),
+      fila({ id_interno: '3', nombre: 'SIN PLAZA', plaza: '' }),
+    ])
+    expect(r.creados).toBe(2)
+    expect(r.errores).toEqual([{ id_interno: '3', nombre: 'SIN PLAZA', error: 'La hoja no trae Plaza para este colaborador' }])
+    expect(m.colaboradores.get(m.indice.get('2')!)?.activo).toBe(false)
+  })
 })
 
 describe('asegurarColaborador', () => {
@@ -64,9 +77,15 @@ describe('asegurarColaborador', () => {
     expect(m.colaboradores.size).toBe(1)
   })
 
+  it('crea como inactivo a quien está inactivo si se permite', async () => {
+    const m = almacenMemoria()
+    const { uid } = await asegurarColaborador(m.almacen, fila({ inactivo: true }), { permitirInactivo: true })
+    expect(m.colaboradores.get(uid)?.activo).toBe(false)
+  })
+
   it('rechaza a quien está dado de baja en la hoja', async () => {
     const m = almacenMemoria()
-    await expect(asegurarColaborador(m.almacen, fila({ fecha_baja: '2026-10-01' }))).rejects.toMatchObject({ estado: 409 })
+    await expect(asegurarColaborador(m.almacen, fila({ inactivo: true }))).rejects.toMatchObject({ estado: 409 })
     expect(m.colaboradores.size).toBe(0)
   })
 
@@ -113,7 +132,7 @@ describe('vincularColaborador', () => {
 
   it('marca como inactivo a quien está de baja en la hoja', async () => {
     const m = almacenMemoria({ colaboradores: { a: existente } })
-    await vincularColaborador(m.almacen, 'a', fila({ fecha_baja: '2026-10-01' }))
+    await vincularColaborador(m.almacen, 'a', fila({ inactivo: true }))
     expect(m.colaboradores.get('a')).toMatchObject({ activo: false, id_interno: '12066' })
   })
 

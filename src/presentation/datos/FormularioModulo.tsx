@@ -72,7 +72,7 @@ export function FormularioModulo({ def, registro, alTerminar }: Props) {
 
   function elegirFila(fila: ColaboradorHoja | null) {
     setFilaHoja(fila)
-    if (fila?.fecha_baja) setValores((prev) => ({ ...prev, activo: false }))
+    if (fila?.inactivo) setValores((prev) => ({ ...prev, activo: false }))
   }
 
   async function enviar(e: FormEvent) {

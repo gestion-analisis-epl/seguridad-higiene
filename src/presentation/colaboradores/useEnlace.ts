@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { ColaboradorHoja, FilaEnlace } from '@/domain/colaboradores-hoja'
-import { cargarEnlace, desvincular, vincular } from '@/infrastructure/api/colaboradores'
+import { cargarEnlace, desvincular, importarColaboradores, vincular } from '@/infrastructure/api/colaboradores'
 
 const mensaje = (e: unknown, defecto: string) => (e instanceof Error ? e.message : defecto)
 
@@ -36,5 +36,5 @@ export function useEnlace() {
     try { await desvincular(uid); return null } catch (e) { return mensaje(e, 'No se pudo desvincular') }
   }, [])
 
-  return { filas, hoja, cargando, error, recargar, vincular: vincularFila, desvincular: desvincularFila }
+  return { filas, hoja, cargando, error, recargar, vincular: vincularFila, desvincular: desvincularFila, importar: importarColaboradores }
 }

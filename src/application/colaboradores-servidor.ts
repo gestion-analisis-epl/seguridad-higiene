@@ -55,8 +55,10 @@ const datosDeHoja = (f: ColaboradorHoja) => ({
   fecha_baja: f.fecha_baja ? deTextoIso(f.fecha_baja) : null,
 })
 
-export async function asegurarColaborador(almacen: AlmacenColaboradores, fila: ColaboradorHoja) {
-  if (fila.fecha_baja) throw new ErrorColaborador(409, 'El colaborador está dado de baja en la hoja')
+export async function asegurarColaborador(
+  almacen: AlmacenColaboradores, fila: ColaboradorHoja, { permitirInactivo = false } = {},
+) {
+  if (fila.inactivo && !permitirInactivo) throw new ErrorColaborador(409, 'El colaborador está inactivo en la hoja')
   return almacen.transaccion(async (tx) => {
     const existente = await tx.leerIndice(fila.id_interno)
     if (existente) return { uid: existente, creado: false }
@@ -65,11 +67,27 @@ export async function asegurarColaborador(almacen: AlmacenColaboradores, fila: C
     const uid = tx.nuevoId()
     tx.crearColaborador(uid, {
       ...datosDeHoja(fila), ...valores, nombre: aTitulo(fila.nombre),
-      fecha_ingreso: fila.fecha_ingreso ? deTextoIso(fila.fecha_ingreso) : null, activo: true,
+      fecha_ingreso: fila.fecha_ingreso ? deTextoIso(fila.fecha_ingreso) : null, activo: !fila.inactivo,
     })
     tx.escribirIndice(fila.id_interno, uid)
     return { uid, creado: true }
   })
+}
+
+export interface ResultadoImportacion { creados: number; errores: { id_interno: string; nombre: string; error: string }[] }
+
+// Una transacción por fila para que un fallo no frene al resto
+export async function importarColaboradores(almacen: AlmacenColaboradores, filas: ColaboradorHoja[]): Promise<ResultadoImportacion> {
+  const resultado: ResultadoImportacion = { creados: 0, errores: [] }
+  for (const fila of filas) {
+    try {
+      if ((await asegurarColaborador(almacen, fila, { permitirInactivo: true })).creado) resultado.creados++
+    } catch (e) {
+      const error = e instanceof ErrorColaborador ? e.message : 'No se pudo crear'
+      resultado.errores.push({ id_interno: fila.id_interno, nombre: fila.nombre, error })
+    }
+  }
+  return resultado
 }
 
 export async function vincularColaborador(
@@ -89,7 +107,7 @@ export async function vincularColaborador(
     for (const [id, items] of Array.from(nuevos)) tx.escribirCatalogo(id, items)
     const fecha = fila.fecha_ingreso ? deTextoIso(fila.fecha_ingreso) : null
     tx.actualizarColaborador(uid, {
-      ...datosDeHoja(fila), ...valores, ...(fila.fecha_baja ? { activo: false } : {}),
+      ...datosDeHoja(fila), ...valores, ...(fila.inactivo ? { activo: false } : {}),
       ...(sobrescribir ? { nombre: aTitulo(fila.nombre), fecha_ingreso: fecha } : actual.fecha_ingreso || !fecha ? {} : { fecha_ingreso: fecha }),
     })
     if (previo && previo !== fila.id_interno) tx.borrarIndice(previo)
