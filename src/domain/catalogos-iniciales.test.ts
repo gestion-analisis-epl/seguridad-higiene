@@ -1,19 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { CATALOGOS_INICIALES, PRENDAS, TIPOS_EPP, unirItems } from './catalogos-iniciales'
+import { CATALOGOS_INICIALES, unirItems } from './catalogos-iniciales'
 
 describe('catálogos iniciales', () => {
   it('los catálogos de la empresa empiezan vacíos', () => {
-    for (const id of ['ciudades', 'areas', 'lineas_negocio', 'normas', 'cuadrillas']) {
+    for (const id of ['ciudades', 'areas', 'lineas_negocio', 'normas', 'cuadrillas', 'prendas', 'tipos_epp']) {
       expect(CATALOGOS_INICIALES[id]).toEqual([])
     }
   })
   it('incluye los catálogos genéricos', () => {
     expect(CATALOGOS_INICIALES.tipos_accidente.map((i) => i.valor)).toEqual(['trayecto', 'laboral'])
     expect(CATALOGOS_INICIALES.tipos_equipo.map((i) => i.valor)).toEqual(['extintor', 'botiquin', 'senaletica'])
-  })
-  it('deriva prendas y EPP de las constantes', () => {
-    expect(CATALOGOS_INICIALES.prendas.map((i) => i.valor)).toEqual([...PRENDAS])
-    expect(CATALOGOS_INICIALES.tipos_epp.map((i) => i.valor)).toEqual([...TIPOS_EPP])
   })
   it('une sin duplicar y conserva lo existente', () => {
     const r = unirItems(

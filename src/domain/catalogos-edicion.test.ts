@@ -14,21 +14,22 @@ describe('validarAlta', () => {
     expect(validarAlta(items, '   ').error).toMatch(/etiqueta/i)
     expect(validarAlta(items, '---').error).toMatch(/etiqueta/i)
   })
-  it('rechaza un valor interno que ya existe', () => {
-    expect(validarAlta(items, 'ALFA!').error).toMatch(/ya existe/i)
-  })
-  it('rechaza etiqueta repetida sin importar mayúsculas ni acentos', () => {
-    expect(validarAlta(items, 'arbol  beta').error).toMatch(/etiqueta/i)
+  it('numera el valor interno cuando la etiqueta se repite', () => {
+    expect(validarAlta(items, 'ALFA!')).toEqual({ valor: 'alfa-2', etiqueta: 'ALFA!', error: null })
+    const con2 = [...items, { valor: 'alfa-2', etiqueta: 'Alfa' }]
+    expect(validarAlta(con2, 'alfa').valor).toBe('alfa-3')
   })
 })
 
 describe('validarEdicion y aplicarEdicion', () => {
-  it('acepta conservar la misma etiqueta del propio ítem', () => {
-    expect(validarEdicion(items, 'alfa', ' alfa ')).toBeNull()
+  it('rechaza etiqueta vacía y acepta una repetida', () => {
+    expect(validarEdicion('')).not.toBeNull()
+    expect(validarEdicion('ARBOL beta')).toBeNull()
   })
-  it('rechaza vacía y duplicada de otro ítem', () => {
-    expect(validarEdicion(items, 'alfa', '')).not.toBeNull()
-    expect(validarEdicion(items, 'alfa', 'ARBOL beta')).not.toBeNull()
+  it('guarda región y riesgo recortado, y omite los vacíos', () => {
+    expect(aplicarEdicion(items, 'alfa', 'Alfa', { region: 'cabeza', riesgo: '  Golpe  ' })[0])
+      .toEqual({ valor: 'alfa', etiqueta: 'Alfa', region: 'cabeza', riesgo: 'Golpe' })
+    expect(aplicarEdicion(items, 'alfa', 'Alfa', { riesgo: '  ' })[0]).toEqual({ valor: 'alfa', etiqueta: 'Alfa' })
   })
   it('cambia solo la etiqueta y nunca el valor', () => {
     expect(aplicarEdicion(items, 'alfa', ' Alfa 2 ')).toEqual([

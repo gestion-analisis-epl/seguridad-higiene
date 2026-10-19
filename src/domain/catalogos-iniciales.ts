@@ -1,23 +1,17 @@
-export interface ItemCatalogo { valor: string; etiqueta: string }
+export interface ItemCatalogo { valor: string; etiqueta: string; region?: string; riesgo?: string; nombre_corto?: string }
 
-export const PRENDAS = ['botas', 'playera', 'camisola', 'pantalon'] as const
-export const TIPOS_EPP = [
-  'guantes', 'lentes', 'casco',
-  'linea-vida-doble-punto', 'arnes-cuerpo-completo', 'linea-posicionamiento',
-] as const
+export const CATALOGO_CON_REGION = 'tipos_epp'
 
-const ETIQUETAS: Record<string, string> = {
-  pantalon: 'Pantalón',
-  'linea-vida-doble-punto': 'Línea de vida de doble punto',
-  'arnes-cuerpo-completo': 'Arnés de cuerpo completo',
-  'linea-posicionamiento': 'Línea de posicionamiento',
-}
-
-const desdeValores = (valores: readonly string[]): ItemCatalogo[] =>
-  valores.map((valor) => ({
-    valor,
-    etiqueta: ETIQUETAS[valor] ?? valor.charAt(0).toUpperCase() + valor.slice(1),
-  }))
+export const REGIONES_ANATOMICAS: ItemCatalogo[] = [
+  { valor: 'cabeza', etiqueta: 'Cabeza' },
+  { valor: 'ojos-y-cara', etiqueta: 'Ojos y cara' },
+  { valor: 'oidos', etiqueta: 'Oídos' },
+  { valor: 'aparato-respiratorio', etiqueta: 'Aparato respiratorio' },
+  { valor: 'extremidades-superiores', etiqueta: 'Extremidades superiores' },
+  { valor: 'tronco', etiqueta: 'Tronco' },
+  { valor: 'extremidades-inferiores', etiqueta: 'Extremidades inferiores' },
+  { valor: 'otros', etiqueta: 'Otros' },
+]
 
 // Los catálogos de la empresa llegan por la migración o desde /admin/catalogos
 export const CATALOGOS_INICIALES: Record<string, ItemCatalogo[]> = {
@@ -25,8 +19,8 @@ export const CATALOGOS_INICIALES: Record<string, ItemCatalogo[]> = {
   areas: [],
   lineas_negocio: [],
   normas: [],
-  tipos_epp: desdeValores(TIPOS_EPP),
-  prendas: desdeValores(PRENDAS),
+  tipos_epp: [],
+  prendas: [],
   tipos_accidente: [
     { valor: 'trayecto', etiqueta: 'Trayecto' },
     { valor: 'laboral', etiqueta: 'Laboral' },

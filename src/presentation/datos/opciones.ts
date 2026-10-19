@@ -4,9 +4,13 @@ import type { Registro } from '@/infrastructure/firestore/repositorio'
 
 export type CatalogosPorId = Record<string, Opcion[]>
 
-export function itemsDeCatalogo(datos: Record<string, unknown> | undefined): Opcion[] {
-  const items = (datos?.items ?? []) as { valor: string; etiqueta: string }[]
-  return items.map(({ valor, etiqueta }) => ({ valor, etiqueta }))
+// completo=true devuelve la etiqueta tal cual (administración); si no, se muestra el nombre corto cuando lo hay
+export function itemsDeCatalogo(datos: Record<string, unknown> | undefined, completo = false): Opcion[] {
+  const items = (datos?.items ?? []) as Opcion[]
+  return items.map(({ valor, etiqueta, region, riesgo, nombre_corto }) => ({
+    valor, etiqueta: completo ? etiqueta : nombre_corto || etiqueta,
+    ...(region ? { region } : {}), ...(riesgo ? { riesgo } : {}), ...(nombre_corto ? { nombre_corto } : {}),
+  }))
 }
 
 // 'mostrar' resuelve nombres de cualquier colaborador; 'elegir' ofrece solo activos (y el ya seleccionado)

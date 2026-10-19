@@ -7,7 +7,7 @@ import type { Registro } from '@/infrastructure/firestore/repositorio'
 import { itemsDeCatalogo } from './opciones'
 import { useLectura } from './useLectura'
 
-export function useCatalogo(id: string | null): Opcion[] {
+export function useCatalogo(id: string | null, completo = false): Opcion[] {
   const { dato } = useLectura(id === null ? null : claveDoc('catalogos', id))
-  return useMemo(() => itemsDeCatalogo((dato as Registro | null | undefined) ?? undefined), [dato])
+  return useMemo(() => itemsDeCatalogo((dato as Registro | null | undefined) ?? undefined, completo), [dato, completo])
 }
