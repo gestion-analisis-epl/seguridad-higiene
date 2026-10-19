@@ -91,18 +91,17 @@ describe('plantillas del repositorio', () => {
     expect(json.firestore[0].database).toBe('base-app')
   })
 
-  it('firestore.rules.template renderiza sin marcadores y con el dominio como regex', () => {
+  it('firestore.rules.template renderiza sin marcadores y con la lista de dominios', () => {
     const reglas = renderizarPlantilla(readFileSync('firestore.rules.template', 'utf8'), valida)
-    expect(reglas).toContain("matches('.*@ejemplo[.]test')")
+    expect(reglas).toContain('dominiosPermitidos()')
     expect(reglas).not.toContain('{{')
   })
 })
 
 describe('reglas de storage', () => {
-  it('renderiza sin marcadores, con la base con nombre y el dominio', () => {
+  it('renderiza sin marcadores y sin leer Firestore (no requiere IAM)', () => {
     const reglas = renderizarPlantilla(readFileSync('storage.rules.template', 'utf8'), valida)
-    expect(reglas).toContain('/databases/base-app/documents/usuarios/')
-    expect(reglas).toContain("matches('.*@ejemplo[.]test')")
+    expect(reglas).not.toContain('firestore.')
     expect(reglas).not.toContain('{{')
   })
 

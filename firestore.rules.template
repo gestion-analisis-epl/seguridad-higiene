@@ -2,10 +2,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Dominios de correo autorizados; agregar aquí los que hagan falta.
+    function dominiosPermitidos() { return ['grupoepl.com.mx']; }
+
     function correoPermitido() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email.matches('.*@{{DOMINIO_REGEX}}');
+        && request.auth.token.email.split('@')[1] in dominiosPermitidos();
     }
 
     function tieneRegistro() {
@@ -83,18 +86,49 @@ service cloud.firestore {
       allow delete: if puedeCapturar();
     }
 
+    // Los colaboradores los crea y enlaza el servidor desde la hoja; el cliente solo ajusta cuadrilla y activo.
+    match /colaboradores/{id} {
+      allow read: if puedeLeer();
+      allow update: if puedeCapturar()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['cuadrilla', 'activo', 'actualizado_por', 'actualizado_en']);
+      allow create, delete: if false;
+    }
+
+    // Las entregas llegan de la hoja de Sheets y solo las escribe el servidor.
+    match /entregas_uniforme/{id} {
+      allow read: if puedeLeer();
+      allow write: if false;
+    }
+
+    match /entregas_epp/{id} {
+      allow read: if puedeLeer();
+      allow write: if false;
+    }
+
+    // Relación de cada artículo de la hoja con su catálogo; lo edita un administrador.
+    match /articulos_hoja/{id} {
+      allow read: if puedeLeer();
+      allow write: if esAdmin();
+    }
+
+    // Uniforme y EPP obligatorios por empresa, puesto y ciudad; los edita un administrador.
+    match /reglas_dotacion/{id} {
+      allow read: if puedeLeer();
+      allow write: if esAdmin();
+    }
+
     function esOperativa(c) {
       return c in [
-        'colaboradores', 'capacitaciones', 'entregas_uniforme', 'entregas_epp',
+        'capacitaciones',
         'accidentes', 'oficinas_equipo', 'vehiculos', 'indicadores_mensuales'
       ];
     }
 
-    // Los colaboradores se desactivan con activo: false, nunca se borran.
     match /{coleccion}/{id} {
       allow read: if esOperativa(coleccion) && puedeLeer();
       allow create, update: if esOperativa(coleccion) && puedeCapturar();
-      allow delete: if coleccion != 'colaboradores' && esOperativa(coleccion) && esAdmin();
+      allow delete: if esOperativa(coleccion) && esAdmin();
     }
   }
 }

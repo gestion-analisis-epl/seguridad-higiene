@@ -10,6 +10,10 @@ let env: RulesTestEnvironment
 
 const VALORES = { NEXT_PUBLIC_FIRESTORE_DATABASE: 'base-prueba', NEXT_PUBLIC_DOMINIO_PERMITIDO: 'ejemplo.test' }
 
+// Las plantillas llevan el dominio real: las pruebas lo sustituyen por uno ficticio.
+const conDominioDePrueba = (texto: string) =>
+  texto.replace(/(dominiosPermitidos\(\) \{ return )\[[^\]]*\]/, "$1['ejemplo.test']")
+
 const como = (uid: string, email = `${uid}@ejemplo.test`) =>
   env.authenticatedContext(uid, { email, email_verified: true }).firestore()
 
@@ -17,7 +21,7 @@ beforeAll(async () => {
   env = await initializeTestEnvironment({
     projectId: 'demo-seguridad-higiene',
     firestore: {
-      rules: renderizarPlantilla(readFileSync('firestore.rules.template', 'utf8'), VALORES),
+      rules: renderizarPlantilla(conDominioDePrueba(readFileSync('firestore.rules.template', 'utf8')), VALORES),
       host: '127.0.0.1', port: 8080,
     },
   })
@@ -63,10 +67,10 @@ describe('escritura de datos', () => {
     await assertFails(setDoc(doc(como('cons1'), 'colaboradores/c2'), { nombre: 'X' }))
     await assertFails(updateDoc(doc(como('cons1'), 'colaboradores/c1'), { nombre: 'X' }))
   })
-  it('capturista crea y edita, pero no borra', async () => {
+  it('capturista crea y edita registros operativos, pero no borra', async () => {
     await assertSucceeds(setDoc(doc(como('capt1'), 'accidentes/a1'), { ciudad: 'ciudad-a' }))
-    await assertSucceeds(updateDoc(doc(como('capt1'), 'colaboradores/c1'), { nombre: 'Y' }))
-    await assertFails(deleteDoc(doc(como('capt1'), 'colaboradores/c1')))
+    await assertSucceeds(updateDoc(doc(como('capt1'), 'accidentes/a0'), { ciudad: 'ciudad-b' }))
+    await assertFails(deleteDoc(doc(como('capt1'), 'accidentes/a0')))
   })
   it('admin borra registros operativos', async () => {
     await assertSucceeds(deleteDoc(doc(como('admin1'), 'accidentes/a0')))
@@ -78,6 +82,57 @@ describe('escritura de datos', () => {
     await assertFails(getDoc(doc(como('admin1'), 'otra_coleccion/x1')))
     await assertFails(setDoc(doc(como('admin1'), 'otra_coleccion/x2'), { valor: 2 }))
     await assertFails(deleteDoc(doc(como('admin1'), 'otra_coleccion/x1')))
+  })
+})
+
+describe('colaboradores', () => {
+  it('nadie crea colaboradores desde el cliente, ni admin', async () => {
+    await assertFails(setDoc(doc(como('capt1'), 'colaboradores/nuevo'), { nombre: 'Ana' }))
+    await assertFails(setDoc(doc(como('admin1'), 'colaboradores/nuevo'), { nombre: 'Ana' }))
+  })
+  it('capturista y admin cambian cuadrilla y activo', async () => {
+    await assertSucceeds(updateDoc(doc(como('capt1'), 'colaboradores/c1'), { cuadrilla: 'q1', activo: false }))
+    await assertSucceeds(updateDoc(doc(como('admin1'), 'colaboradores/c1'), { activo: true }))
+  })
+  it('un guardado sin cambios en los campos de la hoja es válido', async () => {
+    await assertSucceeds(updateDoc(doc(como('capt1'), 'colaboradores/c1'), { nombre: 'Prueba', cuadrilla: 'q1' }))
+  })
+  it('nadie cambia nombre, puesto ni id_interno desde el cliente', async () => {
+    const db = como('admin1')
+    await assertFails(updateDoc(doc(db, 'colaboradores/c1'), { nombre: 'Otro' }))
+    await assertFails(updateDoc(doc(db, 'colaboradores/c1'), { puesto: 'SOLDADOR A' }))
+    await assertFails(updateDoc(doc(db, 'colaboradores/c1'), { id_interno: '99' }))
+  })
+  it('consulta no modifica colaboradores', async () => {
+    await assertFails(updateDoc(doc(como('cons1'), 'colaboradores/c1'), { cuadrilla: 'q1' }))
+  })
+  it('el índice de ids no es accesible desde el cliente', async () => {
+    await assertFails(getDoc(doc(como('admin1'), 'indice_id_interno/1')))
+    await assertFails(setDoc(doc(como('admin1'), 'indice_id_interno/1'), { uid: 'c1' }))
+  })
+})
+
+describe('entregas y artículos de la hoja', () => {
+  it('las entregas se leen pero nadie las escribe desde el cliente, ni admin', async () => {
+    for (const col of ['entregas_uniforme', 'entregas_epp']) {
+      await assertSucceeds(getDoc(doc(como('cons1'), `${col}/e1`)))
+      await assertFails(setDoc(doc(como('capt1'), `${col}/e1`), { prenda: 'botas' }))
+      await assertFails(setDoc(doc(como('admin1'), `${col}/e1`), { prenda: 'botas' }))
+      await assertFails(deleteDoc(doc(como('admin1'), `${col}/e1`)))
+    }
+  })
+  it('el mapeo de artículos lo edita solo un administrador', async () => {
+    await assertSucceeds(getDoc(doc(como('cons1'), 'articulos_hoja/gorro')))
+    await assertSucceeds(setDoc(doc(como('admin1'), 'articulos_hoja/gorro'), { destino: 'uniforme', valor: 'gorro' }))
+    await assertFails(setDoc(doc(como('capt1'), 'articulos_hoja/gorro'), { destino: 'epp', valor: 'casco' }))
+    await assertFails(setDoc(doc(como('cons1'), 'articulos_hoja/gorro'), { destino: 'epp', valor: 'casco' }))
+  })
+  it('las reglas de dotación se leen y solo un administrador las edita', async () => {
+    await assertSucceeds(getDoc(doc(como('cons1'), 'reglas_dotacion/r1')))
+    await assertSucceeds(setDoc(doc(como('admin1'), 'reglas_dotacion/r1'), { linea_negocio: 'linea-x', prendas: [], tipos_epp: [] }))
+    await assertFails(setDoc(doc(como('capt1'), 'reglas_dotacion/r1'), { prendas: [] }))
+    await assertFails(setDoc(doc(como('cons1'), 'reglas_dotacion/r1'), { prendas: [] }))
+    await assertFails(deleteDoc(doc(como('capt1'), 'reglas_dotacion/r1')))
   })
 })
 

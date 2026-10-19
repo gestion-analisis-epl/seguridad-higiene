@@ -2,25 +2,18 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
+    // Dominios de correo autorizados; agregar aquí los que hagan falta.
+    function dominiosPermitidos() { return ['grupoepl.com.mx']; }
+
     function correoPermitido() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email.matches('.*@{{DOMINIO_REGEX}}');
+        && request.auth.token.email.split('@')[1] in dominiosPermitidos();
     }
 
-    function rutaUsuario() {
-      return /databases/{{BASE_DATOS}}/documents/usuarios/$(request.auth.uid);
-    }
-
-    function activoConRol(roles) {
-      return correoPermitido()
-        && firestore.exists(rutaUsuario())
-        && firestore.get(rutaUsuario()).data.activo == true
-        && firestore.get(rutaUsuario()).data.rol in roles;
-    }
-
-    function puedeLeer() { return activoConRol(['admin', 'capturista', 'consulta']); }
-    function puedeCapturar() { return activoConRol(['admin', 'capturista']); }
+    // Sin leer Firestore (no requiere permisos IAM): el rol se exige en la app y en las reglas de Firestore.
+    function puedeLeer() { return correoPermitido(); }
+    function puedeCapturar() { return correoPermitido(); }
 
     function tipoPermitido() {
       return request.resource.contentType in [
