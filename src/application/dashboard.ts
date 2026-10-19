@@ -1,4 +1,4 @@
-import { PRENDAS, TIPOS_EPP } from '@/domain/catalogos-iniciales'
+import { indexarReglas, type ReglaDotacion } from '@/domain/reglas-dotacion'
 import type {
   Accidente, Capacitacion, Colaborador, DatosOperativos, ItemBotiquin, Poblacion,
 } from '@/domain/entidades'
@@ -26,16 +26,32 @@ function capacitacionVigente(id: string, caps: Capacitacion[], hoy: Date): boole
   return caps.some((c) => c.colaborador_id === id && c.cumple && estadoVencimiento(c.vencimiento, hoy) !== 'vencido')
 }
 
-// Listas exigidas para uniforme y EPP completos; sin valores rige la constante del código.
-export interface Requisitos { prendas: string[]; tiposEpp: string[] }
-
-function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date, req?: Requisitos) {
-  const prendas: readonly string[] = req?.prendas.length ? req.prendas : PRENDAS
-  const tiposEpp: readonly string[] = req?.tiposEpp.length ? req.tiposEpp : TIPOS_EPP
+// Quien no tiene regla no se evalúa en uniforme ni EPP y se cuenta aparte.
+function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date, regla: ReglaDotacion | null) {
   return {
     capacitacionOk: capacitacionVigente(c.id, d.capacitaciones, hoy),
-    prendasFaltantes: prendas.filter((p) => !d.entregasUniforme.some((e) => e.colaborador_id === c.id && e.prenda === p)),
-    eppFaltantes: tiposEpp.filter((t) => !d.entregasEpp.some((e) => e.colaborador_id === c.id && e.tipo === t && e.entregado)),
+    sinRegla: regla === null,
+    prendasFaltantes: (regla?.prendas ?? []).filter((p) => !d.entregasUniforme.some((e) => e.colaborador_id === c.id && e.prenda === p && e.entregado !== false)),
+    eppFaltantes: (regla?.tipos_epp ?? []).filter((t) => !d.entregasEpp.some((e) => e.colaborador_id === c.id && e.tipo === t && e.entregado)),
+  }
+}
+
+type Evaluado = ReturnType<typeof evaluar>
+
+function evaluarActivos(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[]) {
+  const resolver = indexarReglas(reglas)
+  return d.colaboradores.filter(esActivo).map((c) => ({ c, e: evaluar(c, d, hoy, resolver(c)) }))
+}
+
+const fraccion = (n: number, total: number) => (total === 0 ? null : n / total)
+
+// Uniforme y EPP se miden solo sobre quienes tienen regla; null si nadie la tiene.
+function cumplimiento(evaluados: Evaluado[]) {
+  const conRegla = evaluados.filter((e) => !e.sinRegla)
+  return {
+    pctUniforme: fraccion(conRegla.filter((e) => e.prendasFaltantes.length === 0).length, conRegla.length),
+    pctEpp: fraccion(conRegla.filter((e) => e.eppFaltantes.length === 0).length, conRegla.length),
+    sinRegla: evaluados.length - conRegla.length,
   }
 }
 
@@ -43,22 +59,21 @@ export interface ResumenCiudad {
   ciudad: string
   activos: number
   pctCapacitacion: number
-  pctUniforme: number
-  pctEpp: number
+  pctUniforme: number | null
+  pctEpp: number | null
+  sinRegla: number
 }
 
-export function resumenPorCiudad(d: DatosOperativos, hoy: Date, req?: Requisitos): ResumenCiudad[] {
-  const ciudades = Array.from(new Set(d.colaboradores.filter(esActivo).map((c) => c.ciudad)))
+export function resumenPorCiudad(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): ResumenCiudad[] {
+  const evaluados = evaluarActivos(d, hoy, reglas)
+  const ciudades = Array.from(new Set(evaluados.map(({ c }) => c.ciudad)))
   return ciudades.sort().map((ciudad) => {
-    const activos = d.colaboradores.filter((c) => esActivo(c) && c.ciudad === ciudad)
-    const evaluados = activos.map((c) => evaluar(c, d, hoy, req))
-    const pct = (n: number) => n / activos.length
+    const deCiudad = evaluados.filter(({ c }) => c.ciudad === ciudad).map(({ e }) => e)
     return {
       ciudad,
-      activos: activos.length,
-      pctCapacitacion: pct(evaluados.filter((e) => e.capacitacionOk).length),
-      pctUniforme: pct(evaluados.filter((e) => e.prendasFaltantes.length === 0).length),
-      pctEpp: pct(evaluados.filter((e) => e.eppFaltantes.length === 0).length),
+      activos: deCiudad.length,
+      pctCapacitacion: deCiudad.filter((e) => e.capacitacionOk).length / deCiudad.length,
+      ...cumplimiento(deCiudad),
     }
   })
 }
@@ -66,22 +81,21 @@ export function resumenPorCiudad(d: DatosOperativos, hoy: Date, req?: Requisitos
 export interface ResumenGlobal {
   activos: number
   pctCapacitacion: number
-  pctUniforme: number
-  pctEpp: number
+  pctUniforme: number | null
+  pctEpp: number | null
+  sinRegla: number
   vencidos: number
   porVencer: number
 }
 
 // Porcentajes como suma de numeradores sobre suma de activos; d ya viene filtrado por ciudad.
-export function resumenGlobal(d: DatosOperativos, hoy: Date, req?: Requisitos): ResumenGlobal {
-  const evaluados = d.colaboradores.filter(esActivo).map((c) => evaluar(c, d, hoy, req))
-  const pct = (n: number) => (evaluados.length === 0 ? 0 : n / evaluados.length)
+export function resumenGlobal(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): ResumenGlobal {
+  const evaluados = evaluarActivos(d, hoy, reglas).map(({ e }) => e)
   const alertas = alertasVencimiento(d, hoy)
   return {
     activos: evaluados.length,
-    pctCapacitacion: pct(evaluados.filter((e) => e.capacitacionOk).length),
-    pctUniforme: pct(evaluados.filter((e) => e.prendasFaltantes.length === 0).length),
-    pctEpp: pct(evaluados.filter((e) => e.eppFaltantes.length === 0).length),
+    pctCapacitacion: evaluados.length === 0 ? 0 : evaluados.filter((e) => e.capacitacionOk).length / evaluados.length,
+    ...cumplimiento(evaluados),
     vencidos: alertas.filter((a) => a.estado === 'vencido').length,
     porVencer: alertas.filter((a) => a.estado === 'por_vencer').length,
   }
@@ -90,23 +104,21 @@ export function resumenGlobal(d: DatosOperativos, hoy: Date, req?: Requisitos): 
 export interface Pendiente {
   colaborador: Colaborador
   capacitacionPendiente: boolean
+  sinRegla: boolean
   prendasFaltantes: string[]
   eppFaltantes: string[]
 }
 
-export function pendientesPorColaborador(d: DatosOperativos, hoy: Date, req?: Requisitos): Pendiente[] {
-  return d.colaboradores
-    .filter(esActivo)
-    .map((colaborador) => {
-      const e = evaluar(colaborador, d, hoy, req)
-      return {
-        colaborador,
-        capacitacionPendiente: !e.capacitacionOk,
-        prendasFaltantes: [...e.prendasFaltantes],
-        eppFaltantes: [...e.eppFaltantes],
-      }
-    })
-    .filter((p) => p.capacitacionPendiente || p.prendasFaltantes.length > 0 || p.eppFaltantes.length > 0)
+export function pendientesPorColaborador(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): Pendiente[] {
+  return evaluarActivos(d, hoy, reglas)
+    .map(({ c, e }) => ({
+      colaborador: c,
+      capacitacionPendiente: !e.capacitacionOk,
+      sinRegla: e.sinRegla,
+      prendasFaltantes: [...e.prendasFaltantes],
+      eppFaltantes: [...e.eppFaltantes],
+    }))
+    .filter((p) => p.capacitacionPendiente || p.sinRegla || p.prendasFaltantes.length > 0 || p.eppFaltantes.length > 0)
 }
 
 export type OrigenAlerta =

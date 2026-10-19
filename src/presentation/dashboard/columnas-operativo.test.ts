@@ -21,7 +21,7 @@ describe('columnas operativas', () => {
   it('pendientes: estado de capacitación y guion cuando no falta nada', () => {
     const p: Pendiente = {
       colaborador: { id: 'c1', nombre: 'Ana', ciudad: 'ciudad-a', linea_negocio: 'linea-x', area: 'Área X' },
-      capacitacionPendiente: false, prendasFaltantes: [], eppFaltantes: ['casco', 'guantes'],
+      capacitacionPendiente: false, sinRegla: false, prendasFaltantes: [], eppFaltantes: ['casco', 'guantes'],
     }
     const v = (id: string) => columnasPendientes(etiqueta).find((c) => c.id === id)!.valor(p)
     expect(v('capacitacion')).toBe('Vigente')
@@ -30,11 +30,27 @@ describe('columnas operativas', () => {
     expect(v('area')).toBe('Área X')
   })
   it('por ciudad: porcentajes enteros', () => {
-    const r: ResumenCiudad = { ciudad: 'ciudad-a', activos: 3, pctCapacitacion: 2 / 3, pctUniforme: 1, pctEpp: 0 }
+    const r: ResumenCiudad = { ciudad: 'ciudad-a', activos: 3, pctCapacitacion: 2 / 3, pctUniforme: 1, pctEpp: 0, sinRegla: 0 }
     const v = (id: string) => columnasPorCiudad(etiqueta).find((c) => c.id === id)!.valor(r)
     expect(v('cap')).toBe(67)
     expect(v('epp')).toBe(0)
     expect(v('ciudad')).toBe('Ciudad A')
     expect(porcentaje(0.5)).toBe(50)
+  })
+  it('por ciudad: sin reglas el porcentaje queda vacío y se cuentan los colaboradores sin regla', () => {
+    const r: ResumenCiudad = { ciudad: 'ciudad-a', activos: 3, pctCapacitacion: 1, pctUniforme: null, pctEpp: null, sinRegla: 3 }
+    const col = (id: string) => columnasPorCiudad(etiqueta).find((c) => c.id === id)!
+    expect(col('uniforme').valor(r)).toBeNull()
+    expect(col('uniforme').celda?.(r)).toBe('—')
+    expect(col('sinregla').valor(r)).toBe(3)
+  })
+  it('pendientes: indica si el colaborador tiene regla', () => {
+    const base: Pendiente = {
+      colaborador: { id: 'c1', nombre: 'Ana', ciudad: 'ciudad-a', linea_negocio: 'linea-x' },
+      capacitacionPendiente: false, sinRegla: true, prendasFaltantes: [], eppFaltantes: [],
+    }
+    const regla = columnasPendientes(etiqueta).find((c) => c.id === 'regla')!
+    expect(regla.valor(base)).toBe('Sin regla')
+    expect(regla.valor({ ...base, sinRegla: false })).toBe('Definida')
   })
 })

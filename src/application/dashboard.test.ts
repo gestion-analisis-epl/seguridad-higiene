@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { DatosOperativos } from '@/domain/entidades'
 import { fechaCalendario } from '@/domain/fechas'
 import { CONFIG_INDICADORES_INICIAL as cfg } from '@/domain/indicadores'
-import { PRENDAS, TIPOS_EPP } from '@/domain/catalogos-iniciales'
+import type { ReglaDotacion } from '@/domain/reglas-dotacion'
 import {
   acumuladoAnual, alertasVencimiento, comparativoCiudades, pendientesPorColaborador,
   resumenGlobal, resumenPorCiudad, serieMensual,
@@ -11,11 +11,17 @@ import { filtrarPorCiudad, filtrarPorCiudades } from './dashboard-filtro'
 
 const hoy = new Date(2026, 8, 30)
 
+const PRENDAS = ['botas', 'playera', 'camisola', 'pantalon']
+const TIPOS_EPP = ['guantes', 'lentes', 'casco', 'linea-vida-doble-punto', 'arnes-cuerpo-completo', 'linea-posicionamiento']
+const reglas: ReglaDotacion[] = [{
+  id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, prendas: PRENDAS, tipos_epp: TIPOS_EPP,
+}]
+
 const datos: DatosOperativos = {
   colaboradores: [
-    { id: 'c1', nombre: 'Ana', ciudad: 'ciudad-a', linea_negocio: 'linea-x', activo: true },
-    { id: 'c2', nombre: 'Beto', ciudad: 'ciudad-a', linea_negocio: 'linea-x', activo: true },
-    { id: 'c3', nombre: 'Cami', ciudad: 'ciudad-b', linea_negocio: 'linea-x', activo: false },
+    { id: 'c1', nombre: 'Ana', ciudad: 'ciudad-a', linea_negocio: 'linea-x', puesto: 'Guardia', activo: true },
+    { id: 'c2', nombre: 'Beto', ciudad: 'ciudad-a', linea_negocio: 'linea-x', puesto: 'Guardia', activo: true },
+    { id: 'c3', nombre: 'Cami', ciudad: 'ciudad-b', linea_negocio: 'linea-x', puesto: 'Guardia', activo: false },
   ],
   capacitaciones: [
     { colaborador_id: 'c1', norma: 'norma-a', ciudad: 'ciudad-a', cumple: true, fecha: fechaCalendario(2026, 5, 4), vencimiento: fechaCalendario(2027, 5, 4) },
@@ -29,25 +35,31 @@ const datos: DatosOperativos = {
 
 describe('resumenPorCiudad', () => {
   it('calcula activos y porcentajes solo con colaboradores activos', () => {
-    const ciudadA = resumenPorCiudad(datos, hoy).find((r) => r.ciudad === 'ciudad-a')!
+    const ciudadA = resumenPorCiudad(datos, hoy, reglas).find((r) => r.ciudad === 'ciudad-a')!
     expect(ciudadA.activos).toBe(2)
     expect(ciudadA.pctCapacitacion).toBeCloseTo(0.5)
     expect(ciudadA.pctUniforme).toBeCloseTo(0.5)
     expect(ciudadA.pctEpp).toBeCloseTo(0.5)
   })
   it('omite ciudades sin colaboradores activos', () => {
-    expect(resumenPorCiudad(datos, hoy).some((r) => r.ciudad === 'ciudad-b')).toBe(false)
+    expect(resumenPorCiudad(datos, hoy, reglas).some((r) => r.ciudad === 'ciudad-b')).toBe(false)
   })
 })
 
 describe('pendientesPorColaborador', () => {
   it('lista a quien tiene pendientes', () => {
-    const p = pendientesPorColaborador(datos, hoy)
+    const p = pendientesPorColaborador(datos, hoy, reglas)
     expect(p).toHaveLength(1)
     expect(p[0].colaborador.id).toBe('c2')
     expect(p[0].capacitacionPendiente).toBe(true)
     expect(p[0].prendasFaltantes).toEqual([...PRENDAS])
     expect(p[0].eppFaltantes).toEqual([...TIPOS_EPP])
+  })
+
+  it('una prenda no entregada sigue como faltante', () => {
+    const d = { ...datos, entregasUniforme: PRENDAS.map((prenda, i) => ({ colaborador_id: 'c1', prenda, entregado: i !== 0 })) }
+    const p = pendientesPorColaborador(d, hoy, reglas).find((x) => x.colaborador.id === 'c1')
+    expect(p?.prendasFaltantes).toEqual([PRENDAS[0]])
   })
 })
 
@@ -253,7 +265,7 @@ describe('filtrarPorCiudades', () => {
 
 describe('resumenGlobal', () => {
   it('suma numeradores sobre activos y cuenta alertas', () => {
-    const r = resumenGlobal(datos, hoy)
+    const r = resumenGlobal(datos, hoy, reglas)
     expect(r.activos).toBe(2)
     expect(r.pctCapacitacion).toBeCloseTo(0.5)
     expect(r.pctUniforme).toBeCloseTo(0.5)
@@ -261,9 +273,9 @@ describe('resumenGlobal', () => {
     expect(r.vencidos).toBe(2)
     expect(r.porVencer).toBe(1)
   })
-  it('sin activos devuelve ceros', () => {
-    expect(resumenGlobal(filtrarPorCiudades(datos, ['ciudad-b']), hoy))
-      .toMatchObject({ activos: 0, pctCapacitacion: 0, pctUniforme: 0, pctEpp: 0 })
+  it('sin activos los porcentajes de dotación quedan vacíos', () => {
+    expect(resumenGlobal(filtrarPorCiudades(datos, ['ciudad-b']), hoy, reglas))
+      .toMatchObject({ activos: 0, pctCapacitacion: 0, pctUniforme: null, pctEpp: null, sinRegla: 0 })
   })
 })
 
@@ -283,26 +295,43 @@ describe('series con varias ciudades', () => {
   })
 })
 
-describe('requisitos desde catálogos', () => {
-  const requisitos = { prendas: ['gorra'], tiposEpp: ['mascarilla', 'guantes'] }
+describe('reglas de dotación', () => {
+  const otras: ReglaDotacion[] = [
+    { id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, prendas: ['gorra'], tipos_epp: ['mascarilla', 'guantes'] },
+  ]
   const extra: DatosOperativos = {
     ...datos,
     entregasUniforme: [{ colaborador_id: 'c1', prenda: 'gorra' }, { colaborador_id: 'c2', prenda: 'botas' }],
     entregasEpp: [{ colaborador_id: 'c1', tipo: 'mascarilla', entregado: true, vencimiento: null }],
   }
-  it('pendientes usa las listas recibidas', () => {
-    const p = pendientesPorColaborador(extra, hoy, requisitos)
+  it('pendientes evalúa contra la regla de cada colaborador', () => {
+    const p = pendientesPorColaborador(extra, hoy, otras)
     expect(p.find((x) => x.colaborador.id === 'c1')?.prendasFaltantes).toEqual([])
     expect(p.find((x) => x.colaborador.id === 'c1')?.eppFaltantes).toEqual(['guantes'])
     expect(p.find((x) => x.colaborador.id === 'c2')?.prendasFaltantes).toEqual(['gorra'])
   })
-  it('resumen global y por ciudad usan las listas recibidas', () => {
-    expect(resumenGlobal(extra, hoy, requisitos).pctUniforme).toBeCloseTo(0.5)
-    expect(resumenGlobal(extra, hoy, requisitos).pctEpp).toBe(0)
-    expect(resumenPorCiudad(extra, hoy, requisitos)[0].pctUniforme).toBeCloseTo(0.5)
+  it('resumen global y por ciudad usan la regla', () => {
+    expect(resumenGlobal(extra, hoy, otras).pctUniforme).toBeCloseTo(0.5)
+    expect(resumenGlobal(extra, hoy, otras).pctEpp).toBe(0)
+    expect(resumenPorCiudad(extra, hoy, otras)[0].pctUniforme).toBeCloseTo(0.5)
   })
-  it('sin listas o con listas vacías usa las constantes', () => {
-    expect(pendientesPorColaborador(datos, hoy, { prendas: [], tiposEpp: [] })).toEqual(pendientesPorColaborador(datos, hoy))
-    expect(resumenGlobal(datos, hoy, undefined).pctUniforme).toBeCloseTo(0.5)
+  it('quien no tiene regla no cuenta en uniforme ni EPP y se cuenta aparte', () => {
+    const d: DatosOperativos = {
+      ...extra,
+      colaboradores: [...extra.colaboradores, { id: 'c8', nombre: 'Edu', ciudad: 'ciudad-a', linea_negocio: 'linea-y', puesto: 'Chofer', activo: true }],
+    }
+    const g = resumenGlobal(d, hoy, otras)
+    expect(g).toMatchObject({ activos: 3, sinRegla: 1 })
+    expect(g.pctUniforme).toBeCloseTo(0.5)
+    expect(resumenPorCiudad(d, hoy, otras)[0]).toMatchObject({ activos: 3, sinRegla: 1 })
+    expect(pendientesPorColaborador(d, hoy, otras).find((x) => x.colaborador.id === 'c8'))
+      .toMatchObject({ sinRegla: true, prendasFaltantes: [], eppFaltantes: [] })
+  })
+  it('una regla vacía cuenta como cumplido', () => {
+    const vacia = [{ ...otras[0], prendas: [], tipos_epp: [] }]
+    expect(resumenGlobal(datos, hoy, vacia)).toMatchObject({ pctUniforme: 1, pctEpp: 1, sinRegla: 0 })
+  })
+  it('sin reglas todos quedan sin regla y los porcentajes son null', () => {
+    expect(resumenGlobal(datos, hoy)).toMatchObject({ sinRegla: 2, pctUniforme: null, pctEpp: null })
   })
 })

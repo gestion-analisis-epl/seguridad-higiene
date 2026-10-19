@@ -28,6 +28,7 @@ export function columnasPendientes(etiqueta: Etiqueta): ColumnaTabla<Pendiente>[
     { id: 'ciudad', encabezado: 'Ciudad', tipo: 'categoria', valor: (p) => etiqueta(p.colaborador.ciudad) },
     { id: 'area', encabezado: 'Área', tipo: 'categoria', valor: (p) => p.colaborador.area },
     { id: 'cuadrilla', encabezado: 'Cuadrilla', tipo: 'categoria', valor: (p) => p.colaborador.cuadrilla },
+    { id: 'regla', encabezado: 'Regla', tipo: 'categoria', valor: (p) => (p.sinRegla ? 'Sin regla' : 'Definida'), anchoInicial: 130 },
     {
       id: 'capacitacion', encabezado: 'Capacitación', tipo: 'categoria', anchoInicial: 140,
       valor: (p) => (p.capacitacionPendiente ? 'Pendiente' : 'Vigente'),
@@ -38,9 +39,10 @@ export function columnasPendientes(etiqueta: Etiqueta): ColumnaTabla<Pendiente>[
 }
 
 export function columnasPorCiudad(etiqueta: Etiqueta): ColumnaTabla<ResumenCiudad>[] {
-  const pct = (id: string, encabezado: string, f: (r: ResumenCiudad) => number): ColumnaTabla<ResumenCiudad> => ({
+  const pct = (id: string, encabezado: string, f: (r: ResumenCiudad) => number | null): ColumnaTabla<ResumenCiudad> => ({
     id, encabezado, tipo: 'numero', alinear: 'derecha', anchoInicial: 140,
-    valor: (r) => porcentaje(f(r)), celda: (r) => `${porcentaje(f(r))}%`,
+    valor: (r) => { const x = f(r); return x === null ? null : porcentaje(x) },
+    celda: (r) => { const x = f(r); return x === null ? '—' : `${porcentaje(x)}%` },
   })
   return [
     { id: 'ciudad', encabezado: 'Ciudad', tipo: 'categoria', valor: (r) => etiqueta(r.ciudad) },
@@ -48,5 +50,6 @@ export function columnasPorCiudad(etiqueta: Etiqueta): ColumnaTabla<ResumenCiuda
     pct('cap', '% capacitación', (r) => r.pctCapacitacion),
     pct('uniforme', '% uniforme', (r) => r.pctUniforme),
     pct('epp', '% EPP', (r) => r.pctEpp),
+    { id: 'sinregla', encabezado: 'Sin regla', tipo: 'numero', valor: (r) => r.sinRegla, alinear: 'derecha', anchoInicial: 110 },
   ]
 }
