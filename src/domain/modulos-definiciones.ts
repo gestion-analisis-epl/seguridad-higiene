@@ -56,11 +56,16 @@ const entregasUniforme: ModuloDef = {
   campos: [
     colaborador,
     { nombre: 'prenda', etiqueta: 'Prenda', tipo: 'seleccion', requerido: true, origen: catalogo('prendas') },
-    { nombre: 'talla', etiqueta: 'Talla', tipo: 'texto', requerido: true },
-    { nombre: 'cantidad', etiqueta: 'Cantidad', tipo: 'numero', requerido: true },
-    { nombre: 'fecha', etiqueta: 'Fecha de entrega', tipo: 'fecha', requerido: true },
+    { nombre: 'articulo', etiqueta: 'Artículo', tipo: 'texto' },
+    { nombre: 'talla', etiqueta: 'Talla', tipo: 'texto' },
+    { nombre: 'cantidad', etiqueta: 'Cantidad', tipo: 'numero' },
+    { nombre: 'monto', etiqueta: 'Monto', tipo: 'numero' },
+    { nombre: 'entregado', etiqueta: 'Entregado', tipo: 'booleano' },
+    { nombre: 'fecha', etiqueta: 'Fecha de entrega', tipo: 'fecha' },
+    { nombre: 'observaciones', etiqueta: 'Observaciones', tipo: 'texto', formato: 'libre' },
   ],
-  columnas: ['colaborador_id', 'prenda', 'talla', 'cantidad', 'fecha'],
+  columnas: ['colaborador_id', 'prenda', 'articulo', 'talla', 'cantidad', 'monto', 'entregado', 'fecha', 'observaciones'],
+  soloLectura: true,
   derivar: (v, ctx) => derivarPeriodo(derivarCiudad(v, ctx), 'fecha'),
 }
 
@@ -70,11 +75,17 @@ const entregasEpp: ModuloDef = {
   campos: [
     colaborador,
     { nombre: 'tipo', etiqueta: 'Tipo de EPP', tipo: 'seleccion', requerido: true, origen: catalogo('tipos_epp') },
+    { nombre: 'articulo', etiqueta: 'Artículo', tipo: 'texto' },
+    { nombre: 'talla', etiqueta: 'Talla', tipo: 'texto' },
+    { nombre: 'cantidad', etiqueta: 'Cantidad', tipo: 'numero' },
+    { nombre: 'monto', etiqueta: 'Monto', tipo: 'numero' },
     { nombre: 'entregado', etiqueta: 'Entregado', tipo: 'booleano' },
     { nombre: 'fecha', etiqueta: 'Fecha de entrega', tipo: 'fecha' },
     { nombre: 'vencimiento', etiqueta: 'Vencimiento', tipo: 'fecha' },
+    { nombre: 'observaciones', etiqueta: 'Observaciones', tipo: 'texto', formato: 'libre' },
   ],
-  columnas: ['colaborador_id', 'tipo', 'entregado', 'fecha', 'vencimiento'],
+  columnas: ['colaborador_id', 'tipo', 'articulo', 'talla', 'cantidad', 'monto', 'entregado', 'fecha', 'vencimiento', 'observaciones'],
+  soloLectura: true,
   derivar: (v, ctx) => derivarCiudad(v, ctx),
 }
 
@@ -171,7 +182,8 @@ export const MODULO_CONFIGURACION: ModuloDef = {
     numero('umbral_meta', 'Umbral ILI: meta'),
     numero('umbral_minimo', 'Umbral ILI: mínimo'),
     numero('referencia_interpretacion', 'Referencia de interpretación'),
+    { nombre: 'entregas_cantidad_maxima', etiqueta: 'Cantidad máxima por entrega importada (opcional)', tipo: 'numero' },
   ],
-  columnas: ['horas_por_persona_mes', 'k_mensual', 'k_anual', 'umbral_supera', 'umbral_meta', 'umbral_minimo', 'referencia_interpretacion'],
+  columnas: ['horas_por_persona_mes', 'k_mensual', 'k_anual', 'umbral_supera', 'umbral_meta', 'umbral_minimo', 'referencia_interpretacion', 'entregas_cantidad_maxima'],
   idFijo: () => 'indicadores',
 }

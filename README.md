@@ -41,7 +41,7 @@ Las pruebas de reglas se escribieron sin Java disponible y nunca se han ejecutad
 
 - `/`: vista operativa. `/analitico`: vista analítica. Los índices IF, IS e ILI cuentan solo accidentes laborales; los de trayecto se registran como informativos.
 - `/datos/<modulo>`: captura y consulta. Módulos: `colaboradores`, `capacitaciones`, `entregas_uniforme`, `entregas_epp`, `accidentes`, `oficinas_equipo`, `vehiculos`, `indicadores_mensuales`.
-- Administración: `/admin/usuarios`, `/admin/catalogos`, `/admin/configuracion`.
+- Administración: `/admin/usuarios`, `/admin/catalogos`, `/admin/colaboradores` (enlace con la hoja), `/admin/configuracion`.
 - En `/admin/catalogos` se puede editar la etiqueta de un valor (el valor interno nunca cambia) y eliminar valores sin uso; si hay registros que lo usan, se bloquea y muestra cuántos por colección.
 - Los dashboards toman prendas y EPP requeridos de los catálogos `prendas` y `tipos_epp` (si están vacíos, de las constantes del código).
 
@@ -101,9 +101,40 @@ Al cerrar sesión o cambiar de usuario se cancelan todos los listeners y se vac�
    Toda cuenta del dominio permitido entra como `consulta` (lee todos los datos) y un admin la promueve en `/admin/usuarios`.
    Las reglas prohíben borrar `usuarios/{uid}` (solo la consola de Firestore, que las ignora, podría: la cuenta se volvería a registrar como `consulta` activa). Revoca con `activo: false` o `rol: "sin_rol"` (en la app: `/admin/usuarios`).
 5. Entrar a `/admin/catalogos` y pulsar "Cargar valores iniciales": solo siembra los catálogos genéricos (prendas, EPP, tipos de accidente y de equipo). Ajustar `/admin/configuracion` si hace falta.
-6. Ciudades, áreas, líneas de negocio, normas y cuadrillas empiezan vacías: correr la migración (toma las etiquetas del Excel) o agregarlas en `/admin/catalogos` ANTES de capturar colaboradores.
+6. Ciudades, áreas y líneas de negocio se llenan solas: al registrar a un colaborador desde la hoja se agrega la entrada que falte. Normas y cuadrillas empiezan vacías: correr la migración (toma las etiquetas del Excel) o agregarlas en `/admin/catalogos`.
 
-El hosting del frontend todavía no está configurado en este repositorio.
+El hosting es Firebase App Hosting; ver "Colaboradores desde Google Sheets".
+
+## Colaboradores desde Google Sheets
+
+Los colaboradores se eligen de un dropdown que lee en vivo la hoja "Colaboradores Operativos SH". El UID de Firestore sigue siendo la llave de todo; la columna `id` de la hoja se guarda como `id_interno`.
+
+- Al elegir a alguien se crea (o se recupera) su documento en `colaboradores` desde el servidor, sin duplicados. Ciudad ← Plaza, Área ← Departamento, Línea de negocio ← Empresa, además de puesto, número y fecha de ingreso. Si Plaza, Departamento o Empresa no existen en el catálogo, se agregan.
+- La lista se guarda en `sessionStorage` (30 min) con una sola petición compartida, y el servidor la guarda 10 min; "Actualizar lista" fuerza la recarga y se limita a una por minuto.
+- Los colaboradores ya existentes se enlazan en `/admin/colaboradores`: la pantalla sugiere la fila de la hoja por nombre, se confirma por fila o todas las exactas a la vez, y nada se borra ni se reescribe en los registros existentes.
+- Cada registro de capacitaciones, accidentes, uniforme y EPP copia nombre, plaza y puesto del colaborador al guardarse.
+- Para actualizar a un colaborador actual: abrirlo en `/datos/colaboradores`, elegir a la persona en el dropdown "Colaborador en la hoja" y guardar; se vinculan y se reemplazan sus datos con los de la hoja. El resto de los campos solo se corrigen en la hoja.
+- Desde el navegador ya no se crean colaboradores: las reglas solo dejan cambiar `cuadrilla` y `activo`. La colección `indice_id_interno` (id de la hoja → UID) solo la escribe el servidor.
+- La migración desde el Excel sigue creando colaboradores sin `id_interno`: tras correrla, vincularlos en `/admin/colaboradores`.
+
+Requisitos en el proyecto:
+
+1. Plan Blaze y la API de Google Sheets habilitada.
+2. Compartir la hoja, como lector, con la cuenta de servicio de App Hosting (`firebase-app-hosting-compute@<PROYECTO>.iam.gserviceaccount.com`).
+3. Copiar `apphosting.example.yaml` a `apphosting.yaml` (está ignorado por git) y completar los valores, incluidos `COLABORADORES_SHEET_ID` y `COLABORADORES_SHEET_TAB`.
+4. Orden de publicación: primero desplegar la app con sus rutas `/api`, luego `pnpm config:firebase` y `firebase deploy --only firestore:<BASE>`; así las reglas nuevas no cortan la captura mientras tanto.
+5. En local: pegar el JSON de la cuenta de servicio en una línea en `FIREBASE_SERVICE_ACCOUNT_JSON` y compartir la hoja como lector con su `client_email`; también van las variables `COLABORADORES_SHEET_*` en `.env.local`. Alternativa: `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/spreadsheets.readonly`.
+
+## Entregas de uniforme y EPP desde Google Sheets
+
+Las entregas las registra un sistema externo en la pestaña `Uniformes` del mismo archivo de colaboradores (variable `COLABORADORES_SHEET_TAB_UNIFORMES`); en la app son solo de consulta.
+
+- `/admin/articulos-hoja`: relaciona cada artículo de la hoja con uniforme, EPP o equipo y con su entrada de catálogo. "Cargar propuesta inicial" agrega solo lo que falte; "Buscar artículos sin mapeo" lista los que la hoja trae y aún no se asignan.
+- `/admin/entregas-hoja`: "Simular" muestra qué cambiaría y "Sincronizar" lo escribe. Es repetible: cada fila tiene una llave (`id` del colaborador + artículo + fecha de registro + orden) y no se duplica. Nada se borra.
+- Una entrega está entregada solo con cantidad mayor a 0 y fecha de entrega. Filas con cantidad inválida, artículo sin mapeo o `id` que no está en las hojas de colaboradores no se importan y salen en el reporte.
+- Los colaboradores que falten se crean desde la hoja, inactivos si así vienen. El tope de cantidad por fila es opcional: campo en `/admin/configuracion`.
+- Las reglas de Firestore impiden escribir `entregas_uniforme` y `entregas_epp` desde el navegador.
+- Limpieza única de lo capturado antes en la app: `pnpm limpiar:entregas` respalda en `respaldos/` y cuenta; con `-- --confirmar` elimina.
 
 ## Importación desde el Excel
 
@@ -171,13 +202,13 @@ Variables en `.env.local` (ver `.env.example`):
 Puesta en marcha (acciones del administrador):
 
 1. Crear un bucket propio de esta app en la región `us-east1`: `gcloud storage buckets create gs://<BUCKET> --location=us-east1 --project <PROYECTO>`
-2. `pnpm config:firebase`, y publicar las reglas de Storage: `firebase deploy --only storage --project <PROYECTO>`. Las reglas leen el rol de `usuarios` en la base con nombre; el servicio de reglas de Storage necesita permiso para leer Firestore (el despliegue con la CLI lo ofrece conceder).
+2. `pnpm config:firebase`, y publicar las reglas de Storage: `firebase deploy --only storage --project <PROYECTO>`. Las reglas de Storage no leen Firestore, así que no piden permisos IAM: solo exigen un correo verificado de un dominio permitido; el rol (admin, capturista, consulta) se aplica en la app y en las reglas de Firestore.
 
 El tope de 10 archivos por registro no es expresable de forma fiable en las reglas: se refuerza solo en el cliente. Las reglas sí validan tipo, tamaño, rol y forma del documento `adjuntos`.
 
 ## Reglas de seguridad
 
-Se versionan como `firestore.rules.template` y `storage.rules.template` y se generan en `firestore.rules` y `storage.rules` con `pnpm config:firebase`. El `firebase.json` generado solo declara la base de esta app, así que un despliegue desde aquí no toca las reglas de otras apps de la organización que comparten el proyecto.
+En Firestore, `colaboradores` no admite altas ni borrados desde el cliente y solo permite actualizar `cuadrilla` y `activo`; el servidor (Admin SDK) ignora las reglas y es quien crea y enlaza colaboradores. Los dominios de correo permitidos están en la función `dominiosPermitidos()` de ambas plantillas (agregar ahí los que hagan falta; la app sigue usando `NEXT_PUBLIC_DOMINIO_PERMITIDO`). Se versionan como `firestore.rules.template` y `storage.rules.template` y se generan en `firestore.rules` y `storage.rules` con `pnpm config:firebase`. El `firebase.json` generado solo declara la base de esta app, así que un despliegue desde aquí no toca las reglas de otras apps de la organización que comparten el proyecto.
 
 ## Antes de publicar
 

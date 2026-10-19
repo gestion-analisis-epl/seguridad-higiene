@@ -24,9 +24,9 @@ describe('etiquetaEstadoEntrega', () => {
 
 describe('columnasDeEntregas', () => {
   const cols = columnasDeEntregas(CONFIG_EPP, items, ciudades, hoy)
-  it('colaborador, ciudad, un item por columna y acciones', () => {
-    expect(cols.map((c) => c.id)).toEqual(['colaborador', 'ciudad', 'estado_colaborador', 'casco', 'botas', 'acciones'])
-    expect(cols.map((c) => c.tipo)).toEqual(['texto', 'categoria', 'categoria', 'categoria', 'categoria', 'texto'])
+  it('colaborador, ciudad, estado y un item por columna', () => {
+    expect(cols.map((c) => c.id)).toEqual(['colaborador', 'ciudad', 'estado_colaborador', 'casco', 'botas'])
+    expect(cols.map((c) => c.tipo)).toEqual(['texto', 'categoria', 'categoria', 'categoria', 'categoria'])
   })
   it('valores: nombre, etiqueta de ciudad y estado', () => {
     const f = fila({ casco: { id: 'r', entregado: false } })
@@ -37,16 +37,9 @@ describe('columnasDeEntregas', () => {
     expect(cols[3].valor(f)).toBe('No entregado')
     expect(cols[4].valor(f)).toBe('Sin entrega')
   })
-  it('acciones no se ordena ni filtra', () => {
-    expect(cols[5].ordenable).toBe(false)
-    expect(cols[5].filtrable).toBe(false)
-  })
-})
-
-describe('columna de acciones', () => {
-  it('no se trunca porque contiene controles', () => {
-    const acciones = columnasDeEntregas(CONFIG_EPP, items, ciudades, hoy).find((c) => c.id === 'acciones')
-    expect(acciones?.sinTruncar).toBe(true)
-    expect(acciones?.anchoMinimo).toBeGreaterThanOrEqual(150)
+  it('una entrega de uniforme no entregada se distingue de una entregada', () => {
+    const uniforme = columnasDeEntregas(CONFIG_UNIFORME, items, ciudades, hoy)
+    expect(uniforme[3].valor(fila({ casco: { id: 'r', entregado: false } }))).toBe('No entregado')
+    expect(uniforme[3].valor(fila({ casco: { id: 'r', entregado: true } }))).toBe('Con entrega')
   })
 })

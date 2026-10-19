@@ -9,7 +9,7 @@ export type Valores = Record<string, Valor>
 export type TipoCampo = 'texto' | 'numero' | 'fecha' | 'booleano' | 'seleccion' | 'lista'
 export type OrigenOpciones = { tipo: 'catalogo'; id: string } | { tipo: 'colaboradores' }
 export type FormatoTexto = 'titulo' | 'placa' | 'libre'
-export interface Opcion { valor: string; etiqueta: string }
+export interface Opcion { valor: string; etiqueta: string; region?: string; riesgo?: string; nombre_corto?: string }
 
 export interface CampoDef {
   nombre: string
@@ -41,6 +41,8 @@ export interface ModuloDef {
   idFijo?: (valores: Valores) => string
   bloquearEnEdicion?: string[]
   adjuntos?: ModuloAdjunto
+  // Los datos llegan de una hoja y no se capturan ni editan en la app
+  soloLectura?: boolean
 }
 
 export function validarRegistro(def: ModuloDef, valores: Valores): Record<string, string> {

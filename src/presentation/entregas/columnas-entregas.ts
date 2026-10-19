@@ -8,7 +8,8 @@ import { etiquetaDe } from './etiquetas'
 
 export function etiquetaEstadoEntrega(config: ConfigEntrega, registro: RegistroEntrega | undefined, hoy: Date): string {
   if (!registro) return 'Sin entrega'
-  return config.conVencimiento ? estadoEpp(registro, hoy).texto : 'Con entrega'
+  if (config.conVencimiento) return estadoEpp(registro, hoy).texto
+  return registro.entregado === false ? 'No entregado' : 'Con entrega'
 }
 
 export const ID_COLUMNA_ESTADO_ENTREGAS = 'estado_colaborador'
@@ -26,6 +27,5 @@ export function columnasDeEntregas(
       id: i.valor, encabezado: i.etiqueta, tipo: 'categoria',
       valor: (f) => etiquetaEstadoEntrega(config, f.ultimas[i.valor], hoy),
     })),
-    { id: 'acciones', encabezado: 'Acciones', tipo: 'texto', anchoInicial: 190, anchoMinimo: 170, sinTruncar: true, ordenable: false, filtrable: false, valor: () => '' },
   ]
 }

@@ -1,6 +1,5 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, setDoc, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/infrastructure/firebase/cliente'
-import type { Operacion } from '@/application/entregas-tipos'
 import type { Valores } from '@/domain/modulos'
 import { aFirestore, conAuditoria, deFirestore } from './conversion'
 
@@ -45,23 +44,4 @@ export async function guardar(coleccion: string, valores: Valores, uid: string, 
 
 export async function eliminar(coleccion: string, id: string): Promise<void> {
   await deleteDoc(doc(db, coleccion, id))
-}
-
-const MAX_OPERACIONES_LOTE = 500
-
-export async function guardarLote(operaciones: Operacion[], uid: string): Promise<void> {
-  if (operaciones.length > MAX_OPERACIONES_LOTE) {
-    throw new Error(`Un lote admite hasta ${MAX_OPERACIONES_LOTE} operaciones`)
-  }
-  if (!operaciones.length) return
-  const lote = writeBatch(db)
-  for (const op of operaciones) {
-    const datos = aFirestore(op.valores)
-    if (op.tipo === 'crear') {
-      lote.set(doc(collection(db, op.coleccion)), conAuditoria(datos, uid, true))
-    } else {
-      lote.set(doc(db, op.coleccion, op.id), conAuditoria(datos, uid, false), { merge: true })
-    }
-  }
-  await lote.commit()
 }

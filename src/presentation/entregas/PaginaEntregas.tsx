@@ -2,9 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import { filtrarFilas } from '@/application/entregas-agrupar'
-import { puede } from '@/domain/permisos'
-import { useSesion } from '@/presentation/auth/AuthProvider'
-import { SelectorColaboradorHoja } from '@/presentation/colaboradores/SelectorColaboradorHoja'
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
@@ -19,8 +16,8 @@ import { PanelEntrega } from './PanelEntrega'
 import { TablaEntregas } from './TablaEntregas'
 import { useEntregas } from './useEntregas'
 
+// Solo consulta: las entregas llegan de la hoja y se sincronizan desde Administración
 export function PaginaEntregas({ cfg }: { cfg: ConfiguracionPagina }) {
-  const { usuario } = useSesion()
   const { cargando, error, registros, filas, items, ciudades } = useEntregas(cfg)
   const [abierto, setAbierto] = useState<string | null>(null)
   const [guardado, setFiltro] = usePersistente(
@@ -31,7 +28,6 @@ export function PaginaEntregas({ cfg }: { cfg: ConfiguracionPagina }) {
   )
   const visibles = filtrarFilas(filas, filtro)
   const fila = abierto ? filas.find((f) => f.colaborador.id === abierto) : undefined
-  const capturista = puede(usuario, 'capturar')
 
   const volver = (
     <button type="button" onClick={() => setAbierto(null)} className="boton-secundario">
@@ -46,8 +42,7 @@ export function PaginaEntregas({ cfg }: { cfg: ConfiguracionPagina }) {
         <EncabezadoPagina rotulo={cfg.titulo} titulo={fila.colaborador.nombre}
           detalle={`${etiquetaDe(ciudades, fila.colaborador.ciudad)}, ${fila.cantidadEntregas === 1 ? '1 entrega' : `${fila.cantidadEntregas} entregas`}`}
           acciones={volver} />
-        <PanelEntrega cfg={cfg} fila={fila} items={items} registros={registros} puedeCapturar={capturista}
-          puedeEliminar={puede(usuario, 'administrar')} alTerminar={() => setAbierto(null)} />
+        <PanelEntrega cfg={cfg} fila={fila} items={items} registros={registros} />
       </section>
     )
   }
@@ -60,18 +55,9 @@ export function PaginaEntregas({ cfg }: { cfg: ConfiguracionPagina }) {
         {error && <AvisoError>{error}</AvisoError>}
         {cargando ? <Cargando /> : (
           <>
-            {capturista && (
-              <div className="tarjeta max-w-xl p-4">
-                <label id="entrega-colaborador-et" htmlFor="entrega-colaborador" className="etiqueta">
-                  Registrar a un colaborador de la hoja
-                </label>
-                <SelectorColaboradorHoja id="entrega-colaborador" etiquetaId="entrega-colaborador-et" valor=""
-                  alCambiar={(uid) => { if (uid) setAbierto(uid) }} />
-              </div>
-            )}
             <FiltrosEntregas filtro={filtro} ciudades={ciudades} alCambiar={setFiltro} />
             <TablaEntregas cfg={cfg} filas={visibles} items={items} ciudades={ciudades}
-              alAbrir={setAbierto} alNueva={capturista ? setAbierto : undefined} />
+              alAbrir={setAbierto} />
           </>
         )}
       </div>

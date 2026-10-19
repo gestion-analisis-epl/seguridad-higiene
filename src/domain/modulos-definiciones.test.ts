@@ -14,6 +14,19 @@ describe('definiciones', () => {
     }
   })
 
+  it('uniforme y EPP son de solo lectura y no exigen datos que la hoja puede omitir', () => {
+    for (const def of [MODULOS.entregas_uniforme, MODULOS.entregas_epp]) {
+      expect(def.soloLectura).toBe(true)
+      const sinTalla = validarRegistro(def, { colaborador_id: 'c1', prenda: 'botas', tipo: 'casco', entregado: false })
+      expect(Object.keys(sinTalla)).toEqual([])
+    }
+  })
+
+  it('el tope de cantidad de entregas es opcional en la configuración', () => {
+    const campo = MODULO_CONFIGURACION.campos.find((c) => c.nombre === 'entregas_cantidad_maxima')
+    expect(campo?.requerido).toBeFalsy()
+  })
+
   it('accidentes derivan ciudad y periodo', () => {
     const r = MODULOS.accidentes.derivar!(
       { colaborador_id: 'c1', fecha: fechaCalendario(2026, 8, 24), tipo: 'laboral', dias_incapacidad: 2 }, ctx, hoy)

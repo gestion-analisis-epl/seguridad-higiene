@@ -24,7 +24,7 @@ export function PaginaModulo({ def }: { def: ModuloDef }) {
   const { usuario } = useSesion()
   const { registros, cargando, error } = useColeccion(def.coleccion)
   const [editando, setEditando] = useState<Registro | 'nuevo' | null>(null)
-  const capturista = puede(usuario, 'capturar')
+  const capturista = puede(usuario, 'capturar') && !def.soloLectura
 
   return (
     <section className="aparecer">
