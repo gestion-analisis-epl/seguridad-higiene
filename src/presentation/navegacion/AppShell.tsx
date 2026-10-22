@@ -52,6 +52,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         } ${
           abierto ? 'visible translate-x-0' : 'invisible -translate-x-full'
         }`}>
+        <button type="button" onClick={() => setContraida((c) => !c)} aria-expanded={!contraida} aria-controls="navegacion"
+          aria-label={contraida ? 'Expandir barra lateral' : 'Contraer barra lateral'} title={contraida ? 'Expandir barra' : 'Contraer barra'}
+          className="absolute -right-3 top-[2.125rem] z-10 hidden h-6 w-6 -translate-y-1/2 place-items-center rounded-full border border-barra-borde bg-barra text-barra-suave shadow-sm transition-colors hover:border-barra-suave hover:text-barra-texto lg:grid">
+          <Icono nombre="pag-anterior" className={`h-3.5 w-3.5 transition-transform duration-200 motion-reduce:transition-none ${contraida ? 'rotate-180' : ''}`} />
+        </button>
         <div className="franja-seguridad h-1.5 shrink-0" />
         <div className={`flex h-cabecera shrink-0 items-center justify-between px-4 ${contraida ? 'lg:justify-center lg:px-0' : ''}`}>
           <Marca compacta={contraida} />
@@ -62,14 +67,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav aria-label="Secciones" className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3">
           <MenuNavegacion grupos={grupos} ruta={ruta} compacta={contraida} />
         </nav>
-        <div className="hidden px-3 pb-2 lg:block">
-          <button type="button" onClick={() => setContraida((c) => !c)} aria-expanded={!contraida} aria-controls="navegacion"
-            aria-label={contraida ? 'Expandir barra lateral' : 'Contraer barra lateral'} title={contraida ? 'Expandir' : 'Contraer'}
-            className={`flex min-h-[2.25rem] w-full items-center gap-3 rounded px-3 text-sm text-barra-suave transition-colors hover:bg-barra-2 hover:text-barra-texto ${contraida ? 'justify-center px-0' : ''}`}>
-            <Icono nombre={contraida ? 'pag-ultima' : 'pag-primera'} />
-            {!contraida && <span>Contraer</span>}
-          </button>
-        </div>
         <TarjetaUsuario compacta={contraida} />
       </aside>
 
