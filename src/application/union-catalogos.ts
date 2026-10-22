@@ -29,6 +29,7 @@ export function referenciasDeCatalogo(catalogo: string): Referencia[] {
   const modulos = usosDeCatalogo(MODULOS, catalogo).flatMap((u) => u.campos.map((campo) => ({ coleccion: u.coleccion, campo })))
   const extra: Referencia[] = []
   if (catalogo === 'lineas_negocio') extra.push({ coleccion: 'reglas_dotacion', campo: 'linea_negocio', bloquea: 'reglas de dotación' })
+  if (catalogo === 'areas') extra.push({ coleccion: 'reglas_dotacion', campo: 'area', bloquea: 'reglas de dotación' })
   if (catalogo === 'prendas' || catalogo === 'tipos_epp') extra.push({ coleccion: 'reglas_dotacion', campo: catalogo, lista: true, bloquea: 'reglas de dotación' })
   const destino = DESTINO_ARTICULO[catalogo]
   if (destino) extra.push({ coleccion: 'articulos_hoja', campo: 'valor', bloquea: 'artículos de la hoja', donde: (d) => d.destino === destino })

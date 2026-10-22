@@ -10,11 +10,13 @@ export interface ReglaDotacion {
   puesto_etiqueta: string
   // Vacío: aplica a todas las plazas de la empresa y el puesto
   ciudad: string | null
+  // Vacío: aplica a todas las áreas (departamentos)
+  area: string | null
   prendas: string[]
   tipos_epp: string[]
 }
 
-export interface PerfilColaborador { linea_negocio: string; puesto?: string | null; ciudad: string }
+export interface PerfilColaborador { linea_negocio: string; puesto?: string | null; ciudad: string; area?: string | null }
 export type ColaboradorRegla = PerfilColaborador & { activo?: boolean }
 
 export interface CombinacionPendiente {
@@ -27,8 +29,9 @@ export interface CombinacionPendiente {
 
 export const normalizarPuesto = normalizarNombre
 
-export function idRegla(linea: string, puesto: string, ciudad: string | null): string {
-  return [slug(linea), slug(normalizarPuesto(puesto)), ciudad ? slug(ciudad) : 'todas'].join('__')
+// Sin área el identificador no cambia, así las reglas anteriores conservan el suyo
+export function idRegla(linea: string, puesto: string, ciudad: string | null, area: string | null = null): string {
+  return [slug(linea), slug(normalizarPuesto(puesto)), ciudad ? slug(ciudad) : 'todas', ...(area ? [slug(area)] : [])].join('__')
 }
 
 const texto = (v: unknown) => (typeof v === 'string' ? v : '')
@@ -39,19 +42,21 @@ export function aRegla(r: Record<string, unknown>): ReglaDotacion {
   return {
     id: texto(r.id), linea_negocio: texto(r.linea_negocio), puesto: normalizarPuesto(texto(r.puesto)),
     puesto_etiqueta: texto(r.puesto_etiqueta) || texto(r.puesto), ciudad: texto(r.ciudad) || null,
-    prendas: lista(r.prendas), tipos_epp: lista(r.tipos_epp),
+    area: texto(r.area) || null, prendas: lista(r.prendas), tipos_epp: lista(r.tipos_epp),
   }
 }
 
-const llave = (linea: string, puesto: string, ciudad: string | null) => `${linea}|${puesto}|${ciudad ?? ''}`
+const llave = (linea: string, puesto: string, ciudad: string | null, area: string | null) => `${linea}|${puesto}|${ciudad ?? ''}|${area ?? ''}`
 
-// Empresa + puesto + ciudad, luego empresa + puesto sin ciudad; sin ninguna, null
+// De lo más específico a lo general: ciudad y área, ciudad, área, ninguna; sin ninguna, null
 export function indexarReglas(reglas: ReglaDotacion[]): (c: PerfilColaborador) => ReglaDotacion | null {
-  const mapa = new Map(reglas.map((r) => [llave(r.linea_negocio, normalizarPuesto(r.puesto), r.ciudad), r]))
+  const mapa = new Map(reglas.map((r) => [llave(r.linea_negocio, normalizarPuesto(r.puesto), r.ciudad, r.area), r]))
   return (c) => {
     const puesto = normalizarPuesto(c.puesto ?? '')
     if (!c.linea_negocio || !puesto) return null
-    return mapa.get(llave(c.linea_negocio, puesto, c.ciudad)) ?? mapa.get(llave(c.linea_negocio, puesto, null)) ?? null
+    const area = c.area || null
+    return mapa.get(llave(c.linea_negocio, puesto, c.ciudad, area)) ?? mapa.get(llave(c.linea_negocio, puesto, c.ciudad, null))
+      ?? mapa.get(llave(c.linea_negocio, puesto, null, area)) ?? mapa.get(llave(c.linea_negocio, puesto, null, null)) ?? null
   }
 }
 
@@ -69,7 +74,7 @@ export function combinacionesSinRegla(
     if (c.activo === false || resolver(c)) continue
     const puesto = normalizarPuesto(c.puesto ?? '')
     if (!c.linea_negocio || !puesto) { sinDatos++; continue }
-    const clave = llave(c.linea_negocio, puesto, c.ciudad)
+    const clave = llave(c.linea_negocio, puesto, c.ciudad, null)
     const actual = grupos.get(clave)
     if (actual) actual.colaboradores++
     else grupos.set(clave, { linea_negocio: c.linea_negocio, puesto, puesto_etiqueta: aTitulo(c.puesto ?? ''), ciudad: c.ciudad, colaboradores: 1 })

@@ -9,6 +9,7 @@ interface Props {
   reglas: ReglaDotacion[]
   lineas: Opcion[]
   ciudades: Opcion[]
+  areas: Opcion[]
   prendas: Opcion[]
   tiposEpp: Opcion[]
   etiquetaDe: (opciones: Opcion[], valor: string) => string
@@ -16,7 +17,7 @@ interface Props {
   alEliminar: (id: string) => Promise<void>
 }
 
-export function ListaReglas({ reglas, lineas, ciudades, prendas, tiposEpp, etiquetaDe, alEditar, alEliminar }: Props) {
+export function ListaReglas({ reglas, lineas, ciudades, areas, prendas, tiposEpp, etiquetaDe, alEditar, alEliminar }: Props) {
   const [texto, setTexto] = useState('')
   const [linea, setLinea] = useState('')
   const [confirmando, setConfirmando] = useState<string | null>(null)
@@ -27,7 +28,7 @@ export function ListaReglas({ reglas, lineas, ciudades, prendas, tiposEpp, etiqu
     return reglas
       .filter((r) => (!linea || r.linea_negocio === linea) && (!q || r.puesto.includes(q)))
       .sort((a, b) => a.linea_negocio.localeCompare(b.linea_negocio) || a.puesto.localeCompare(b.puesto)
-        || (a.ciudad ?? '').localeCompare(b.ciudad ?? ''))
+        || (a.ciudad ?? '').localeCompare(b.ciudad ?? '') || (a.area ?? '').localeCompare(b.area ?? ''))
   }, [reglas, texto, linea])
 
   async function eliminar(id: string) {
@@ -56,7 +57,7 @@ export function ListaReglas({ reglas, lineas, ciudades, prendas, tiposEpp, etiqu
             <div className="min-w-0">
               <p className="font-medium">{r.puesto_etiqueta}</p>
               <p className="text-xs text-texto-suave">
-                {etiquetaDe(lineas, r.linea_negocio)} · {r.ciudad ? etiquetaDe(ciudades, r.ciudad) : 'Todas las plazas'}
+                {etiquetaDe(lineas, r.linea_negocio)} · {r.ciudad ? etiquetaDe(ciudades, r.ciudad) : 'Todas las plazas'} · {r.area ? etiquetaDe(areas, r.area) : 'Todas las áreas'}
               </p>
               <p className="mt-1 text-sm">Uniforme: {articulos(r.prendas, prendas)}</p>
               <p className="text-sm">EPP: {articulos(r.tipos_epp, tiposEpp)}</p>

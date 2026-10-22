@@ -15,11 +15,12 @@ import { useReglas } from '@/presentation/datos/useReglas'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { EditorRegla, type BorradorRegla } from './EditorRegla'
 import { ListaPorDefinir } from './ListaPorDefinir'
+import { ImportarReglasEpp } from './ImportarReglasEpp'
 import { ListaReglas } from './ListaReglas'
 import { ReiniciarDotacion } from './ReiniciarDotacion'
 
 const etiquetaDe = (opciones: Opcion[], valor: string) => opciones.find((o) => o.valor === valor)?.etiqueta ?? valor
-const VACIO: BorradorRegla = { id: null, linea_negocio: '', puesto_etiqueta: '', ciudad: null, prendas: [], tipos_epp: [] }
+const VACIO: BorradorRegla = { id: null, linea_negocio: '', puesto_etiqueta: '', ciudad: null, area: null, prendas: [], tipos_epp: [] }
 
 export function ReglasDotacion() {
   const { uid } = useSesion()
@@ -27,6 +28,7 @@ export function ReglasDotacion() {
   const personas = useColeccion('colaboradores')
   const lineas = useCatalogo('lineas_negocio')
   const ciudades = useCatalogo('ciudades')
+  const areas = useCatalogo('areas')
   const prendas = useCatalogo('prendas')
   const tiposEpp = useCatalogo('tipos_epp')
   const [editor, setEditor] = useState<BorradorRegla | null>(null)
@@ -55,13 +57,13 @@ export function ReglasDotacion() {
     unicos.delete('')
     const destinos = b.lote ?? Array.from(unicos.values(), (p) => ({ linea_negocio: b.linea_negocio, puesto_etiqueta: p }))
     for (const d of destinos) {
-      await guardarRegla({ ...d, ciudad: b.lote ? null : b.ciudad, prendas: b.prendas, tipos_epp: b.tipos_epp }, uid ?? '')
+      await guardarRegla({ ...d, ciudad: b.lote ? null : b.ciudad, area: b.lote ? null : b.area, prendas: b.prendas, tipos_epp: b.tipos_epp }, uid ?? '')
     }
     setEditor(null)
   }
 
   const editar = (r: ReglaDotacion) => setEditor({
-    id: r.id, linea_negocio: r.linea_negocio, puesto_etiqueta: r.puesto_etiqueta, ciudad: r.ciudad,
+    id: r.id, linea_negocio: r.linea_negocio, puesto_etiqueta: r.puesto_etiqueta, ciudad: r.ciudad, area: r.area,
     prendas: r.prendas, tipos_epp: r.tipos_epp,
   })
 
@@ -78,7 +80,7 @@ export function ReglasDotacion() {
       )}
       {editor ? (
         <EditorRegla key={`${editor.id ?? 'nueva'}|${editor.linea_negocio}|${editor.puesto_etiqueta}|${editor.lote?.length ?? 0}`}
-          inicial={editor} reglas={reglas} colaboradores={colaboradores} lineas={lineas} ciudades={ciudades}
+          inicial={editor} reglas={reglas} colaboradores={colaboradores} lineas={lineas} ciudades={ciudades} areas={areas}
           prendas={prendas} tiposEpp={tiposEpp} etiquetaDe={etiquetaDe} alGuardar={guardar}
           alCancelar={() => setEditor(null)} alAgregar={agregarEntrada} />
       ) : (
@@ -86,8 +88,14 @@ export function ReglasDotacion() {
       )}
       <ListaPorDefinir pendientes={pendientes} lineas={lineas} ciudades={ciudades} etiquetaDe={etiquetaDe}
         alDefinir={definir} alDefinirVarias={definirVarias} />
-      <ListaReglas reglas={reglas} lineas={lineas} ciudades={ciudades} prendas={prendas} tiposEpp={tiposEpp}
+      <ListaReglas reglas={reglas} lineas={lineas} ciudades={ciudades} areas={areas} prendas={prendas} tiposEpp={tiposEpp}
         etiquetaDe={etiquetaDe} alEditar={editar} alEliminar={eliminarRegla} />
+      <details>
+        <summary className="cursor-pointer text-base">Importar EPP desde Excel</summary>
+        <div className="mt-3">
+          <ImportarReglasEpp reglas={reglas} lineas={lineas} ciudades={ciudades} areas={areas} tiposEpp={tiposEpp} etiquetaDe={etiquetaDe} />
+        </div>
+      </details>
       <details>
         <summary className="cursor-pointer text-base">Reiniciar dotación</summary>
         <div className="mt-3"><ReiniciarDotacion /></div>

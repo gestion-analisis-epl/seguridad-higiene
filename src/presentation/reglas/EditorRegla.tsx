@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Opcion } from '@/domain/modulos'
 import { aTitulo } from '@/domain/texto'
 import {
@@ -16,6 +16,7 @@ export interface BorradorRegla {
   linea_negocio: string
   puesto_etiqueta: string
   ciudad: string | null
+  area: string | null
   prendas: string[]
   tipos_epp: string[]
   // Varios puestos de la misma empresa en una regla nueva; se guarda una regla por puesto
@@ -78,6 +79,7 @@ interface Props {
   colaboradores: ColaboradorRegla[]
   lineas: Opcion[]
   ciudades: Opcion[]
+  areas: Opcion[]
   prendas: Opcion[]
   tiposEpp: Opcion[]
   etiquetaDe: (opciones: Opcion[], valor: string) => string
@@ -87,8 +89,9 @@ interface Props {
 }
 
 export function EditorRegla({
-  inicial, reglas, colaboradores, lineas, ciudades, prendas, tiposEpp, etiquetaDe, alGuardar, alCancelar, alAgregar,
+  inicial, reglas, colaboradores, lineas, ciudades, areas, prendas, tiposEpp, etiquetaDe, alGuardar, alCancelar, alAgregar,
 }: Props) {
+  const titulo = useRef<HTMLHeadingElement>(null)
   const [b, setB] = useState<BorradorRegla>(() => ({ ...inicial, puestos: inicial.puestos ?? (inicial.puesto_etiqueta ? [inicial.puesto_etiqueta] : []) }))
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -122,10 +125,17 @@ export function EditorRegla({
   const abarcados = useMemo(() => {
     if (lote || !completa) return null
     return elegidos.filter((p) => normalizarPuesto(p) !== '').reduce((total, p) => total + colaboradoresAbarcados({
-      id: idRegla(b.linea_negocio, p, b.ciudad), linea_negocio: b.linea_negocio,
-      puesto: normalizarPuesto(p), puesto_etiqueta: p, ciudad: b.ciudad, prendas: b.prendas, tipos_epp: b.tipos_epp,
+      id: idRegla(b.linea_negocio, p, b.ciudad, b.area), linea_negocio: b.linea_negocio,
+      puesto: normalizarPuesto(p), puesto_etiqueta: p, ciudad: b.ciudad, area: b.area, prendas: b.prendas, tipos_epp: b.tipos_epp,
     }, reglas, colaboradores), 0)
   }, [b, elegidos, lote, completa, reglas, colaboradores])
+
+  // El editor se monta al pulsar Editar o Definir; se lleva a la vista y el foco avisa que se abrió
+  useEffect(() => {
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    titulo.current?.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' })
+    titulo.current?.focus({ preventScroll: true })
+  }, [])
 
   async function guardar() {
     setOcupado(true)
@@ -134,17 +144,19 @@ export function EditorRegla({
   }
 
   const descripcion = (r: ReglaDotacion) =>
-    `${etiquetaDe(lineas, r.linea_negocio)} · ${r.puesto_etiqueta} · ${r.ciudad ? etiquetaDe(ciudades, r.ciudad) : 'Todas las plazas'}`
+    `${etiquetaDe(lineas, r.linea_negocio)} · ${r.puesto_etiqueta} · ${r.ciudad ? etiquetaDe(ciudades, r.ciudad) : 'Todas las plazas'} · ${r.area ? etiquetaDe(areas, r.area) : 'Todas las áreas'}`
 
   return (
     <section className="tarjeta space-y-4 p-4" aria-label="Editor de regla">
-      <h2 className="text-base">{editando ? 'Editar regla' : lote ? `Definir ${b.lote!.length} combinaciones` : 'Nueva regla'}</h2>
+      <h2 ref={titulo} tabIndex={-1} className="scroll-mt-4 text-base outline-none">{editando
+        ? `Editar regla: ${etiquetaDe(lineas, b.linea_negocio)} · ${b.puesto_etiqueta}`
+        : lote ? `Definir ${b.lote!.length} combinaciones` : 'Nueva regla'}</h2>
       {lote ? (
         <p className="text-sm text-texto-suave">
           Se guardará una regla por cada empresa y puesto seleccionados, para todas las plazas: {b.lote!.map((d) => `${etiquetaDe(lineas, d.linea_negocio)} · ${d.puesto_etiqueta}`).join('; ')}.
         </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label id="regla-empresa-et" htmlFor="regla-empresa" className="etiqueta">Empresa</label>
             {editando ? <p className="text-sm">{etiquetaDe(lineas, b.linea_negocio)}</p> : (
@@ -187,6 +199,16 @@ export function EditorRegla({
                 onChange={(e) => setB({ ...b, ciudad: e.target.value || null })}>
                 <option value="">Todas las plazas</option>
                 {ciudades.map((c) => <option key={c.valor} value={c.valor}>{c.etiqueta}</option>)}
+              </select>
+            )}
+          </div>
+          <div>
+            <label htmlFor="regla-area" className="etiqueta">Área</label>
+            {editando ? <p className="text-sm">{b.area ? etiquetaDe(areas, b.area) : 'Todas las áreas'}</p> : (
+              <select id="regla-area" className="control" value={b.area ?? ''}
+                onChange={(e) => setB({ ...b, area: e.target.value || null })}>
+                <option value="">Todas las áreas</option>
+                {areas.map((a) => <option key={a.valor} value={a.valor}>{a.etiqueta}</option>)}
               </select>
             )}
           </div>

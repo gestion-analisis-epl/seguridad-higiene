@@ -7,7 +7,7 @@ import {
 
 const regla = (o: Partial<ReglaDotacion> = {}): ReglaDotacion => ({
   id: 'x', linea_negocio: 'linea-x', puesto: 'guardia de seguridad', puesto_etiqueta: 'Guardia de Seguridad',
-  ciudad: null, prendas: ['botas'], tipos_epp: ['casco'], ...o,
+  ciudad: null, area: null, prendas: ['botas'], tipos_epp: ['casco'], ...o,
 })
 const persona = (o: Record<string, unknown> = {}) =>
   ({ linea_negocio: 'linea-x', puesto: 'GUARDIA DE SEGURIDAD ', ciudad: 'leon', ...o })
@@ -23,12 +23,20 @@ describe('idRegla', () => {
     expect(idRegla('linea-x', 'Guardia de Seguridad', 'leon')).toBe('linea-x__guardia-de-seguridad__leon')
     expect(idRegla('linea-x', 'Guardia de Seguridad', null)).toBe('linea-x__guardia-de-seguridad__todas')
   })
+  it('añade el área solo cuando la regla la trae, para conservar los identificadores existentes', () => {
+    expect(idRegla('linea-x', 'Jefe de Cuadrilla', 'juarez', 'mantenimiento')).toBe('linea-x__jefe-de-cuadrilla__juarez__mantenimiento')
+    expect(idRegla('linea-x', 'Jefe de Cuadrilla', null, 'mantenimiento')).toBe('linea-x__jefe-de-cuadrilla__todas__mantenimiento')
+    expect(idRegla('linea-x', 'Jefe de Cuadrilla', 'juarez', null)).toBe('linea-x__jefe-de-cuadrilla__juarez')
+  })
 })
 
 describe('aRegla', () => {
   it('normaliza el puesto y descarta lo que no es texto', () => {
-    expect(aRegla({ id: 'a', linea_negocio: 'linea-x', puesto: 'GUARDIA ', puesto_etiqueta: '', ciudad: '', prendas: ['botas', 3], tipos_epp: null }))
-      .toEqual({ id: 'a', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'GUARDIA ', ciudad: null, prendas: ['botas'], tipos_epp: [] })
+    expect(aRegla({ id: 'a', linea_negocio: 'linea-x', puesto: 'GUARDIA ', puesto_etiqueta: '', ciudad: '', area: 'operaciones', prendas: ['botas', 3], tipos_epp: null }))
+      .toEqual({ id: 'a', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'GUARDIA ', ciudad: null, area: 'operaciones', prendas: ['botas'], tipos_epp: [] })
+  })
+  it('sin área la deja en null', () => {
+    expect(aRegla({ id: 'a', linea_negocio: 'linea-x', puesto: 'guardia' }).area).toBeNull()
   })
 })
 
@@ -40,6 +48,28 @@ describe('resolverRegla', () => {
   })
   it('cae a la regla sin ciudad cuando la plaza no tiene la suya', () => {
     expect(resolverRegla([general, leon], persona({ ciudad: 'puebla' }))?.id).toBe('gen')
+  })
+  describe('con área', () => {
+    const mant = regla({ id: 'mant', area: 'mantenimiento', ciudad: 'leon' })
+    const oper = regla({ id: 'oper', area: 'operaciones', ciudad: 'leon' })
+    it('elige la regla del área del colaborador', () => {
+      expect(resolverRegla([mant, oper], persona({ area: 'mantenimiento' }))?.id).toBe('mant')
+      expect(resolverRegla([mant, oper], persona({ area: 'operaciones' }))?.id).toBe('oper')
+    })
+    it('no aplica una regla de otra área ni a quien no trae área', () => {
+      expect(resolverRegla([mant], persona({ area: 'operaciones' }))).toBeNull()
+      expect(resolverRegla([mant], persona())).toBeNull()
+    })
+    it('cae de ciudad y área a ciudad, luego a área y por último a la general', () => {
+      const ciudadArea = regla({ id: 'ca', ciudad: 'leon', area: 'mantenimiento' })
+      const soloCiudad = regla({ id: 'c', ciudad: 'leon' })
+      const soloArea = regla({ id: 'a', area: 'mantenimiento' })
+      const p = persona({ area: 'mantenimiento' })
+      expect(resolverRegla([general, soloArea, soloCiudad, ciudadArea], p)?.id).toBe('ca')
+      expect(resolverRegla([general, soloArea, soloCiudad], p)?.id).toBe('c')
+      expect(resolverRegla([general, soloArea], p)?.id).toBe('a')
+      expect(resolverRegla([general], p)?.id).toBe('gen')
+    })
   })
   it('devuelve null sin regla para la empresa o el puesto', () => {
     expect(resolverRegla([general], persona({ linea_negocio: 'linea-y' }))).toBeNull()
@@ -86,6 +116,13 @@ describe('colaboradoresAbarcados', () => {
   it('al editar una regla existente cuenta como si ya estuviera guardada', () => {
     const esp = regla({ id: 'esp', ciudad: 'leon' })
     expect(colaboradoresAbarcados(esp, [esp], gente)).toBe(2)
+  })
+})
+
+describe('colaboradoresAbarcados con área', () => {
+  it('una regla de área solo cuenta a los colaboradores de esa área', () => {
+    const gente = [persona({ area: 'mantenimiento' }), persona({ area: 'operaciones' }), persona()]
+    expect(colaboradoresAbarcados(regla({ id: 'm', area: 'mantenimiento' }), [], gente)).toBe(1)
   })
 })
 

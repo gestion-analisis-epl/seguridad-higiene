@@ -11,3 +11,8 @@ export const respaldoReinicio = (alcances: AlcanceReinicio[]) =>
 
 export const ejecutarReinicio = (alcances: AlcanceReinicio[], confirmar: string) =>
   llamar<{ conteos: ConteoReinicio[] }>('/api/dotacion/reiniciar', enviar({ alcances, confirmar }))
+
+export interface ReglaAImportar { linea_negocio: string; puesto_etiqueta: string; ciudad: string | null; area: string | null; tipos_epp: string[] }
+
+export const importarReglas = (reglas: ReglaAImportar[]) =>
+  llamar<{ creadas: number; actualizadas: number }>('/api/dotacion/reglas/importar', enviar({ reglas }))
