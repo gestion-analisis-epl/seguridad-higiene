@@ -22,19 +22,21 @@ export function columnasAlertas<A extends Alerta = Alerta>(etiqueta: Etiqueta): 
   ]
 }
 
-export function columnasPendientes(etiqueta: Etiqueta): ColumnaTabla<Pendiente>[] {
+export interface EtiquetasPendientes { articulo?: Etiqueta; area?: Etiqueta; cuadrilla?: Etiqueta }
+
+export function columnasPendientes(etiqueta: Etiqueta, { articulo = (v) => v, area = (v) => v, cuadrilla = (v) => v }: EtiquetasPendientes = {}): ColumnaTabla<Pendiente>[] {
   return [
     { id: 'colaborador', encabezado: 'Colaborador', tipo: 'texto', valor: (p) => p.colaborador.nombre },
     { id: 'ciudad', encabezado: 'Ciudad', tipo: 'categoria', valor: (p) => etiqueta(p.colaborador.ciudad) },
-    { id: 'area', encabezado: 'Área', tipo: 'categoria', valor: (p) => p.colaborador.area },
-    { id: 'cuadrilla', encabezado: 'Cuadrilla', tipo: 'categoria', valor: (p) => p.colaborador.cuadrilla },
+    { id: 'area', encabezado: 'Área', tipo: 'categoria', valor: (p) => (p.colaborador.area ? area(p.colaborador.area) : p.colaborador.area) },
+    { id: 'cuadrilla', encabezado: 'Cuadrilla', tipo: 'categoria', valor: (p) => (p.colaborador.cuadrilla ? cuadrilla(p.colaborador.cuadrilla) : p.colaborador.cuadrilla) },
     { id: 'regla', encabezado: 'Regla', tipo: 'categoria', valor: (p) => (p.sinRegla ? 'Sin regla' : 'Definida'), anchoInicial: 130 },
     {
       id: 'capacitacion', encabezado: 'Capacitación', tipo: 'categoria', anchoInicial: 140,
       valor: (p) => (p.capacitacionPendiente ? 'Pendiente' : 'Vigente'),
     },
-    { id: 'uniforme', encabezado: 'Uniforme faltante', tipo: 'texto', valor: (p) => p.prendasFaltantes.join(', ') || '-', anchoInicial: 220 },
-    { id: 'epp', encabezado: 'EPP faltante', tipo: 'texto', valor: (p) => p.eppFaltantes.join(', ') || '-', anchoInicial: 220 },
+    { id: 'uniforme', encabezado: 'Uniforme faltante', tipo: 'texto', valor: (p) => p.prendasFaltantes.map(articulo).join(', ') || '-', anchoInicial: 220 },
+    { id: 'epp', encabezado: 'EPP faltante', tipo: 'texto', valor: (p) => p.eppFaltantes.map(articulo).join(', ') || '-', anchoInicial: 220 },
   ]
 }
 

@@ -1,4 +1,4 @@
-import type { Alerta, OrigenAlerta, Pendiente } from './dashboard'
+import type { Alerta, Evaluacion, OrigenAlerta, Pendiente } from './dashboard'
 
 export type TipoFaltante = 'uniforme' | 'epp' | 'capacitacion'
 
@@ -21,6 +21,21 @@ export function faltantesPorArticulo(pendientes: Pendiente[], limite = 8): Falta
   return Array.from(cuenta.values())
     .sort((a, b) => b.personas - a.personas || a.articulo.localeCompare(b.articulo))
     .slice(0, limite)
+}
+
+// Los colaboradores que cuentan en la barra de ese faltante
+export function pendientesDeFaltante(pendientes: Pendiente[], { articulo, tipo }: Faltante): Pendiente[] {
+  return pendientes.filter((p) =>
+    tipo === 'capacitacion' ? p.capacitacionPendiente : (tipo === 'uniforme' ? p.prendasFaltantes : p.eppFaltantes).includes(articulo))
+}
+
+export type Indicador = 'capacitacion' | 'uniforme' | 'epp'
+
+// La población sobre la que se mide cada porcentaje: todos en capacitación, solo quienes tienen algo obligatorio en uniforme y EPP
+export function poblacionDeIndicador(evaluacion: Evaluacion[], indicador: Indicador): Evaluacion[] {
+  if (indicador === 'uniforme') return evaluacion.filter((e) => e.pideUniforme)
+  if (indicador === 'epp') return evaluacion.filter((e) => e.pideEpp)
+  return evaluacion
 }
 
 export interface DesgloseOrigen { origen: OrigenAlerta; vencidos: number; porVencer: number }

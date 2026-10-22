@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Colaborador } from '@/domain/entidades'
-import type { Alerta, Pendiente } from './dashboard'
-import { faltantesPorArticulo, vencimientosPorOrigen } from './dashboard-graficas'
+import type { Alerta, Evaluacion, Pendiente } from './dashboard'
+import { faltantesPorArticulo, pendientesDeFaltante, poblacionDeIndicador, vencimientosPorOrigen } from './dashboard-graficas'
 
 const pendiente = (o: Partial<Pendiente>): Pendiente => ({
   colaborador: { id: 'x' } as Colaborador, capacitacionPendiente: false, sinRegla: false, prendasFaltantes: [], eppFaltantes: [], ...o,
@@ -26,6 +26,16 @@ describe('faltantesPorArticulo', () => {
   })
 })
 
+describe('pendientesDeFaltante', () => {
+  const a = pendiente({ prendasFaltantes: ['gorro'], capacitacionPendiente: true })
+  const b = pendiente({ eppFaltantes: ['gorro'] })
+  it('devuelve solo a quienes les falta ese artículo del mismo tipo', () => {
+    expect(pendientesDeFaltante([a, b], { articulo: 'gorro', tipo: 'uniforme', personas: 1 })).toEqual([a])
+    expect(pendientesDeFaltante([a, b], { articulo: 'gorro', tipo: 'epp', personas: 1 })).toEqual([b])
+    expect(pendientesDeFaltante([a, b], { articulo: 'Capacitación vigente', tipo: 'capacitacion', personas: 1 })).toEqual([a])
+  })
+})
+
 describe('vencimientosPorOrigen', () => {
   const alerta = (origen: Alerta['origen'], estado: Alerta['estado']): Alerta => ({
     origen, estado, ciudad: 'x', referencia: 'r', vencimiento: new Date(), dias: 0,
@@ -37,5 +47,15 @@ describe('vencimientosPorOrigen', () => {
       { origen: 'epp', vencidos: 1, porVencer: 2 },
       { origen: 'extintor', vencidos: 1, porVencer: 0 },
     ])
+  })
+})
+
+describe('poblacionDeIndicador', () => {
+  const ev = (o: Partial<Evaluacion>): Evaluacion => ({ ...pendiente({}), pideUniforme: false, pideEpp: false, ...o })
+  const a = ev({ pideUniforme: true }), b = ev({ pideEpp: true }), c = ev({})
+  it('mide capacitación sobre todos y uniforme y EPP solo sobre quienes los piden', () => {
+    expect(poblacionDeIndicador([a, b, c], 'capacitacion')).toEqual([a, b, c])
+    expect(poblacionDeIndicador([a, b, c], 'uniforme')).toEqual([a])
+    expect(poblacionDeIndicador([a, b, c], 'epp')).toEqual([b])
   })
 })

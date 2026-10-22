@@ -31,6 +31,8 @@ function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date, regla: ReglaDota
   return {
     capacitacionOk: capacitacionVigente(c.id, d.capacitaciones, hoy),
     sinRegla: regla === null,
+    pideUniforme: (regla?.prendas.length ?? 0) > 0,
+    pideEpp: (regla?.tipos_epp.length ?? 0) > 0,
     prendasFaltantes: (regla?.prendas ?? []).filter((p) => !d.entregasUniforme.some((e) => e.colaborador_id === c.id && e.prenda === p && e.entregado !== false)),
     eppFaltantes: (regla?.tipos_epp ?? []).filter((t) => !d.entregasEpp.some((e) => e.colaborador_id === c.id && e.tipo === t && e.entregado)),
   }
@@ -45,13 +47,14 @@ function evaluarActivos(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[]) 
 
 const fraccion = (n: number, total: number) => (total === 0 ? null : n / total)
 
-// Uniforme y EPP se miden solo sobre quienes tienen regla; null si nadie la tiene.
+// Cada porcentaje se mide solo sobre quienes tienen algo obligatorio de ese tipo; null si nadie lo tiene.
 function cumplimiento(evaluados: Evaluado[]) {
-  const conRegla = evaluados.filter((e) => !e.sinRegla)
+  const conUniforme = evaluados.filter((e) => e.pideUniforme)
+  const conEpp = evaluados.filter((e) => e.pideEpp)
   return {
-    pctUniforme: fraccion(conRegla.filter((e) => e.prendasFaltantes.length === 0).length, conRegla.length),
-    pctEpp: fraccion(conRegla.filter((e) => e.eppFaltantes.length === 0).length, conRegla.length),
-    sinRegla: evaluados.length - conRegla.length,
+    pctUniforme: fraccion(conUniforme.filter((e) => e.prendasFaltantes.length === 0).length, conUniforme.length),
+    pctEpp: fraccion(conEpp.filter((e) => e.eppFaltantes.length === 0).length, conEpp.length),
+    sinRegla: evaluados.filter((e) => e.sinRegla).length,
   }
 }
 
@@ -109,15 +112,23 @@ export interface Pendiente {
   eppFaltantes: string[]
 }
 
+// Todos los activos con su estado; pideUniforme y pideEpp marcan a quienes entran en cada porcentaje
+export interface Evaluacion extends Pendiente { pideUniforme: boolean; pideEpp: boolean }
+
+export function evaluacionColaboradores(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): Evaluacion[] {
+  return evaluarActivos(d, hoy, reglas).map(({ c, e }) => ({
+    colaborador: c,
+    capacitacionPendiente: !e.capacitacionOk,
+    sinRegla: e.sinRegla,
+    prendasFaltantes: [...e.prendasFaltantes],
+    eppFaltantes: [...e.eppFaltantes],
+    pideUniforme: e.pideUniforme,
+    pideEpp: e.pideEpp,
+  }))
+}
+
 export function pendientesPorColaborador(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): Pendiente[] {
-  return evaluarActivos(d, hoy, reglas)
-    .map(({ c, e }) => ({
-      colaborador: c,
-      capacitacionPendiente: !e.capacitacionOk,
-      sinRegla: e.sinRegla,
-      prendasFaltantes: [...e.prendasFaltantes],
-      eppFaltantes: [...e.eppFaltantes],
-    }))
+  return evaluacionColaboradores(d, hoy, reglas)
     .filter((p) => p.capacitacionPendiente || p.sinRegla || p.prendasFaltantes.length > 0 || p.eppFaltantes.length > 0)
 }
 

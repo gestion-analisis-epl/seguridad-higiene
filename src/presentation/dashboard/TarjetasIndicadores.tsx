@@ -2,11 +2,13 @@ import type { Indices, NivelIli } from '@/domain/indicadores'
 import { miles, num } from './formato'
 import { NIVELES } from './niveles'
 
-export function Tarjeta({ rotulo, valor, nivel }: { rotulo: string; valor: string; nivel?: NivelIli }) {
+export function Tarjeta({ rotulo, valor, nivel, alElegir }: { rotulo: string; valor: string; nivel?: NivelIli; alElegir?: () => void }) {
   return (
-    <div data-nivel={nivel} className="kpi tarjeta min-w-0 p-4">
+    <div data-nivel={nivel} className={`kpi tarjeta min-w-0 p-4${alElegir ? ' relative hover:bg-superficie-2' : ''}`}>
       <dt className="rotulo">{rotulo}</dt>
-      <dd className="mt-2 break-words text-xl font-semibold leading-tight tabular-nums">{valor}</dd>
+      <dd className="mt-2 break-words text-xl font-semibold leading-tight tabular-nums">
+        {alElegir ? <button type="button" onClick={alElegir} title={`Ver los colaboradores: ${rotulo}`} className="text-left after:absolute after:inset-0">{valor}</button> : valor}
+      </dd>
     </div>
   )
 }

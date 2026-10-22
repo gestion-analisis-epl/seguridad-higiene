@@ -2,14 +2,17 @@ import type { Alerta } from '@/application/dashboard'
 import { vencimientosPorOrigen } from '@/application/dashboard-graficas'
 
 // Barra apilada de vencidos y por vencer, con desglose por origen.
-export function BarraVencimientos({ alertas }: { alertas: Alerta[] }) {
+export function BarraVencimientos({ alertas, alElegir }: { alertas: Alerta[]; alElegir?: () => void }) {
   const vencidos = alertas.filter((a) => a.estado === 'vencido').length
   const porVencer = alertas.length - vencidos
   const total = alertas.length
   const desglose = vencimientosPorOrigen(alertas)
   return (
     <div className="kpi tarjeta min-w-0 p-4">
-      <h3 className="rotulo">Estado de vencimientos</h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="rotulo">Estado de vencimientos</h3>
+        {alElegir && total > 0 && <button type="button" className="text-xs underline" onClick={alElegir}>Ver detalle</button>}
+      </div>
       {total === 0 ? (
         <p className="mt-3 text-sm text-texto-suave">Nada vencido ni por vencer en los próximos 30 días.</p>
       ) : (

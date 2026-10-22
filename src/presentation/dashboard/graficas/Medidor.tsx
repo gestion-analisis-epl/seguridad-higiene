@@ -5,7 +5,18 @@ const RADIO = 42
 const CIRCUNFERENCIA = 2 * Math.PI * RADIO
 
 // Anillo de cumplimiento; el color y la etiqueta de estado evitan depender solo del color.
-export function Medidor({ rotulo, fraccion }: { rotulo: string; fraccion: number | null }) {
+export function Medidor({ rotulo, fraccion, alElegir }: { rotulo: string; fraccion: number | null; alElegir?: () => void }) {
+  const figura = medidor(rotulo, fraccion)
+  if (!alElegir) return figura
+  return (
+    <button type="button" onClick={alElegir} title={`Ver los colaboradores: ${rotulo}`}
+      className="block min-w-0 rounded text-left hover:bg-superficie-2 [&>figure]:h-full">
+      {figura}
+    </button>
+  )
+}
+
+function medidor(rotulo: string, fraccion: number | null) {
   if (fraccion === null) {
     return (
       <figure className="kpi tarjeta flex min-w-0 flex-col items-center p-4" aria-label={`${rotulo}: sin datos, ninguna regla definida`}>

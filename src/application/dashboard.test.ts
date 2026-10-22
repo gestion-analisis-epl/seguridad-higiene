@@ -14,7 +14,7 @@ const hoy = new Date(2026, 8, 30)
 const PRENDAS = ['botas', 'playera', 'camisola', 'pantalon']
 const TIPOS_EPP = ['guantes', 'lentes', 'casco', 'linea-vida-doble-punto', 'arnes-cuerpo-completo', 'linea-posicionamiento']
 const reglas: ReglaDotacion[] = [{
-  id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, prendas: PRENDAS, tipos_epp: TIPOS_EPP,
+  id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, area: null, prendas: PRENDAS, tipos_epp: TIPOS_EPP,
 }]
 
 const datos: DatosOperativos = {
@@ -297,7 +297,7 @@ describe('series con varias ciudades', () => {
 
 describe('reglas de dotación', () => {
   const otras: ReglaDotacion[] = [
-    { id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, prendas: ['gorra'], tipos_epp: ['mascarilla', 'guantes'] },
+    { id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, area: null, prendas: ['gorra'], tipos_epp: ['mascarilla', 'guantes'] },
   ]
   const extra: DatosOperativos = {
     ...datos,
@@ -327,9 +327,15 @@ describe('reglas de dotación', () => {
     expect(pendientesPorColaborador(d, hoy, otras).find((x) => x.colaborador.id === 'c8'))
       .toMatchObject({ sinRegla: true, prendasFaltantes: [], eppFaltantes: [] })
   })
-  it('una regla vacía cuenta como cumplido', () => {
+  it('una regla vacía no entra en los porcentajes, pero tampoco cuenta como sin regla', () => {
     const vacia = [{ ...otras[0], prendas: [], tipos_epp: [] }]
-    expect(resumenGlobal(datos, hoy, vacia)).toMatchObject({ pctUniforme: 1, pctEpp: 1, sinRegla: 0 })
+    expect(resumenGlobal(datos, hoy, vacia)).toMatchObject({ pctUniforme: null, pctEpp: null, sinRegla: 0 })
+  })
+  it('el porcentaje de uniforme ignora a quienes solo tienen EPP obligatorio', () => {
+    const soloEpp = [{ ...otras[0], prendas: [] }]
+    const g = resumenGlobal(datos, hoy, soloEpp)
+    expect(g.pctUniforme).toBeNull()
+    expect(g.pctEpp).not.toBeNull()
   })
   it('sin reglas todos quedan sin regla y los porcentajes son null', () => {
     expect(resumenGlobal(datos, hoy)).toMatchObject({ sinRegla: 2, pctUniforme: null, pctEpp: null })
