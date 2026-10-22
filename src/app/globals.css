@@ -60,6 +60,7 @@
   --sombra: 0 1px 2px rgb(20 22 26 / 0.06), 0 1px 1px rgb(20 22 26 / 0.04);
   --sombra-alta: 0 12px 32px rgb(20 22 26 / 0.18);
   --ancho-barra: 16rem;
+  --ancho-barra-mini: 4.25rem;
   --alto-cabecera: 3.5rem;
 }
 
@@ -125,6 +126,28 @@
   body {
     @apply bg-fondo font-sans text-texto antialiased;
     font-feature-settings: 'ss01', 'tnum';
+  }
+
+  /* Barras delgadas y discretas: solo el pulgar, sin pista */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--texto-suave) 40%, transparent) transparent;
+  }
+
+  .zona-barra * {
+    scrollbar-color: var(--barra-borde) transparent;
+  }
+
+  @supports not (scrollbar-color: auto) {
+    *::-webkit-scrollbar { width: 8px; height: 8px; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    *::-webkit-scrollbar-thumb {
+      background-color: color-mix(in srgb, var(--texto-suave) 40%, transparent);
+      border-radius: 9999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    *::-webkit-scrollbar-thumb:hover { background-color: var(--texto-suave); }
   }
 
   :focus-visible {

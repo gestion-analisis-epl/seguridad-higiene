@@ -44,7 +44,7 @@ const config: Config = {
       },
       borderRadius: { DEFAULT: v("radio"), lg: v("radio-lg") },
       boxShadow: { suave: v("sombra"), alta: v("sombra-alta") },
-      spacing: { barra: v("ancho-barra"), cabecera: v("alto-cabecera") },
+      spacing: { barra: v("ancho-barra"), "barra-mini": v("ancho-barra-mini"), cabecera: v("alto-cabecera") },
     },
   },
   plugins: [],
