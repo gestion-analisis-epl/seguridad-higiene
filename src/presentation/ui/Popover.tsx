@@ -13,7 +13,7 @@ const igual = (a: PosicionPanel | null, b: PosicionPanel) =>
 // Panel en un portal sobre body: ningun ancestro (overflow, transform o animacion) lo recorta ni lo desplaza
 export function Popover({ id, ancla, alCerrar, ancho = 288, altoMax = 340, etiqueta, children }: {
   id?: string
-  ancla: RefObject<HTMLElement>
+  ancla: RefObject<HTMLElement | null>
   alCerrar: () => void
   ancho?: number
   altoMax?: number

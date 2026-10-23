@@ -12,7 +12,7 @@ let bloquear: (() => () => void) | null = null
 export function Dialogo({ titulo, alCerrar, retorno, children }: {
   titulo: string
   alCerrar: () => void
-  retorno?: RefObject<HTMLElement>
+  retorno?: RefObject<HTMLElement | null>
   children: ReactNode
 }) {
   const idTitulo = useId()

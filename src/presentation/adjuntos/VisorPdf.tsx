@@ -10,7 +10,7 @@ import { Icono } from '@/presentation/ui/Icono'
 
 interface Props {
   adjunto: Adjunto
-  retorno: RefObject<HTMLElement>
+  retorno: RefObject<HTMLElement | null>
   alCerrar: () => void
   alDescargar: () => void
 }
