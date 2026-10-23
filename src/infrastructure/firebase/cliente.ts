@@ -1,6 +1,12 @@
 import { getApp, getApps, initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from 'firebase/firestore'
 import { leerConfiguracion } from './configuracion'
 
 // Accesos estáticos: Next.js solo incrusta process.env.NEXT_PUBLIC_* escritos así
@@ -19,5 +25,19 @@ export const app = getApps().length
     })
 
 export const auth = getAuth(app)
-export const db = getFirestore(app, baseDatos)
+// Caché en IndexedDB solo en cliente; si ya estaba inicializado reutiliza la instancia
+function crearFirestore(): Firestore {
+  if (typeof window === 'undefined') return getFirestore(app, baseDatos)
+  try {
+    return initializeFirestore(
+      app,
+      { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) },
+      baseDatos,
+    )
+  } catch {
+    return getFirestore(app, baseDatos)
+  }
+}
+
+export const db = crearFirestore()
 export { dominioPermitido }
