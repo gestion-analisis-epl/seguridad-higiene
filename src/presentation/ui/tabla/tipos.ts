@@ -13,6 +13,8 @@ export interface ColumnaTabla<T> extends ColumnaLogica<T> {
   alinear?: 'izquierda' | 'derecha'
   // Celdas con controles: no se truncan con puntos suspensivos
   sinTruncar?: boolean
+  // Disponible en el selector de columnas, pero oculta mientras no se elija; la primera columna nunca se oculta
+  ocultaPorDefecto?: boolean
 }
 
 export interface PropsDataTable<T> {

@@ -1,10 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { escribirXlsx } from '@/infrastructure/xlsx/escribir-xlsx'
 import { Icono } from '../Icono'
 import { usePersistente } from '../usePersistente'
 import { EncabezadoColumna } from './EncabezadoColumna'
 import { ControlesPaginacion } from './ControlesPaginacion'
+import { SelectorColumnas } from './SelectorColumnas'
+import { SIN_OCULTAS, alternarOculta, columnasMostradas, filtrosEnOcultas, idsOcultos, ocultasPorDefecto, ocultasValidas } from './columnas-visibles'
+import { descargarXlsx } from './descargar'
+import { hojaParaExcel, nombreArchivo } from './exportar'
 import { TAMANO_PAGINA_INICIAL, paginar, resumenPagina, tamanoValido } from './paginacion'
 import { esControlInteractivo } from './interaccion'
 import { difiereDeIniciales, estadoBase, filtrosRestablecidos } from './filtros-iniciales'
@@ -35,6 +40,12 @@ export function DataTable<T>({
   const [tamano, setTamano] = usePersistente<number>(
     claveAnchos ? `tamano:${claveAnchos}` : null, TAMANO_PAGINA_INICIAL, tamanoValido,
   )
+  const iniciales = useMemo(() => ocultasPorDefecto(columnas), [columnas])
+  const [ocultas, setOcultas] = usePersistente<string[]>(
+    claveAnchos ? `columnas:${claveAnchos}` : null, iniciales, ocultasValidas,
+  )
+  const fuera = useMemo(() => idsOcultos(columnas, ocultas), [columnas, ocultas])
+  const mostradas = useMemo(() => columnasMostradas(columnas, ocultas), [columnas, ocultas])
   const [enVivo, setEnVivo] = useState<{ id: string; ancho: number } | null>(null)
   const [guardados, setGuardados] = usePersistente<Record<string, number>>(
     claveAnchos ? `anchos:${claveAnchos}` : null, {}, anchosValidos,
@@ -47,7 +58,7 @@ export function DataTable<T>({
     [claveMedidas, guardados],
   )
   const anchos = enVivo ? { ...base, [enVivo.id]: enVivo.ancho } : base
-  const anchoTotal = columnas.reduce((suma, c) => suma + anchos[c.id], 0)
+  const anchoTotal = mostradas.reduce((suma, c) => suma + anchos[c.id], 0)
   const difiere = difiereDeIniciales(filtros, filtrosIniciales)
   const hayIniciales = !!filtrosIniciales && Object.keys(filtrosIniciales).length > 0
 
@@ -80,6 +91,11 @@ export function DataTable<T>({
     setGuardados((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => id !== c.id)))
   }
 
+  const descargar = () => descargarXlsx(
+    nombreArchivo(etiqueta, new Date()), escribirXlsx(hojaParaExcel(mostradas, visibles, anchos, etiqueta)),
+  )
+  const filtrosOcultos = filtrosEnOcultas(filtros, fuera)
+
   const alClicFila = (e: React.MouseEvent, fila: T) => {
     if (!esControlInteractivo(e.target as Element)) alSeleccionarFila?.(fila)
   }
@@ -87,26 +103,39 @@ export function DataTable<T>({
   return (
     <div className="min-w-0">
       <div className="mb-2 flex min-h-[2.5rem] flex-wrap items-center justify-between gap-2">
-        <p role="status" className="text-sm text-texto-suave">{resumenPagina(actual, filas.length)}</p>
-        {difiere && (
-          <button type="button" onClick={() => cambiarEstado({ filtros: filtrosRestablecidos(filtrosIniciales), pagina: 1 })} className="boton-secundario min-h-[2rem] px-3 text-xs">
-            <Icono nombre="cerrar" className="h-3.5 w-3.5" />
-            {hayIniciales ? 'Restablecer filtros' : 'Limpiar filtros'}
+        <p role="status" className="text-sm text-texto-suave">
+          {resumenPagina(actual, filas.length)}
+          {filtrosOcultos > 0 && ` · ${filtrosOcultos} ${filtrosOcultos === 1 ? 'filtro' : 'filtros'} en columnas ocultas`}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {difiere && (
+            <button type="button" onClick={() => cambiarEstado({ filtros: filtrosRestablecidos(filtrosIniciales), pagina: 1 })} className="boton-secundario min-h-[2rem] px-3 text-xs">
+              <Icono nombre="cerrar" className="h-3.5 w-3.5" />
+              {hayIniciales ? 'Restablecer filtros' : 'Limpiar filtros'}
+            </button>
+          )}
+          {columnas.length > 1 && (
+            <SelectorColumnas columnas={columnas} ocultas={fuera}
+              alAlternar={(id) => setOcultas((o) => alternarOculta(o, id))} alMostrarTodas={() => setOcultas(SIN_OCULTAS)} />
+          )}
+          <button type="button" onClick={descargar} disabled={visibles.length === 0} className="boton-secundario min-h-[2rem] px-3 text-xs">
+            <Icono nombre="descargar" className="h-3.5 w-3.5" />
+            Descargar Excel
           </button>
-        )}
+        </div>
       </div>
       <div className="contenedor-tabla">
         <table
-          aria-label={etiqueta} aria-rowcount={visibles.length + 1} aria-colcount={columnas.length}
+          aria-label={etiqueta} aria-rowcount={visibles.length + 1} aria-colcount={mostradas.length}
           className={`tabla table-fixed ${densidad === 'compacta' ? '[&_td]:!py-1' : ''}`}
           style={{ width: '100%', minWidth: anchoTotal }}
         >
           <colgroup>
-            {columnas.map((c) => <col key={c.id} style={{ width: anchos[c.id] }} />)}
+            {mostradas.map((c) => <col key={c.id} style={{ width: anchos[c.id] }} />)}
           </colgroup>
           <thead>
             <tr>
-              {columnas.map((c, i) => {
+              {mostradas.map((c, i) => {
                 const filtro = filtros[c.id]
                 return (
                   <EncabezadoColumna
@@ -116,7 +145,7 @@ export function DataTable<T>({
                     ordenable={c.ordenable !== false} filtrable={c.filtrable !== false}
                     filtro={filtro} filtroActivo={!!filtro && filtroActivo(filtro)}
                     opciones={opcionesColumnas[c.id] ?? []}
-                    ancho={anchos[c.id]} minimo={minimoDe(c)} ultima={i === columnas.length - 1}
+                    ancho={anchos[c.id]} minimo={minimoDe(c)} ultima={i === mostradas.length - 1}
                     alOrdenar={() => cambiarEstado({ orden: siguienteOrden(orden, c.id), pagina: 1 })}
                     alFiltrar={(f) => cambiarFiltro(c.id, f)}
                     alArrastrarAncho={(a) => arrastrarAncho(c, a)}
@@ -129,7 +158,7 @@ export function DataTable<T>({
           </thead>
           <tbody>
             {visibles.length === 0 && (
-              <tr><td colSpan={columnas.length} className="py-10 text-center text-texto-suave">{vacio}</td></tr>
+              <tr><td colSpan={mostradas.length} className="py-10 text-center text-texto-suave">{vacio}</td></tr>
             )}
             {actual.filas.map((fila) => (
               <tr
@@ -138,7 +167,7 @@ export function DataTable<T>({
                 onClick={alSeleccionarFila ? (e) => alClicFila(e, fila) : undefined}
                 className={alSeleccionarFila ? 'cursor-pointer transition-colors hover:bg-superficie-2 focus-within:bg-superficie-2' : undefined}
               >
-                {columnas.map((c, i) => {
+                {mostradas.map((c, i) => {
                   const contenido = c.celda ? c.celda(fila) : textoVisible(c.valor(fila))
                   return (
                     <td key={c.id} title={c.sinTruncar ? undefined : textoVisible(c.valor(fila)) || undefined}
