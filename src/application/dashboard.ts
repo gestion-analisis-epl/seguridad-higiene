@@ -33,6 +33,8 @@ function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date, regla: ReglaDota
     sinRegla: regla === null,
     pideUniforme: (regla?.prendas.length ?? 0) > 0,
     pideEpp: (regla?.tipos_epp.length ?? 0) > 0,
+    prendasExigidas: regla?.prendas.length ?? 0,
+    eppExigidos: regla?.tipos_epp.length ?? 0,
     prendasFaltantes: (regla?.prendas ?? []).filter((p) => !d.entregasUniforme.some((e) => e.colaborador_id === c.id && e.prenda === p && e.entregado !== false)),
     eppFaltantes: (regla?.tipos_epp ?? []).filter((t) => !d.entregasEpp.some((e) => e.colaborador_id === c.id && e.tipo === t && e.entregado)),
   }
@@ -47,6 +49,18 @@ function evaluarActivos(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[]) 
 
 const fraccion = (n: number, total: number) => (total === 0 ? null : n / total)
 
+// Artículos exigidos que ya se entregaron; completos son las personas sin faltantes. fraccion es null sin exigidos.
+export interface Cobertura { fraccion: number | null; entregados: number; exigidos: number; completos: number; evaluados: number }
+
+function cobertura(exigen: { exigidos: number; faltantes: number }[]): Cobertura {
+  const exigidos = exigen.reduce((s, e) => s + e.exigidos, 0)
+  const entregados = exigidos - exigen.reduce((s, e) => s + e.faltantes, 0)
+  return {
+    fraccion: fraccion(entregados, exigidos), entregados, exigidos,
+    completos: exigen.filter((e) => e.faltantes === 0).length, evaluados: exigen.length,
+  }
+}
+
 // Cada porcentaje se mide solo sobre quienes tienen algo obligatorio de ese tipo; null si nadie lo tiene.
 function cumplimiento(evaluados: Evaluado[]) {
   const conUniforme = evaluados.filter((e) => e.pideUniforme)
@@ -54,6 +68,8 @@ function cumplimiento(evaluados: Evaluado[]) {
   return {
     pctUniforme: fraccion(conUniforme.filter((e) => e.prendasFaltantes.length === 0).length, conUniforme.length),
     pctEpp: fraccion(conEpp.filter((e) => e.eppFaltantes.length === 0).length, conEpp.length),
+    coberturaUniforme: cobertura(conUniforme.map((e) => ({ exigidos: e.prendasExigidas, faltantes: e.prendasFaltantes.length }))),
+    coberturaEpp: cobertura(conEpp.map((e) => ({ exigidos: e.eppExigidos, faltantes: e.eppFaltantes.length }))),
     sinRegla: evaluados.filter((e) => e.sinRegla).length,
   }
 }
@@ -64,6 +80,8 @@ export interface ResumenCiudad {
   pctCapacitacion: number
   pctUniforme: number | null
   pctEpp: number | null
+  coberturaUniforme: Cobertura
+  coberturaEpp: Cobertura
   sinRegla: number
 }
 
@@ -86,6 +104,8 @@ export interface ResumenGlobal {
   pctCapacitacion: number
   pctUniforme: number | null
   pctEpp: number | null
+  coberturaUniforme: Cobertura
+  coberturaEpp: Cobertura
   sinRegla: number
   vencidos: number
   porVencer: number

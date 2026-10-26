@@ -341,3 +341,40 @@ describe('reglas de dotación', () => {
     expect(resumenGlobal(datos, hoy)).toMatchObject({ sinRegla: 2, pctUniforme: null, pctEpp: null })
   })
 })
+
+describe('cobertura de dotación', () => {
+  const regla: ReglaDotacion[] = [
+    { id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, area: null, prendas: ['a', 'b', 'c', 'd'], tipos_epp: ['x', 'y'] },
+  ]
+  const parcial: DatosOperativos = {
+    ...datos,
+    entregasUniforme: [{ colaborador_id: 'c1', prenda: 'a' }, { colaborador_id: 'c1', prenda: 'b' }, { colaborador_id: 'c2', prenda: 'c', entregado: false }],
+    entregasEpp: [
+      { colaborador_id: 'c1', tipo: 'x', entregado: true, vencimiento: null },
+      { colaborador_id: 'c2', tipo: 'x', entregado: false, vencimiento: null },
+      { colaborador_id: 'c2', tipo: 'fuera-de-regla', entregado: true, vencimiento: null },
+    ],
+  }
+  it('mide artículos entregados sobre exigidos, no personas completas', () => {
+    const g = resumenGlobal(parcial, hoy, regla)
+    expect(g.coberturaUniforme).toEqual({ fraccion: 0.25, entregados: 2, exigidos: 8, completos: 0, evaluados: 2 })
+    expect(g.coberturaEpp).toEqual({ fraccion: 0.25, entregados: 1, exigidos: 4, completos: 0, evaluados: 2 })
+    expect(g.pctUniforme).toBe(0)
+    expect(g.pctEpp).toBe(0)
+  })
+  it('una persona completa suma a completos y a la cobertura', () => {
+    const g = resumenGlobal(datos, hoy, reglas)
+    expect(g.coberturaUniforme).toMatchObject({ entregados: 4, exigidos: 8, completos: 1, evaluados: 2 })
+    expect(g.coberturaEpp).toMatchObject({ entregados: 6, exigidos: 12, completos: 1, evaluados: 2 })
+    expect(g.coberturaEpp.fraccion).toBeCloseTo(0.5)
+  })
+  it('por ciudad usa solo a los activos de esa ciudad', () => {
+    const c = resumenPorCiudad(parcial, hoy, regla).find((r) => r.ciudad === 'ciudad-a')!
+    expect(c.coberturaUniforme).toMatchObject({ entregados: 2, exigidos: 8 })
+  })
+  it('quien no tiene regla o una regla vacía no entra y sin exigidos la fracción es null', () => {
+    const vacia = [{ ...regla[0], prendas: [], tipos_epp: [] }]
+    expect(resumenGlobal(parcial, hoy, vacia).coberturaUniforme).toEqual({ fraccion: null, entregados: 0, exigidos: 0, completos: 0, evaluados: 0 })
+    expect(resumenGlobal(parcial, hoy).coberturaEpp.fraccion).toBeNull()
+  })
+})

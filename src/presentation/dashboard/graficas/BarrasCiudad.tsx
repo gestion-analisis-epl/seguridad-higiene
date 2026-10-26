@@ -7,12 +7,15 @@ import { COLOR_SEMAFORO, semaforo } from '../semaforo'
 
 import type { Indicador as Poblacion } from '@/application/dashboard-graficas'
 
-type Indicador = 'pctCapacitacion' | 'pctUniforme' | 'pctEpp'
+type Indicador = 'pctCapacitacion' | 'coberturaUniforme' | 'coberturaEpp'
+
+const valorDe = (f: ResumenCiudad, i: Indicador): number | null =>
+  i === 'pctCapacitacion' ? f.pctCapacitacion : f[i].fraccion
 
 const INDICADORES: { clave: Indicador; texto: string; poblacion: Poblacion }[] = [
   { clave: 'pctCapacitacion', texto: 'Capacitación', poblacion: 'capacitacion' },
-  { clave: 'pctUniforme', texto: 'Uniforme', poblacion: 'uniforme' },
-  { clave: 'pctEpp', texto: 'EPP', poblacion: 'epp' },
+  { clave: 'coberturaUniforme', texto: 'Uniforme', poblacion: 'uniforme' },
+  { clave: 'coberturaEpp', texto: 'EPP', poblacion: 'epp' },
 ]
 
 // Una barra por ciudad, de menor a mayor cumplimiento, para ver de inmediato dónde hay rezago.
@@ -22,7 +25,7 @@ export function BarrasCiudad({ filas, etiqueta, alElegir }: {
   alElegir: (ciudad: string, indicador: { texto: string; poblacion: Poblacion }) => void
 }) {
   const [indicador, setIndicador] = useState<Indicador>('pctCapacitacion')
-  const orden = (f: ResumenCiudad) => f[indicador] ?? -1
+  const orden = (f: ResumenCiudad) => valorDe(f, indicador) ?? -1
   const ordenadas = [...filas].sort((a, b) => orden(a) - orden(b) || a.ciudad.localeCompare(b.ciudad))
   return (
     <div className="kpi tarjeta min-w-0 p-4">
@@ -42,7 +45,7 @@ export function BarrasCiudad({ filas, etiqueta, alElegir }: {
       ) : (
         <ul className="mt-3 space-y-2">
           {ordenadas.map((f) => {
-            const valor = f[indicador]
+            const valor = valorDe(f, indicador)
             const fuera = indicador !== 'pctCapacitacion' && f.sinRegla > 0 ? ` · ${f.sinRegla} sin regla` : ''
             return (
               <li key={f.ciudad}>

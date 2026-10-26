@@ -5,8 +5,8 @@ const RADIO = 42
 const CIRCUNFERENCIA = 2 * Math.PI * RADIO
 
 // Anillo de cumplimiento; el color y la etiqueta de estado evitan depender solo del color.
-export function Medidor({ rotulo, fraccion, alElegir }: { rotulo: string; fraccion: number | null; alElegir?: () => void }) {
-  const figura = medidor(rotulo, fraccion)
+export function Medidor({ rotulo, fraccion, detalle, alElegir }: { rotulo: string; fraccion: number | null; detalle?: string; alElegir?: () => void }) {
+  const figura = medidor(rotulo, fraccion, detalle)
   if (!alElegir) return figura
   return (
     <button type="button" onClick={alElegir} title={`Ver los colaboradores: ${rotulo}`}
@@ -16,7 +16,7 @@ export function Medidor({ rotulo, fraccion, alElegir }: { rotulo: string; fracci
   )
 }
 
-function medidor(rotulo: string, fraccion: number | null) {
+function medidor(rotulo: string, fraccion: number | null, detalle?: string) {
   if (fraccion === null) {
     return (
       <figure className="kpi tarjeta flex min-w-0 flex-col items-center p-4" aria-label={`${rotulo}: sin datos, ninguna regla definida`}>
@@ -46,6 +46,7 @@ function medidor(rotulo: string, fraccion: number | null) {
       <figcaption className="mt-2 text-center">
         <span className="rotulo block">{rotulo}</span>
         <span className="text-xs font-medium" style={{ color: COLOR_SEMAFORO[nivel] }}>{TEXTO_SEMAFORO[nivel]}</span>
+        {detalle && <span className="block text-xs text-texto-suave">{detalle}</span>}
       </figcaption>
     </figure>
   )
