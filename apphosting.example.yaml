@@ -37,3 +37,6 @@ env:
   - variable: COLABORADORES_SHEET_TAB_UNIFORMES
     value: Uniformes
     availability: [RUNTIME]
+  - variable: CRON_SECRET
+    secret: cron-secret
+    availability: [RUNTIME]

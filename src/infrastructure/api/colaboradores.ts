@@ -1,5 +1,5 @@
 import { crearClienteHoja, type RespuestaHoja } from '@/application/colaboradores-hoja-cliente'
-import type { ResultadoImportacion } from '@/application/colaboradores-servidor'
+import type { ResultadoImportacion, ResultadoSincronizacion } from '@/application/colaboradores-servidor'
 import type { ColaboradorHoja, FilaEnlace } from '@/domain/colaboradores-hoja'
 import { enviar, llamar } from './llamar'
 
@@ -26,3 +26,6 @@ export const vincular = (uid: string, idInterno: string, sobrescribir = false) =
 
 export const desvincular = (uid: string) =>
   llamar<{ ok: true }>('/api/colaboradores/enlace', enviar({ accion: 'desvincular', uid }))
+
+export const sincronizarColaboradores = (simular: boolean) =>
+  llamar<ResultadoSincronizacion & { simulado: boolean }>('/api/colaboradores/sincronizar', enviar({ simular }))

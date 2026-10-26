@@ -125,6 +125,15 @@ Requisitos en el proyecto:
 4. Orden de publicación: primero desplegar la app con sus rutas `/api`, luego `pnpm config:firebase` y `firebase deploy --only firestore:<BASE>`; así las reglas nuevas no cortan la captura mientras tanto.
 5. En local: pegar el JSON de la cuenta de servicio en una línea en `FIREBASE_SERVICE_ACCOUNT_JSON` y compartir la hoja como lector con su `client_email`; también van las variables `COLABORADORES_SHEET_*` en `.env.local`. Alternativa: `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/spreadsheets.readonly`.
 
+### Sincronización automática (cron)
+
+`POST /api/colaboradores/sincronizar-cron` con `Authorization: Bearer <CRON_SECRET>` aplica la hoja a los colaboradores: crea a los activos nuevos, activa o desactiva según la hoja (bajas y reingresos) y actualiza puesto, zona, plaza, empresa, jefe, gerente, ciudad, área y línea. Nunca cambia nombre, fecha de ingreso, `id_interno` ni número de colaborador, y no crea inactivos. Quien coincide en nombre con un colaborador sin vincular se omite para enlazarlo a mano. Si la hoja no se puede leer o viene vacía no hace nada. `?simular=1` solo calcula qué cambiaría.
+
+También se puede lanzar a mano desde `/admin/colaboradores` con "Actualizar desde la hoja" (primero "Simular"). Ahí mismo, los que coinciden en nombre con alguien sin vincular salen en "Por decidir" (vincular a la persona existente, crear uno nuevo o dejarlo para después) y los que fallan en "Con error".
+
+- Crear el secreto: `firebase apphosting:secrets:set cron-secret` y declararlo en `apphosting.yaml` como `variable: CRON_SECRET`, `secret: cron-secret` (disponibilidad RUNTIME).
+- Cloud Scheduler: tarea HTTP `POST` a la URL de la app, cada 15 a 30 minutos, con el encabezado `Authorization: Bearer <valor del secreto>`.
+
 ## Entregas de uniforme y EPP desde Google Sheets
 
 Las entregas las registra un sistema externo en la pestaña `Uniformes` del mismo archivo de colaboradores (variable `COLABORADORES_SHEET_TAB_UNIFORMES`); en la app son solo de consulta.
