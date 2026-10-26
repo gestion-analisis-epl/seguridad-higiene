@@ -49,6 +49,29 @@ describe('columnasDeModulo', () => {
   })
 })
 
+describe('columnas extra', () => {
+  const conExtra: ModuloDef = {
+    ...def,
+    columnasExtra: [
+      { nombre: 'jefe', etiqueta: 'Jefe', tipo: 'texto', formato: 'titulo' },
+      { nombre: 'empresa', etiqueta: 'Empresa', tipo: 'texto' },
+    ],
+  }
+  const cs = columnasDeModulo(conExtra, opciones)
+  const extra = (id: string) => cs.find((c) => c.id === id)!
+  it('van después de las del módulo y empiezan ocultas', () => {
+    expect(cs.map((c) => c.id)).toEqual(['ciudad', 'nombre', 'cantidad', 'fecha', 'activo', 'jefe', 'empresa'])
+    expect(cs.filter((c) => c.ocultaPorDefecto).map((c) => c.id)).toEqual(['jefe', 'empresa'])
+  })
+  it('el formato título se aplica al mostrar y sin formato se respetan las siglas', () => {
+    expect(extra('jefe').valor(fila({ jefe: 'JOSE CHAGOYA' }))).toBe('Jose Chagoya')
+    expect(extra('empresa').valor(fila({ empresa: 'MKTQRO' }))).toBe('MKTQRO')
+  })
+  it('sin extras no hay columnas ocultas', () => {
+    expect(cols.some((c) => c.ocultaPorDefecto)).toBe(false)
+  })
+})
+
 describe('columnasDeModulo con lista', () => {
   const lista: ModuloDef = {
     id: 'l', coleccion: 'l', titulo: 'L', columnas: ['items'],

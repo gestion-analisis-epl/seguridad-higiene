@@ -14,13 +14,30 @@ const subcamposBotiquin: CampoDef[] = [
 ]
 const sinItems = (campo: string) => (v: Valores) => !(Array.isArray(v[campo]) && v[campo].length > 0)
 
+// Columnas del Sheets que la tabla puede mostrar; empresa y correo van tal cual para respetar siglas y minúsculas
+const columnasExtraColaboradores: CampoDef[] = [
+  { nombre: 'id_interno', etiqueta: 'ID', tipo: 'texto' },
+  { nombre: 'nombres', etiqueta: 'Nombre(s)', tipo: 'texto', formato: 'titulo' },
+  { nombre: 'apellido_paterno', etiqueta: 'Apellido paterno', tipo: 'texto', formato: 'titulo' },
+  { nombre: 'apellido_materno', etiqueta: 'Apellido materno', tipo: 'texto', formato: 'titulo' },
+  { nombre: 'funcion_area', etiqueta: 'Función Área', tipo: 'texto', formato: 'titulo' },
+  { nombre: 'zona', etiqueta: 'Zona', tipo: 'texto', formato: 'titulo' },
+  { nombre: 'plaza', etiqueta: 'Plaza', tipo: 'texto', formato: 'titulo' },
+  { nombre: 'empresa', etiqueta: 'Empresa', tipo: 'texto' },
+  { nombre: 'empresa_alta', etiqueta: 'Empresa alta', tipo: 'texto' },
+  { nombre: 'gerente', etiqueta: 'Gerente', tipo: 'texto', formato: 'titulo' },
+  { nombre: 'jefe', etiqueta: 'Jefe', tipo: 'texto', formato: 'titulo' },
+  { nombre: 'correo', etiqueta: 'Correo', tipo: 'texto' },
+  { nombre: 'tipo_nomina', etiqueta: 'Tipo de nómina', tipo: 'texto', formato: 'titulo' },
+]
+
 const colaboradores: ModuloDef = {
   id: 'colaboradores', coleccion: 'colaboradores', titulo: 'Colaboradores',
   inicial: { activo: true },
   campos: [
     { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true, formato: 'titulo' },
     { nombre: 'numero_colaborador', etiqueta: 'No. de colaborador', tipo: 'texto' },
-    { nombre: 'puesto', etiqueta: 'Puesto', tipo: 'texto' },
+    { nombre: 'puesto', etiqueta: 'Puesto', tipo: 'texto', formato: 'titulo' },
     { nombre: 'ciudad', etiqueta: 'Ciudad', tipo: 'seleccion', requerido: true, origen: catalogo('ciudades') },
     { nombre: 'area', etiqueta: 'Área', tipo: 'seleccion', origen: catalogo('areas') },
     { nombre: 'linea_negocio', etiqueta: 'Línea de negocio', tipo: 'seleccion', requerido: true, origen: catalogo('lineas_negocio') },
@@ -29,6 +46,7 @@ const colaboradores: ModuloDef = {
     { nombre: 'activo', etiqueta: 'Activo', tipo: 'booleano' },
   ],
   columnas: ['nombre', 'numero_colaborador', 'puesto', 'ciudad', 'area', 'cuadrilla', 'fecha_ingreso', 'activo'],
+  columnasExtra: columnasExtraColaboradores,
   bloquearEnEdicion: ['nombre', 'numero_colaborador', 'puesto', 'ciudad', 'area', 'linea_negocio', 'fecha_ingreso'],
 }
 

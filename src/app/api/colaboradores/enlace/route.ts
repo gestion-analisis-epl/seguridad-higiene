@@ -1,5 +1,5 @@
 import { desvincularColaborador, ErrorColaborador, vincularColaborador } from '@/application/colaboradores-servidor'
-import { planearEnlace } from '@/domain/colaboradores-hoja'
+import { paraCliente, planearEnlace } from '@/domain/colaboradores-hoja'
 import { adminDb } from '@/infrastructure/servidor/admin'
 import { crearAlmacenAdmin } from '@/infrastructure/servidor/almacen-admin'
 import { autorizar, leerCuerpo } from '@/infrastructure/servidor/autorizar'
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       nombre: String(d.data().nombre ?? d.id),
       id_interno: typeof d.data().id_interno === 'string' ? (d.data().id_interno as string) : null,
     }))
-    return Response.json({ filas: planearEnlace(existentes, hoja), hoja })
+    return Response.json({ filas: planearEnlace(existentes, hoja).map((f) => ({ ...f, sugerencia: f.sugerencia && { ...f.sugerencia, candidatos: f.sugerencia.candidatos.map(paraCliente) } })), hoja: hoja.map(paraCliente) })
   } catch (error) {
     console.error('No se pudo preparar el enlace de colaboradores', error)
     return Response.json({ error: 'No se pudo preparar el enlace de colaboradores' }, { status: 502 })

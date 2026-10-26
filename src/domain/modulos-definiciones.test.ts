@@ -14,6 +14,19 @@ describe('definiciones', () => {
     }
   })
 
+  it('colaboradores: el puesto va en formato título y las columnas extra del Sheets no pisan el formulario', () => {
+    const def = MODULOS.colaboradores
+    expect(def.campos.find((c) => c.nombre === 'puesto')?.formato).toBe('titulo')
+    expect(def.columnasExtra?.map((c) => c.nombre)).toEqual([
+      'id_interno', 'nombres', 'apellido_paterno', 'apellido_materno', 'funcion_area', 'zona', 'plaza', 'empresa',
+      'empresa_alta', 'gerente', 'jefe', 'correo', 'tipo_nomina',
+    ])
+    for (const n of ['id_interno', 'empresa', 'empresa_alta', 'correo']) {
+      expect(def.columnasExtra?.find((c) => c.nombre === n)?.formato, n).toBeUndefined()
+    }
+    expect(def.columnasExtra?.every((c) => !def.campos.some((f) => f.nombre === c.nombre))).toBe(true)
+  })
+
   it('uniforme y EPP son de solo lectura y no exigen datos que la hoja puede omitir', () => {
     for (const def of [MODULOS.entregas_uniforme, MODULOS.entregas_epp]) {
       expect(def.soloLectura).toBe(true)

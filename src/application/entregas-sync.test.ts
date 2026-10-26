@@ -15,7 +15,8 @@ const parsear = (...filas: unknown[][]) => parsearEntregasHoja([ENCABEZADO, ...f
 
 const col = (id: string, o: Partial<ColaboradorHoja> = {}): ColaboradorHoja => ({
   id_interno: id, numero: '9', nombre: 'ANA PEREZ', plaza: 'LEON', departamento: 'X', empresa: 'Y', puesto: 'SOLDADOR',
-  fecha_ingreso: null, zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', inactivo: false, ...o,
+  fecha_ingreso: null, zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', inactivo: false,
+  nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', ...o,
 })
 
 const MAPEO = new Map<string, MapeoArticulo>([

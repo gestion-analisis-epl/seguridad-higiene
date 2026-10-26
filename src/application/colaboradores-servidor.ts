@@ -52,6 +52,8 @@ async function resolverCatalogos(tx: TxColaboradores, fila: ColaboradorHoja, cam
 const camposMovibles = (f: ColaboradorHoja) => ({
   puesto: f.puesto, zona: f.zona, plaza: f.plaza, empresa: f.empresa, jefe: f.jefe, gerente: f.gerente,
   motivo_baja: f.motivo_baja, fecha_baja: f.fecha_baja ? deTextoIso(f.fecha_baja) : null,
+  nombres: f.nombres, apellido_paterno: f.apellido_paterno, apellido_materno: f.apellido_materno, funcion_area: f.funcion_area,
+  empresa_alta: f.empresa_alta, correo: f.correo, tipo_nomina: f.tipo_nomina,
 })
 
 const datosDeHoja = (f: ColaboradorHoja) => ({ id_interno: f.id_interno, numero_colaborador: f.numero, ...camposMovibles(f) })
@@ -116,7 +118,8 @@ export async function vincularColaborador(
   })
 }
 
-const comparable = (v: unknown) => (v instanceof Date ? v.getTime()
+// Un texto vacío equivale a un campo ausente, para no reescribir columnas sin dato
+const comparable = (v: unknown) => (v === '' ? null : v instanceof Date ? v.getTime()
   : v && typeof v === 'object' && 'toMillis' in v ? (v as { toMillis(): number }).toMillis() : v ?? null)
 
 const cambiosPropuestos = (fila: ColaboradorHoja, actual: Record<string, unknown>, valores: Partial<Record<CampoCatalogo, string | null>>) =>

@@ -1,23 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buscarColaboradores, copiaDeColaborador, etiquetaColaboradorHoja, fechaDeHoja, normalizarNombre, parsearFilasHoja,
+  buscarColaboradores, copiaDeColaborador, etiquetaColaboradorHoja, fechaDeHoja, normalizarNombre, paraCliente, parsearFilasHoja,
   planearEnlace, planearImportacion, resolverEntradaCatalogo, type ColaboradorHoja,
 } from './colaboradores-hoja'
 
 const ENCABEZADO = [
-  'id', 'No.Colaborador', 'Nombre', 'NombreCompleto', 'Función Área', 'Departamento', 'Puesto', 'FechaIngreso',
-  'FechaBaja', 'Zona', 'Plaza', 'MotivoBaja', 'Empresa', 'Gerente', 'Jefe', 'CorreoEmpresa',
+  'id', 'No.Colaborador', 'Nombre', 'ApellidoPaterno', 'ApellidoMaterno', 'NombreCompleto', 'Función Área', 'Departamento', 'Puesto',
+  'FechaIngreso', 'FechaBaja', 'Zona', 'Plaza', 'MotivoBaja', 'Empresa', 'Empresa Alta', 'Gerente', 'Jefe', 'CorreoEmpresa', 'TipoNomina',
 ]
 const fila = (o: Record<string, string>) => ENCABEZADO.map((h) => o[h] ?? '')
 const base = {
   id: '12066', 'No.Colaborador': '2120', NombreCompleto: 'ADALBERTO GUTIERREZ MIRANDA', Departamento: 'SEGURIDAD',
   Puesto: 'GUARDIA DE SEGURIDAD ', FechaIngreso: '2026-09-28 0:00:00', Zona: 'Bajío Centro', Plaza: 'LEON',
   Empresa: 'SICMART SA DE CV', Gerente: 'ALFONSO ORDAZ OCAÑA ', Jefe: 'JOSE CHAGOYA', CorreoEmpresa: 'x@y.com',
+  Nombre: 'ADALBERTO', ApellidoPaterno: 'GUTIERREZ', ApellidoMaterno: 'MIRANDA', 'Función Área': 'OPERACION',
+  'Empresa Alta': 'SICMART', TipoNomina: 'SEMANAL',
 }
 const hoja = (...filas: Record<string, string>[]) => [ENCABEZADO, ...filas.map(fila)]
 const col = (o: Partial<ColaboradorHoja>): ColaboradorHoja => ({
   id_interno: '1', numero: '1', nombre: 'ANA PEREZ', plaza: 'LEON', departamento: 'OPERACIONES', empresa: 'X', puesto: 'P',
-  fecha_ingreso: null, zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', inactivo: false, ...o,
+  fecha_ingreso: null, zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', inactivo: false,
+  nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', ...o,
 })
 
 describe('parsearFilasHoja', () => {
@@ -37,12 +40,25 @@ describe('parsearFilasHoja', () => {
       id_interno: '12066', numero: '2120', nombre: 'ADALBERTO GUTIERREZ MIRANDA', plaza: 'LEON', departamento: 'SEGURIDAD',
       empresa: 'SICMART SA DE CV', puesto: 'GUARDIA DE SEGURIDAD', fecha_ingreso: '2026-09-28', zona: 'Bajío Centro',
       jefe: 'JOSE CHAGOYA', gerente: 'ALFONSO ORDAZ OCAÑA', fecha_baja: null, motivo_baja: '', inactivo: false,
+      nombres: 'ADALBERTO', apellido_paterno: 'GUTIERREZ', apellido_materno: 'MIRANDA', funcion_area: 'OPERACION',
+      empresa_alta: 'SICMART', correo: 'x@y.com', tipo_nomina: 'SEMANAL',
     }])
   })
 
-  it('no expone el correo ni otras columnas', () => {
+  it('las columnas adicionales son opcionales: si la pestaña no las trae quedan vacías', () => {
+    const minima = [['id', 'NombreCompleto', 'Departamento', 'Puesto', 'FechaIngreso', 'Plaza', 'Empresa'], ['7', 'ANA PEREZ', 'OPS', 'P', '2026-01-02', 'LEON', 'X']]
+    expect(parsearFilasHoja(minima).colaboradores[0]).toMatchObject({
+      nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '',
+    })
+  })
+
+  it('lo que va al navegador no lleva correo ni las columnas adicionales', () => {
     const [c] = parsearFilasHoja(hoja(base)).colaboradores
-    expect(Object.values(c)).not.toContain('x@y.com')
+    expect(c.correo).toBe('x@y.com')
+    const publico = paraCliente(c)
+    expect(Object.values(publico)).not.toContain('x@y.com')
+    expect(publico).toMatchObject({ id_interno: '12066', nombre: 'ADALBERTO GUTIERREZ MIRANDA', puesto: 'GUARDIA DE SEGURIDAD', gerente: 'ALFONSO ORDAZ OCAÑA' })
+    expect(publico).toMatchObject({ nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '' })
   })
 
   it('descarta filas sin id, sin nombre, con id repetido o con id inválido', () => {

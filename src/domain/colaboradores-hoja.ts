@@ -18,6 +18,14 @@ export interface ColaboradorHoja {
   gerente: string
   fecha_baja: string | null
   motivo_baja: string
+  // Columnas adicionales del Sheets; si la pestaña no las trae quedan vacías
+  nombres: string
+  apellido_paterno: string
+  apellido_materno: string
+  funcion_area: string
+  empresa_alta: string
+  correo: string
+  tipo_nomina: string
   // Viene de la pestaña de inactivos o trae fecha de baja
   inactivo: boolean
 }
@@ -28,7 +36,9 @@ type TextoHoja = Exclude<CampoHoja, 'fecha_ingreso' | 'fecha_baja'>
 const ENCABEZADOS: Record<CampoHoja, string> = {
   id_interno: 'id', numero: 'no.colaborador', nombre: 'nombrecompleto', plaza: 'plaza', departamento: 'departamento',
   empresa: 'empresa', puesto: 'puesto', fecha_ingreso: 'fechaingreso', zona: 'zona', jefe: 'jefe', gerente: 'gerente',
-  fecha_baja: 'fechabaja', motivo_baja: 'motivobaja',
+  fecha_baja: 'fechabaja', motivo_baja: 'motivobaja', nombres: 'nombre', apellido_paterno: 'apellidopaterno',
+  apellido_materno: 'apellidomaterno', funcion_area: 'funcionarea', empresa_alta: 'empresaalta', correo: 'correoempresa',
+  tipo_nomina: 'tiponomina',
 }
 const OBLIGATORIAS: CampoHoja[] = ['id_interno', 'nombre', 'plaza', 'departamento', 'empresa', 'puesto', 'fecha_ingreso']
 const ID_VALIDO = /^[0-9A-Za-z_-]{1,64}$/
@@ -76,11 +86,19 @@ export function parsearFilasHoja(valores: string[][], { inactivos = false } = {}
       id_interno: id, numero: texto('numero'), nombre: texto('nombre'), plaza: texto('plaza'),
       departamento: texto('departamento'), empresa: texto('empresa'), puesto: texto('puesto'),
       fecha_ingreso: fecha('fecha_ingreso'), zona: texto('zona'), jefe: texto('jefe'), gerente: texto('gerente'),
-      fecha_baja: fechaBaja, motivo_baja: texto('motivo_baja'), inactivo: inactivos || fechaBaja !== null,
+      fecha_baja: fechaBaja, motivo_baja: texto('motivo_baja'), nombres: texto('nombres'),
+      apellido_paterno: texto('apellido_paterno'), apellido_materno: texto('apellido_materno'), funcion_area: texto('funcion_area'),
+      empresa_alta: texto('empresa_alta'), correo: texto('correo'), tipo_nomina: texto('tipo_nomina'),
+      inactivo: inactivos || fechaBaja !== null,
     })
   }
   return { colaboradores, descartadas }
 }
+
+// El navegador solo necesita identificar la fila; las columnas adicionales se guardan en el servidor y no viajan
+export const paraCliente = (f: ColaboradorHoja): ColaboradorHoja => ({
+  ...f, nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '',
+})
 
 export function buscarColaboradores(filas: ColaboradorHoja[], texto: string): ColaboradorHoja[] {
   const palabras = normalizarNombre(texto).split(' ').filter(Boolean)

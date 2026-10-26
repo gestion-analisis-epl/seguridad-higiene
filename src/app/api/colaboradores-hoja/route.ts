@@ -1,3 +1,4 @@
+import { paraCliente } from '@/domain/colaboradores-hoja'
 import { autorizar } from '@/infrastructure/servidor/autorizar'
 import { leerHoja } from '@/infrastructure/servidor/hoja'
 
@@ -22,7 +23,7 @@ export async function GET(req: Request) {
   try {
     const forzar = new URL(req.url).searchParams.get('forzar') === '1'
     const { dato, cargadoEn, desactualizado } = await leerHoja(forzar)
-    return Response.json({ colaboradores: dato, cargadoEn, desactualizado })
+    return Response.json({ colaboradores: dato.map(paraCliente), cargadoEn, desactualizado })
   } catch (error) {
     console.error('No se pudo leer la hoja de colaboradores', error)
     return Response.json({ error: `No se pudo leer la hoja de colaboradores (${motivoDeFallo(error)})` }, { status: 502 })

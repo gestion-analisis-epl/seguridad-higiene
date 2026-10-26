@@ -36,6 +36,8 @@ export interface ModuloDef {
   titulo: string
   campos: CampoDef[]
   columnas: string[]
+  // Solo se ven en la tabla: empiezan ocultas, se eligen en el selector y el formulario no las usa
+  columnasExtra?: CampoDef[]
   inicial?: Valores
   derivar?: (valores: Valores, ctx: ContextoModulo, hoy: Date) => Valores
   idFijo?: (valores: Valores) => string

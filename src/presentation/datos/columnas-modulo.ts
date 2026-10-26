@@ -1,6 +1,7 @@
 import { formatearValor, type CampoDef, type ModuloDef, type Opcion, type Valor } from '@/domain/modulos'
 import type { Registro } from '@/infrastructure/firestore/repositorio'
 import { estadoDeColaborador } from '@/application/estado-colaborador'
+import { aTitulo } from '@/domain/texto'
 import type { Filtro } from '@/presentation/ui/tabla/logica'
 import { FILTRO_ACTIVO_BOOLEANO, FILTRO_ESTADO_ACTIVO } from '@/presentation/ui/tabla/filtros-estado'
 import type { ColumnaTabla, TipoColumna, ValorCelda } from '@/presentation/ui/tabla/tipos'
@@ -25,7 +26,7 @@ function valorDe(campo: CampoDef, opciones: Opcion[], v: unknown): ValorCelda {
     case 'fecha': return v instanceof Date ? v : null
     case 'booleano': return Boolean(v)
     case 'seleccion': return opciones.find((o) => o.valor === v)?.etiqueta ?? String(v)
-    default: return String(v)
+    default: return campo.formato === 'titulo' ? aTitulo(String(v)) : String(v)
   }
 }
 
@@ -70,18 +71,23 @@ export function columnasDeModulo(
   def: ModuloDef, opciones: Record<string, Opcion[]>, activos?: Map<string, boolean>,
   ciudadDe?: (r: Registro) => string | null,
 ): ColumnaTabla<Registro>[] {
-  const columnas = def.columnas.map((nombre): ColumnaTabla<Registro> => {
-    const campo = def.campos.find((c) => c.nombre === nombre)!
+  const deCampo = (campo: CampoDef, extra = false): ColumnaTabla<Registro> => {
+    const nombre = campo.nombre
     const ops = opciones[nombre] ?? []
     return {
       id: nombre,
       encabezado: campo.etiqueta,
       tipo: TIPOS[campo.tipo],
       alinear: campo.tipo === 'numero' ? 'derecha' : 'izquierda',
+      ...(extra ? { ocultaPorDefecto: true } : {}),
       // Sin dato de activo cuenta como activo, igual que en el resto de la app
       valor: (r: Registro) => (def.id === 'colaboradores' && nombre === 'activo' ? r[nombre] !== false : valorDe(campo, ops, r[nombre])),
     }
-  })
+  }
+  const columnas = [
+    ...def.columnas.map((nombre) => deCampo(def.campos.find((c) => c.nombre === nombre)!)),
+    ...(def.columnasExtra ?? []).map((campo) => deCampo(campo, true)),
+  ]
   const i = columnas.findIndex((c) => c.id === CAMPO_COLABORADOR)
   if (i < 0) return columnas
   const extra: ColumnaTabla<Registro>[] = []

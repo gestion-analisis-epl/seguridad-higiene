@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ItemCatalogo } from '@/domain/catalogos-iniciales'
 import type { ColaboradorHoja } from '@/domain/colaboradores-hoja'
 import {
-  almacenSoloLectura, asegurarColaborador, desvincularColaborador, ErrorColaborador, importarColaboradores, sincronizarColaboradores,
+  actualizarDesdeHoja, almacenSoloLectura, asegurarColaborador, desvincularColaborador, ErrorColaborador, importarColaboradores, sincronizarColaboradores,
   vincularColaborador,
   type AlmacenColaboradores, type TxColaboradores,
 } from './colaboradores-servidor'
@@ -40,7 +40,8 @@ function almacenMemoria(inicial: { colaboradores?: Record<string, Record<string,
 const fila = (o: Partial<ColaboradorHoja> = {}): ColaboradorHoja => ({
   id_interno: '12066', numero: '2120', nombre: 'ADALBERTO GUTIERREZ MIRANDA', plaza: 'LEON', departamento: 'SEGURIDAD',
   empresa: 'SICMART SA DE CV', puesto: 'GUARDIA DE SEGURIDAD', fecha_ingreso: '2026-09-28', zona: 'Bajío Centro',
-  jefe: 'JOSE', gerente: 'ALFONSO', fecha_baja: null, motivo_baja: '', inactivo: false, ...o,
+  jefe: 'JOSE', gerente: 'ALFONSO', fecha_baja: null, motivo_baja: '', inactivo: false,
+  nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', ...o,
 })
 
 describe('importarColaboradores', () => {
@@ -262,5 +263,20 @@ describe('desvincularColaborador', () => {
     const m = almacenMemoria({ colaboradores: { a: { nombre: 'X' } } })
     await expect(desvincularColaborador(m.almacen, 'a')).resolves.toBeUndefined()
     await expect(desvincularColaborador(m.almacen, 'zz')).rejects.toMatchObject({ estado: 404 })
+  })
+})
+
+describe('columnas adicionales del Sheets', () => {
+  const extra = {
+    nombres: 'ADALBERTO', apellido_paterno: 'GUTIERREZ', apellido_materno: 'MIRANDA', funcion_area: 'OPERACION',
+    empresa_alta: 'SICMART', correo: 'a@b.com', tipo_nomina: 'SEMANAL',
+  }
+  it('se guardan al crear y se actualizan al sincronizar', async () => {
+    const m = almacenMemoria()
+    await asegurarColaborador(m.almacen, fila(extra))
+    const uid = m.indice.get('12066')!
+    expect(m.colaboradores.get(uid)).toMatchObject(extra)
+    expect(await actualizarDesdeHoja(m.almacen, fila({ ...extra, correo: 'nuevo@b.com' }))).toBe('actualizado')
+    expect(m.colaboradores.get(uid)?.correo).toBe('nuevo@b.com')
   })
 })
