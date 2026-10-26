@@ -18,4 +18,8 @@ describe('catálogos iniciales', () => {
     )
     expect(r).toEqual([{ valor: 'a', etiqueta: 'Alfa editada' }, { valor: 'b', etiqueta: 'Beta' }])
   })
+  it('no repite valores que vienen duplicados entre los nuevos', () => {
+    const r = unirItems([], [{ valor: 'a', etiqueta: 'Alfa' }, { valor: 'a', etiqueta: 'Alfa' }])
+    expect(r).toEqual([{ valor: 'a', etiqueta: 'Alfa' }])
+  })
 })

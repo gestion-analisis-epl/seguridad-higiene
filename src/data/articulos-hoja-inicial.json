@@ -25,8 +25,8 @@
   { "articulo": "LENTES DE SEGURIDAD OSCUROS", "destino": "epp", "valor": "lentes", "etiqueta": "Lentes" },
   { "articulo": "LENTES CLAROS", "destino": "epp", "valor": "lentes", "etiqueta": "Lentes" },
   { "articulo": "FAJA", "destino": "epp", "valor": "faja", "etiqueta": "Faja" },
-  { "articulo": "PORTA HERRAMIENTAS DE CINTURA (GRANDE)", "destino": "epp", "valor": "porta-herramientas", "etiqueta": "Porta herramientas" },
-  { "articulo": "PORTA HERRAMIENTAS DE CINTURA (CHICO)", "destino": "epp", "valor": "porta-herramientas", "etiqueta": "Porta herramientas" },
+  { "articulo": "PORTA HERRAMIENTAS DE CINTURA (GRANDE)", "destino": "uniforme", "valor": "porta-herramientas", "etiqueta": "Porta herramientas" },
+  { "articulo": "PORTA HERRAMIENTAS DE CINTURA (CHICO)", "destino": "uniforme", "valor": "porta-herramientas", "etiqueta": "Porta herramientas" },
   { "articulo": "EXTINTOR PQS 2 KG", "destino": "equipo", "valor": "extintor", "etiqueta": "Extintor" },
   { "articulo": "CANDADO PHILLIPS MOD 112", "destino": "equipo", "valor": "candado", "etiqueta": "Candado" }
 ]

@@ -7,7 +7,9 @@ export type CatalogosPorId = Record<string, Opcion[]>
 // completo=true devuelve la etiqueta tal cual (administración); si no, se muestra el nombre corto cuando lo hay
 export function itemsDeCatalogo(datos: Record<string, unknown> | undefined, completo = false): Opcion[] {
   const items = (datos?.items ?? []) as Opcion[]
-  return items.map(({ valor, etiqueta, region, riesgo, nombre_corto }) => ({
+  // Un valor repetido en Firestore rompería las keys de las columnas y listas
+  const vistos = new Set<string>()
+  return items.filter((i) => !vistos.has(i.valor) && vistos.add(i.valor)).map(({ valor, etiqueta, region, riesgo, nombre_corto }) => ({
     valor, etiqueta: completo ? etiqueta : nombre_corto || etiqueta,
     ...(region ? { region } : {}), ...(riesgo ? { riesgo } : {}), ...(nombre_corto ? { nombre_corto } : {}),
   }))

@@ -35,5 +35,5 @@ export const CATALOGOS_INICIALES: Record<string, ItemCatalogo[]> = {
 
 export function unirItems(existentes: ItemCatalogo[], nuevos: ItemCatalogo[]): ItemCatalogo[] {
   const vistos = new Set(existentes.map((i) => i.valor))
-  return [...existentes, ...nuevos.filter((i) => !vistos.has(i.valor))]
+  return [...existentes, ...nuevos.filter((i) => !vistos.has(i.valor) && vistos.add(i.valor))]
 }

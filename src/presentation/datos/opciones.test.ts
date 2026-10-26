@@ -60,4 +60,8 @@ describe('itemsDeCatalogo', () => {
     expect(itemsDeCatalogo({ items: [{ valor: 'a', etiqueta: 'A', extra: 1 }] })).toEqual([{ valor: 'a', etiqueta: 'A' }])
     expect(itemsDeCatalogo({})).toEqual([])
   })
+  it('ignora valores repetidos y conserva el primero', () => {
+    const items = [{ valor: 'a', etiqueta: 'A' }, { valor: 'a', etiqueta: 'A bis' }, { valor: 'b', etiqueta: 'B' }]
+    expect(itemsDeCatalogo({ items })).toEqual([{ valor: 'a', etiqueta: 'A' }, { valor: 'b', etiqueta: 'B' }])
+  })
 })
