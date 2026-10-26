@@ -149,7 +149,7 @@ export function evaluacionColaboradores(d: DatosOperativos, hoy: Date, reglas: R
 
 export function pendientesPorColaborador(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): Pendiente[] {
   return evaluacionColaboradores(d, hoy, reglas)
-    .filter((p) => p.capacitacionPendiente || p.sinRegla || p.prendasFaltantes.length > 0 || p.eppFaltantes.length > 0)
+    .filter((p) => p.capacitacionPendiente || p.prendasFaltantes.length > 0 || p.eppFaltantes.length > 0)
 }
 
 export type OrigenAlerta =

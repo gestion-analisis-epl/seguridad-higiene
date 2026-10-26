@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { alertasVencimiento, evaluacionColaboradores, type Alerta, type Pendiente, pendientesPorColaborador, resumenGlobal, resumenPorCiudad } from '@/application/dashboard'
 import type { Opcion } from '@/domain/modulos'
 import { filtrarPorCiudades } from '@/application/dashboard-filtro'
@@ -20,9 +20,9 @@ import { useReglas } from '@/presentation/datos/useReglas'
 import { useDatosOperativos } from './useDatosOperativos'
 import { useFiltroCiudades } from './useFiltroCiudades'
 
-function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
+function Seccion({ titulo, indice, children }: { titulo: string; indice: number; children: ReactNode }) {
   return (
-    <section className="mt-8">
+    <section className="revelar mt-8" style={{ '--i': indice } as CSSProperties}>
       <h2 className="mb-3 text-base">{titulo}</h2>
       {children}
     </section>
@@ -69,7 +69,6 @@ export function DashboardOperativo() {
   const verTarjeta = (t: TarjetaElegida) => {
     if (t === 'vencimientos') setDetalle({ titulo: 'Vencimientos próximos' })
     else if (t === 'activos') setDetalle({ titulo: 'Colaboradores activos', filas: evaluacion })
-    else if (t === 'sinRegla') setDetalle({ titulo: 'Sin regla de dotación', filas: evaluacion.filter((e) => e.sinRegla) })
     else verIndicador({ capacitacion: 'Capacitación vigente', uniforme: 'Uniforme completo', epp: 'EPP completo' }[t], t)
   }
 
@@ -93,11 +92,11 @@ export function DashboardOperativo() {
               alElegir={(ciudad, i) => verIndicador(`${i.texto} · ${etiqueta(ciudad)}`, i.poblacion, ciudad)} />
             <TopFaltantes faltantes={faltantes} etiquetaArticulo={etiquetaArticulo} alElegir={verFaltante} />
           </div>
-          <Seccion titulo="Vencimientos en los próximos 30 días">
+          <Seccion titulo="Vencimientos en los próximos 30 días" indice={6}>
             <DataTable columnas={colsAlertas} filas={alertas} idFila={(a) => a.id}
               atributosFila={atributosAlerta} vacio="Sin vencimientos próximos." etiqueta="Vencimientos próximos" claveAnchos="dashboard-alertas" />
           </Seccion>
-          <Seccion titulo="Colaboradores con pendientes">
+          <Seccion titulo="Colaboradores con pendientes" indice={7}>
             <DataTable columnas={colsPendientes} filas={pendientes} idFila={(p) => p.colaborador.id}
               vacio="Sin pendientes." etiqueta="Colaboradores con pendientes" claveAnchos="dashboard-pendientes" />
           </Seccion>

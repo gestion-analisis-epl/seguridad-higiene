@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import type { ResumenCiudad } from '@/application/dashboard'
 import { porcentaje } from '../columnas-operativo'
-import { COLOR_SEMAFORO, semaforo } from '../semaforo'
+import { COLOR_SEMAFORO, semaforo, UMBRAL_ATENCION, UMBRAL_BIEN } from '../semaforo'
+import { BarraAnimada } from './BarraAnimada'
 
 import type { Indicador as Poblacion } from '@/application/dashboard-graficas'
 
@@ -28,7 +29,7 @@ export function BarrasCiudad({ filas, etiqueta, alElegir }: {
   const orden = (f: ResumenCiudad) => valorDe(f, indicador) ?? -1
   const ordenadas = [...filas].sort((a, b) => orden(a) - orden(b) || a.ciudad.localeCompare(b.ciudad))
   return (
-    <div className="kpi tarjeta min-w-0 p-4">
+    <div className="kpi tarjeta revelar min-w-0 p-4" style={{ '--i': 4 } as CSSProperties}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="rotulo">Cumplimiento por ciudad</h3>
         <div role="group" aria-label="Indicador" className="flex gap-1">
@@ -43,21 +44,18 @@ export function BarrasCiudad({ filas, etiqueta, alElegir }: {
       {ordenadas.length === 0 ? (
         <p className="mt-3 text-sm text-texto-suave">Sin colaboradores activos.</p>
       ) : (
-        <ul className="mt-3 space-y-2">
-          {ordenadas.map((f) => {
+        <ul className="mt-3 space-y-1.5">
+          {ordenadas.map((f, i) => {
             const valor = valorDe(f, indicador)
-            const fuera = indicador !== 'pctCapacitacion' && f.sinRegla > 0 ? ` · ${f.sinRegla} sin regla` : ''
             return (
               <li key={f.ciudad}>
               <button type="button" onClick={() => alElegir(f.ciudad, INDICADORES.find((i) => i.clave === indicador)!)}
-                title={`Ver los colaboradores de ${etiqueta(f.ciudad)}${fuera}`}
-                className="grid w-full grid-cols-[minmax(5rem,9rem)_1fr_3rem] items-center gap-2 rounded text-left text-sm hover:bg-superficie-2">
+                title={`Ver los colaboradores de ${etiqueta(f.ciudad)}`}
+                className="grid w-full grid-cols-[minmax(5rem,9rem)_1fr_3rem] items-center gap-2 rounded px-1 py-0.5 text-left text-sm transition-colors hover:bg-superficie-2">
                 <span className="truncate">{etiqueta(f.ciudad)}</span>
-                <svg viewBox="0 0 100 8" preserveAspectRatio="none" className="h-3 w-full" role="img"
-                  aria-label={valor === null ? `${etiqueta(f.ciudad)}: sin reglas` : `${etiqueta(f.ciudad)}: ${porcentaje(valor)}%${fuera}`}>
-                  <rect width="100" height="8" fill="var(--borde)" />
-                  {valor !== null && <rect width={valor * 100} height="8" fill={COLOR_SEMAFORO[semaforo(valor)]} />}
-                </svg>
+                <BarraAnimada fraccion={valor ?? 0} color={valor === null ? 'var(--borde)' : COLOR_SEMAFORO[semaforo(valor)]}
+                  etiqueta={valor === null ? `${etiqueta(f.ciudad)}: sin datos` : `${etiqueta(f.ciudad)}: ${porcentaje(valor)}%`}
+                  retraso={i * 55} marcas={[UMBRAL_ATENCION, UMBRAL_BIEN]} />
                 <span className="text-right tabular-nums">{valor === null ? '—' : `${porcentaje(valor)}%`}</span>
               </button>
               </li>

@@ -4,7 +4,7 @@ import { fechaCalendario } from '@/domain/fechas'
 import { CONFIG_INDICADORES_INICIAL as cfg } from '@/domain/indicadores'
 import type { ReglaDotacion } from '@/domain/reglas-dotacion'
 import {
-  acumuladoAnual, alertasVencimiento, comparativoCiudades, pendientesPorColaborador,
+  acumuladoAnual, alertasVencimiento, comparativoCiudades, evaluacionColaboradores, pendientesPorColaborador,
   resumenGlobal, resumenPorCiudad, serieMensual,
 } from './dashboard'
 import { filtrarPorCiudad, filtrarPorCiudades } from './dashboard-filtro'
@@ -326,6 +326,15 @@ describe('reglas de dotación', () => {
     expect(resumenPorCiudad(d, hoy, otras)[0]).toMatchObject({ activos: 3, sinRegla: 1 })
     expect(pendientesPorColaborador(d, hoy, otras).find((x) => x.colaborador.id === 'c8'))
       .toMatchObject({ sinRegla: true, prendasFaltantes: [], eppFaltantes: [] })
+  })
+  it('quien solo está pendiente por no tener regla ya no aparece en pendientes', () => {
+    const d: DatosOperativos = {
+      ...extra,
+      colaboradores: [{ id: 'c8', nombre: 'Edu', ciudad: 'ciudad-a', linea_negocio: 'linea-y', puesto: 'Chofer', activo: true }],
+      capacitaciones: [{ colaborador_id: 'c8', norma: 'norma-a', ciudad: 'ciudad-a', cumple: true, fecha: fechaCalendario(2026, 5, 4), vencimiento: fechaCalendario(2027, 5, 4) }],
+    }
+    expect(pendientesPorColaborador(d, hoy, otras)).toEqual([])
+    expect(evaluacionColaboradores(d, hoy, otras)[0]).toMatchObject({ sinRegla: true })
   })
   it('una regla vacía no entra en los porcentajes, pero tampoco cuenta como sin regla', () => {
     const vacia = [{ ...otras[0], prendas: [], tipos_epp: [] }]

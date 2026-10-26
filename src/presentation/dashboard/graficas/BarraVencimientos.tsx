@@ -1,5 +1,8 @@
+'use client'
+
 import type { Alerta } from '@/application/dashboard'
 import { vencimientosPorOrigen } from '@/application/dashboard-graficas'
+import { useMontado } from '@/presentation/ui/useConteo'
 
 // Barra apilada de vencidos y por vencer, con desglose por origen.
 export function BarraVencimientos({ alertas, alElegir }: { alertas: Alerta[]; alElegir?: () => void }) {
@@ -7,6 +10,9 @@ export function BarraVencimientos({ alertas, alElegir }: { alertas: Alerta[]; al
   const porVencer = alertas.length - vencidos
   const total = alertas.length
   const desglose = vencimientosPorOrigen(alertas)
+  const montado = useMontado()
+  const tramo = (n: number) => `${montado && total > 0 ? (n / total) * 100 : 0}%`
+  const crecer = (retraso: number) => ({ transition: 'width 800ms cubic-bezier(0.2, 0.7, 0.2, 1)', transitionDelay: `${retraso}ms` })
   return (
     <div className="kpi tarjeta min-w-0 p-4">
       <div className="flex items-center justify-between gap-2">
@@ -17,15 +23,18 @@ export function BarraVencimientos({ alertas, alElegir }: { alertas: Alerta[]; al
         <p className="mt-3 text-sm text-texto-suave">Nada vencido ni por vencer en los próximos 30 días.</p>
       ) : (
         <>
-          <svg viewBox="0 0 100 10" preserveAspectRatio="none" className="mt-3 h-4 w-full" role="img"
-            aria-label={`${vencidos} vencidos y ${porVencer} por vencer`}>
-            <rect x="0" y="0" width="100" height="10" rx="1" fill="var(--borde)" />
-            <rect x="0" y="0" width={(vencidos / total) * 100} height="10" fill="var(--estado-vencido)" />
-            <rect x={(vencidos / total) * 100} y="0" width={(porVencer / total) * 100} height="10" fill="var(--estado-por-vencer)" />
-          </svg>
+          <div role="img" aria-label={`${vencidos} vencidos y ${porVencer} por vencer`}
+            className="mt-3 flex h-4 w-full overflow-hidden rounded-sm bg-borde">
+            <div className="barra-viva h-full" style={{ width: tramo(vencidos), background: 'var(--estado-vencido)', ...crecer(0) }} />
+            <div className="barra-viva h-full" style={{ width: tramo(porVencer), background: 'var(--estado-por-vencer)', ...crecer(120) }} />
+          </div>
           <p className="mt-2 flex flex-wrap gap-x-4 text-sm tabular-nums">
-            <span style={{ color: 'var(--estado-vencido)' }}>■ Vencidos: {vencidos}</span>
-            <span style={{ color: 'var(--estado-por-vencer)' }}>■ Por vencer: {porVencer}</span>
+            <span className="inline-flex items-center gap-1.5" style={{ color: 'var(--estado-vencido)' }}>
+              <span aria-hidden="true" className={`h-2 w-2 rounded-full bg-current ${vencidos > 0 ? 'latido' : ''}`} />Vencidos: {vencidos}
+            </span>
+            <span className="inline-flex items-center gap-1.5" style={{ color: 'var(--estado-por-vencer)' }}>
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-current" />Por vencer: {porVencer}
+            </span>
           </p>
           <ul className="mt-3 space-y-1 text-sm">
             {desglose.map((d) => (

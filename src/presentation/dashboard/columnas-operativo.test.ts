@@ -40,20 +40,14 @@ describe('columnas operativas', () => {
     expect(v('ciudad')).toBe('Ciudad A')
     expect(porcentaje(0.5)).toBe(50)
   })
-  it('por ciudad: sin reglas el porcentaje queda vacío y se cuentan los colaboradores sin regla', () => {
+  it('por ciudad: sin reglas el porcentaje queda vacío y no hay columna de colaboradores sin regla', () => {
     const r: ResumenCiudad = { ciudad: 'ciudad-a', activos: 3, pctCapacitacion: 1, pctUniforme: null, pctEpp: null, ...SIN_COBERTURA, sinRegla: 3 }
     const col = (id: string) => columnasPorCiudad(etiqueta).find((c) => c.id === id)!
     expect(col('uniforme').valor(r)).toBeNull()
     expect(col('uniforme').celda?.(r)).toBe('—')
-    expect(col('sinregla').valor(r)).toBe(3)
+    expect(columnasPorCiudad(etiqueta).some((c) => c.id === 'sinregla')).toBe(false)
   })
-  it('pendientes: indica si el colaborador tiene regla', () => {
-    const base: Pendiente = {
-      colaborador: { id: 'c1', nombre: 'Ana', ciudad: 'ciudad-a', linea_negocio: 'linea-x' },
-      capacitacionPendiente: false, sinRegla: true, prendasFaltantes: [], eppFaltantes: [],
-    }
-    const regla = columnasPendientes(etiqueta).find((c) => c.id === 'regla')!
-    expect(regla.valor(base)).toBe('Sin regla')
-    expect(regla.valor({ ...base, sinRegla: false })).toBe('Definida')
+  it('pendientes: la regla de dotación es cosa de administración y no sale en el dashboard', () => {
+    expect(columnasPendientes(etiqueta).some((c) => c.id === 'regla')).toBe(false)
   })
 })

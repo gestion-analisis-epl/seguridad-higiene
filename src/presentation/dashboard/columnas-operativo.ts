@@ -30,7 +30,6 @@ export function columnasPendientes(etiqueta: Etiqueta, { articulo = (v) => v, ar
     { id: 'ciudad', encabezado: 'Ciudad', tipo: 'categoria', valor: (p) => etiqueta(p.colaborador.ciudad) },
     { id: 'area', encabezado: 'Área', tipo: 'categoria', valor: (p) => (p.colaborador.area ? area(p.colaborador.area) : p.colaborador.area) },
     { id: 'cuadrilla', encabezado: 'Cuadrilla', tipo: 'categoria', valor: (p) => (p.colaborador.cuadrilla ? cuadrilla(p.colaborador.cuadrilla) : p.colaborador.cuadrilla) },
-    { id: 'regla', encabezado: 'Regla', tipo: 'categoria', valor: (p) => (p.sinRegla ? 'Sin regla' : 'Definida'), anchoInicial: 130 },
     {
       id: 'capacitacion', encabezado: 'Capacitación', tipo: 'categoria', anchoInicial: 140,
       valor: (p) => (p.capacitacionPendiente ? 'Pendiente' : 'Vigente'),
@@ -52,6 +51,5 @@ export function columnasPorCiudad(etiqueta: Etiqueta): ColumnaTabla<ResumenCiuda
     pct('cap', '% capacitación', (r) => r.pctCapacitacion),
     pct('uniforme', '% uniforme', (r) => r.pctUniforme),
     pct('epp', '% EPP', (r) => r.pctEpp),
-    { id: 'sinregla', encabezado: 'Sin regla', tipo: 'numero', valor: (r) => r.sinRegla, alinear: 'derecha', anchoInicial: 110 },
   ]
 }
