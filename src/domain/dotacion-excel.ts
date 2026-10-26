@@ -6,7 +6,7 @@ import { slug } from './slug'
 import { aTitulo } from './texto'
 
 // filas[fila][columna], base 0, con las celdas vacías como ''
-export interface HojaLeida { nombre: string; filas: string[][] }
+export interface HojaLeida { nombre: string; filas: string[][]; colores?: string[][] }
 export interface CodigoEpp { region: number; letra: string }
 export interface FilaPuesto { hoja: string; puesto: string; departamento: string; codigos: CodigoEpp[] }
 

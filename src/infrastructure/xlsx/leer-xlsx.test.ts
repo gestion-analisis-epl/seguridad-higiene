@@ -75,3 +75,31 @@ describe('leerXlsx', () => {
     await expect(leerXlsx(crearZip({ 'otra.txt': 'x' }))).rejects.toThrow('Excel válido')
   })
 })
+
+describe('leerXlsx con colores', () => {
+  const LIBRO_C = '<workbook><sheets><sheet name="H" sheetId="1" r:id="rId1"/></sheets></workbook>'
+  const RELS_C = '<Relationships><Relationship Id="rId1" Type="x" Target="worksheets/sheet1.xml"/></Relationships>'
+  const ESTILOS = `<styleSheet><fills count="4">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF92D050"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="ffff0000"/></patternFill></fill>
+  </fills>
+  <cellStyleXfs count="1"><xf fillId="2"/></cellStyleXfs>
+  <cellXfs count="3"><xf fillId="0"/><xf fillId="2" applyFill="1"/><xf fillId="3"/></cellXfs></styleSheet>`
+  const HOJA_C = `<worksheet><sheetData><row r="2">
+    <c r="B2" s="1" t="inlineStr"><is><t>SI</t></is></c>
+    <c r="C2" s="2" t="inlineStr"><is><t>NO</t></is></c>
+    <c r="D2" s="0" t="inlineStr"><is><t>x</t></is></c></row></sheetData></worksheet>`
+  const base = { 'xl/workbook.xml': LIBRO_C, 'xl/_rels/workbook.xml.rels': RELS_C, 'xl/worksheets/sheet1.xml': HOJA_C }
+
+  it('devuelve el relleno RGB de cada celda en una matriz paralela a filas', async () => {
+    const [hoja] = await leerXlsx(crearZip({ ...base, 'xl/styles.xml': ESTILOS }))
+    expect(hoja.filas).toEqual([[], ['', 'SI', 'NO', 'x']])
+    expect(hoja.colores).toEqual([[], ['', 'FF92D050', 'FFFF0000', '']])
+  })
+  it('sin estilos con relleno no agrega colores', async () => {
+    const [hoja] = await leerXlsx(crearZip(base))
+    expect(hoja.colores).toBeUndefined()
+  })
+})

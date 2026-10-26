@@ -48,8 +48,17 @@ function columna(ref: string): number {
   return Array.from(/^[A-Z]+/.exec(ref)?.[0] ?? '').reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1
 }
 
-function leerHoja(xml: string, compartidas: string[]): string[][] {
+// Relleno RGB (AARRGGBB en mayúsculas) de cada estilo de celda; '' sin relleno sólido RGB
+function leerRellenos(xml: string): string[] {
+  const rellenos = Array.from((/<fills\b[^>]*>([\s\S]*?)<\/fills>/.exec(xml)?.[1] ?? '').matchAll(/<fill\b[^>]*>([\s\S]*?)<\/fill>/g),
+    (m) => /<patternFill\b[^>]*patternType="solid"/.test(m[1]) ? (atributo(/<fgColor\b[^>]*>/.exec(m[1])?.[0] ?? '', 'rgb') ?? '').toUpperCase() : '')
+  const estilos = /<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/.exec(xml)?.[1] ?? ''
+  return Array.from(estilos.matchAll(/<xf\b[^>]*>/g), (m) => rellenos[Number(atributo(m[0], 'fillId') ?? 0)] ?? '')
+}
+
+function leerHoja(xml: string, compartidas: string[], rellenos: string[]): { filas: string[][]; colores: string[][] } {
   const filas: string[][] = []
+  const colores: string[][] = []
   for (const fila of Array.from(xml.matchAll(/<row\b[^>]*?(?:\/>|>([\s\S]*?)<\/row>)/g))) {
     const numero = Number(atributo(fila[0], 'r')) - 1
     for (const celda of Array.from((fila[1] ?? '').matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g))) {
@@ -61,12 +70,19 @@ function leerHoja(xml: string, compartidas: string[]): string[][] {
       const texto = tipo === 'inlineStr' ? textoDe(cuerpo) : valor === undefined ? '' : tipo === 's' ? compartidas[Number(valor)] ?? '' : decodificar(valor)
       if (texto === '') continue
       const f = (filas[numero] ??= [])
+      const k = (colores[numero] ??= [])
       const c = columna(ref)
       for (let i = f.length; i < c; i++) f[i] = ''
+      for (let i = k.length; i < c; i++) k[i] = ''
       f[c] = texto
+      k[c] = rellenos[Number(atributo(celda[1], 's') ?? -1)] ?? ''
     }
   }
-  return Array.from({ length: filas.length }, (_, i) => filas[i] ?? [])
+  const largo = filas.length
+  return {
+    filas: Array.from({ length: largo }, (_, i) => filas[i] ?? []),
+    colores: Array.from({ length: largo }, (_, i) => colores[i] ?? []),
+  }
 }
 
 // Hojas visibles con su contenido como texto, en el orden del libro
@@ -78,13 +94,15 @@ export async function leerXlsx(contenido: ArrayBuffer | Uint8Array): Promise<Hoj
   const destinos = new Map(Array.from(texto('xl/_rels/workbook.xml.rels').matchAll(/<Relationship\b[^>]*>/g),
     (m) => [atributo(m[0], 'Id') ?? '', atributo(m[0], 'Target') ?? ''] as const))
   const compartidas = Array.from(texto('xl/sharedStrings.xml').matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g), (m) => textoDe(m[1]))
+  const rellenos = leerRellenos(texto('xl/styles.xml'))
   const hojas: HojaLeida[] = []
   for (const h of Array.from(libro.matchAll(/<sheet\b[^>]*>/g))) {
     if (atributo(h[0], 'state') && atributo(h[0], 'state') !== 'visible') continue
     const destino = destinos.get(atributo(h[0], 'r:id') ?? '')
     const ruta = destino ? `xl/${destino.replace(/^\/?(xl\/)?/, '')}` : ''
     if (!archivos.has(ruta)) continue
-    hojas.push({ nombre: decodificar(atributo(h[0], 'name') ?? ''), filas: leerHoja(texto(ruta), compartidas) })
+    const { filas, colores } = leerHoja(texto(ruta), compartidas, rellenos)
+    hojas.push({ nombre: decodificar(atributo(h[0], 'name') ?? ''), filas, ...(colores.some((f) => f.some(Boolean)) ? { colores } : {}) })
   }
   return hojas
 }
