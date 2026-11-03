@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { DatosOperativos } from '@/domain/entidades'
 import { fechaCalendario } from '@/domain/fechas'
 import { CONFIG_INDICADORES_INICIAL as cfg } from '@/domain/indicadores'
-import type { ReglaDotacion } from '@/domain/reglas-dotacion'
+import type { Dotacion, ReglaDotacion } from '@/domain/reglas-dotacion'
 import {
   acumuladoAnual, alertasVencimiento, comparativoCiudades, evaluacionColaboradores, pendientesPorColaborador,
   resumenGlobal, resumenPorCiudad, serieMensual,
@@ -13,15 +13,17 @@ const hoy = new Date(2026, 8, 30)
 
 const PRENDAS = ['botas', 'playera', 'camisola', 'pantalon']
 const TIPOS_EPP = ['guantes', 'lentes', 'casco', 'linea-vida-doble-punto', 'arnes-cuerpo-completo', 'linea-posicionamiento']
-const reglas: ReglaDotacion[] = [{
-  id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, area: null, prendas: PRENDAS, tipos_epp: TIPOS_EPP,
-}]
+const base = (agrega: string[]): ReglaDotacion => ({
+  id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, area: null, agrega, quita: [],
+})
+const dotar = (prendas: string[], epp: string[]): Dotacion => ({ uniforme: [base(prendas)], epp: [base(epp)] })
+const reglas = dotar(PRENDAS, TIPOS_EPP)
 
 const datos: DatosOperativos = {
   colaboradores: [
-    { id: 'c1', nombre: 'Ana', ciudad: 'ciudad-a', linea_negocio: 'linea-x', puesto: 'Guardia', activo: true },
-    { id: 'c2', nombre: 'Beto', ciudad: 'ciudad-a', linea_negocio: 'linea-x', puesto: 'Guardia', activo: true },
-    { id: 'c3', nombre: 'Cami', ciudad: 'ciudad-b', linea_negocio: 'linea-x', puesto: 'Guardia', activo: false },
+    { id: 'c1', normas_obligatorias: ['norma-a'], nombre: 'Ana', ciudad: 'ciudad-a', linea_negocio: 'linea-x', puesto: 'Guardia', activo: true },
+    { id: 'c2', normas_obligatorias: ['norma-a'], nombre: 'Beto', ciudad: 'ciudad-a', linea_negocio: 'linea-x', puesto: 'Guardia', activo: true },
+    { id: 'c3', normas_obligatorias: ['norma-a'], nombre: 'Cami', ciudad: 'ciudad-b', linea_negocio: 'linea-x', puesto: 'Guardia', activo: false },
   ],
   capacitaciones: [
     { colaborador_id: 'c1', norma: 'norma-a', ciudad: 'ciudad-a', cumple: true, fecha: fechaCalendario(2026, 5, 4), vencimiento: fechaCalendario(2027, 5, 4) },
@@ -140,9 +142,16 @@ describe('alertasVencimiento', () => {
     expect(a).toHaveLength(1)
     expect(a[0].dias).toBe(-29)
   })
-  it('separa por norma: otra norma vencida sí alerta', () => {
-    const d = soloPersonas({ capacitaciones: [cap('c2', 2026, vigente), { ...cap('c2', 2025, vencida), norma: 'norma-b' }] })
+  it('separa por norma: otra norma obligatoria vencida sí alerta', () => {
+    const d = soloPersonas({
+      colaboradores: datos.colaboradores.map((c) => (c.id === 'c2' ? { ...c, normas_obligatorias: ['norma-a', 'norma-b'] } : c)),
+      capacitaciones: [cap('c2', 2026, vigente), { ...cap('c2', 2025, vencida), norma: 'norma-b' }],
+    })
     expect(alertasVencimiento(d, hoy)).toHaveLength(1)
+  })
+  it('no alerta capacitaciones de normas que no son obligatorias para la persona', () => {
+    const d = soloPersonas({ capacitaciones: [{ ...cap('c2', 2025, vencida), norma: 'norma-b' }] })
+    expect(alertasVencimiento(d, hoy)).toEqual([])
   })
   it('una renovación sin vencimiento cancela la alerta de la vencida', () => {
     const d = soloPersonas({ capacitaciones: [cap('c2', 2025, vencida), cap('c2', 2026, null)] })
@@ -182,7 +191,7 @@ describe('activo por omisión', () => {
   it('un colaborador sin campo activo cuenta como activo', () => {
     const d: DatosOperativos = {
       ...datos,
-      colaboradores: [{ id: 'c9', nombre: 'Dani', ciudad: 'ciudad-a', linea_negocio: 'linea-x' }],
+      colaboradores: [{ id: 'c9', normas_obligatorias: ['norma-a'], nombre: 'Dani', ciudad: 'ciudad-a', linea_negocio: 'linea-x' }],
       capacitaciones: [], equipoOficinas: [], vehiculos: [],
       entregasEpp: [{ colaborador_id: 'c9', tipo: 'casco', entregado: true, vencimiento: fechaCalendario(2026, 9, 1) }],
     }
@@ -282,7 +291,7 @@ describe('resumenGlobal', () => {
   })
   it('sin activos los porcentajes de dotación quedan vacíos', () => {
     expect(resumenGlobal(filtrarPorCiudades(datos, ['ciudad-b']), hoy, reglas))
-      .toMatchObject({ activos: 0, pctCapacitacion: 0, pctUniforme: null, pctEpp: null, sinRegla: 0 })
+      .toMatchObject({ activos: 0, pctCapacitacion: null, pctUniforme: null, pctEpp: null, sinRegla: 0 })
   })
 })
 
@@ -303,9 +312,7 @@ describe('series con varias ciudades', () => {
 })
 
 describe('reglas de dotación', () => {
-  const otras: ReglaDotacion[] = [
-    { id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, area: null, prendas: ['gorra'], tipos_epp: ['mascarilla', 'guantes'] },
-  ]
+  const otras = dotar(['gorra'], ['mascarilla', 'guantes'])
   const extra: DatosOperativos = {
     ...datos,
     entregasUniforme: [{ colaborador_id: 'c1', prenda: 'gorra' }, { colaborador_id: 'c2', prenda: 'botas' }],
@@ -331,7 +338,7 @@ describe('reglas de dotación', () => {
     expect(g).toMatchObject({ activos: 3, sinRegla: 1 })
     expect(g.pctUniforme).toBeCloseTo(0.5)
     expect(resumenPorCiudad(d, hoy, otras)[0]).toMatchObject({ activos: 3, sinRegla: 1 })
-    expect(pendientesPorColaborador(d, hoy, otras).find((x) => x.colaborador.id === 'c8'))
+    expect(evaluacionColaboradores(d, hoy, otras).find((x) => x.colaborador.id === 'c8'))
       .toMatchObject({ sinRegla: true, prendasFaltantes: [], eppFaltantes: [] })
   })
   it('quien solo está pendiente por no tener regla ya no aparece en pendientes', () => {
@@ -344,11 +351,11 @@ describe('reglas de dotación', () => {
     expect(evaluacionColaboradores(d, hoy, otras)[0]).toMatchObject({ sinRegla: true })
   })
   it('una regla vacía no entra en los porcentajes, pero tampoco cuenta como sin regla', () => {
-    const vacia = [{ ...otras[0], prendas: [], tipos_epp: [] }]
+    const vacia = dotar([], [])
     expect(resumenGlobal(datos, hoy, vacia)).toMatchObject({ pctUniforme: null, pctEpp: null, sinRegla: 0 })
   })
   it('el porcentaje de uniforme ignora a quienes solo tienen EPP obligatorio', () => {
-    const soloEpp = [{ ...otras[0], prendas: [] }]
+    const soloEpp = dotar([], ['mascarilla', 'guantes'])
     const g = resumenGlobal(datos, hoy, soloEpp)
     expect(g.pctUniforme).toBeNull()
     expect(g.pctEpp).not.toBeNull()
@@ -359,9 +366,7 @@ describe('reglas de dotación', () => {
 })
 
 describe('cobertura de dotación', () => {
-  const regla: ReglaDotacion[] = [
-    { id: 'r1', linea_negocio: 'linea-x', puesto: 'guardia', puesto_etiqueta: 'Guardia', ciudad: null, area: null, prendas: ['a', 'b', 'c', 'd'], tipos_epp: ['x', 'y'] },
-  ]
+  const regla = dotar(['a', 'b', 'c', 'd'], ['x', 'y'])
   const parcial: DatosOperativos = {
     ...datos,
     entregasUniforme: [{ colaborador_id: 'c1', prenda: 'a' }, { colaborador_id: 'c1', prenda: 'b' }, { colaborador_id: 'c2', prenda: 'c', entregado: false }],
@@ -389,8 +394,35 @@ describe('cobertura de dotación', () => {
     expect(c.coberturaUniforme).toMatchObject({ entregados: 2, exigidos: 8 })
   })
   it('quien no tiene regla o una regla vacía no entra y sin exigidos la fracción es null', () => {
-    const vacia = [{ ...regla[0], prendas: [], tipos_epp: [] }]
+    const vacia = dotar([], [])
     expect(resumenGlobal(parcial, hoy, vacia).coberturaUniforme).toEqual({ fraccion: null, entregados: 0, exigidos: 0, completos: 0, evaluados: 0 })
     expect(resumenGlobal(parcial, hoy).coberturaEpp.fraccion).toBeNull()
+  })
+})
+
+describe('capacitación por normas obligatorias', () => {
+  const persona = (id: string, normas?: string[] | null) =>
+    ({ id, nombre: id, ciudad: 'ciudad-a', linea_negocio: 'linea-x', activo: true, normas_obligatorias: normas })
+  const vigenteDe = (id: string, norma: string) =>
+    ({ colaborador_id: id, norma, ciudad: 'ciudad-a', cumple: true, fecha: fechaCalendario(2026, 5, 4), vencimiento: fechaCalendario(2027, 5, 4) })
+  const armar = (colaboradores: DatosOperativos['colaboradores'], capacitaciones: DatosOperativos['capacitaciones']): DatosOperativos =>
+    ({ ...datos, colaboradores, capacitaciones, entregasUniforme: [], entregasEpp: [], equipoOficinas: [], vehiculos: [] })
+
+  it('exige cada norma obligatoria y no cualquier capacitación', () => {
+    const d = armar([persona('a', ['n1', 'n2']), persona('b', ['n1'])], [vigenteDe('a', 'n1'), vigenteDe('b', 'n1')])
+    const e = evaluacionColaboradores(d, hoy)
+    expect(e.find((x) => x.colaborador.id === 'a')?.capacitacionPendiente).toBe(true)
+    expect(e.find((x) => x.colaborador.id === 'b')?.capacitacionPendiente).toBe(false)
+    expect(resumenGlobal(d, hoy).pctCapacitacion).toBeCloseTo(0.5)
+  })
+  it('una norma que no es obligatoria no sustituye a la que falta', () => {
+    const d = armar([persona('a', ['n1'])], [vigenteDe('a', 'n2')])
+    expect(evaluacionColaboradores(d, hoy)[0].capacitacionPendiente).toBe(true)
+  })
+  it('sin normas o sin registro no se evalúa ni cuenta en el porcentaje', () => {
+    const d = armar([persona('a', []), persona('b'), persona('c', null), persona('d', ['n1'])], [vigenteDe('d', 'n1')])
+    expect(evaluacionColaboradores(d, hoy).filter((x) => x.capacitacionPendiente)).toEqual([])
+    expect(resumenGlobal(d, hoy).pctCapacitacion).toBe(1)
+    expect(resumenGlobal(armar([persona('a', [])], []), hoy).pctCapacitacion).toBeNull()
   })
 })

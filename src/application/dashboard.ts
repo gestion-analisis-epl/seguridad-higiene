@@ -1,4 +1,4 @@
-import { indexarReglas, type ReglaDotacion } from '@/domain/reglas-dotacion'
+import { DOTACION_VACIA, indexarDotacion, type Dotacion, type DotacionResuelta } from '@/domain/reglas-dotacion'
 import type {
   Accidente, Capacitacion, Colaborador, DatosOperativos, ItemBotiquin, Poblacion,
 } from '@/domain/entidades'
@@ -22,14 +22,19 @@ function ultimosPorClave<T extends { vencimiento: Date | null }>(items: T[], cla
   return Array.from(ultimos.values())
 }
 
-function capacitacionVigente(id: string, caps: Capacitacion[], hoy: Date): boolean {
-  return caps.some((c) => c.colaborador_id === id && c.cumple && estadoVencimiento(c.vencimiento, hoy) !== 'vencido')
+const normasDe = (c: Colaborador): string[] => c.normas_obligatorias ?? []
+
+// Normas obligatorias de la persona sin una capacitación vigente que cumpla
+function normasFaltantes(c: Colaborador, caps: Capacitacion[], hoy: Date): string[] {
+  return normasDe(c).filter((n) => !caps.some((x) => x.colaborador_id === c.id && x.norma === n && x.cumple && estadoVencimiento(x.vencimiento, hoy) !== 'vencido'))
 }
 
-// Quien no tiene regla no se evalúa en uniforme ni EPP y se cuenta aparte.
-function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date, regla: ReglaDotacion | null) {
+// Quien no tiene regla no se evalúa en uniforme ni EPP y se cuenta aparte; sin normas obligatorias tampoco en capacitación.
+function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date, regla: DotacionResuelta | null) {
+  const normasPendientes = normasFaltantes(c, d.capacitaciones, hoy)
   return {
-    capacitacionOk: capacitacionVigente(c.id, d.capacitaciones, hoy),
+    pideCapacitacion: normasDe(c).length > 0,
+    capacitacionOk: normasPendientes.length === 0,
     sinRegla: regla === null,
     pideUniforme: (regla?.prendas.length ?? 0) > 0,
     pideEpp: (regla?.tipos_epp.length ?? 0) > 0,
@@ -42,8 +47,8 @@ function evaluar(c: Colaborador, d: DatosOperativos, hoy: Date, regla: ReglaDota
 
 type Evaluado = ReturnType<typeof evaluar>
 
-function evaluarActivos(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[]) {
-  const resolver = indexarReglas(reglas)
+function evaluarActivos(d: DatosOperativos, hoy: Date, dotacion: Dotacion) {
+  const resolver = indexarDotacion(dotacion)
   return d.colaboradores.filter(esActivo).map((c) => ({ c, e: evaluar(c, d, hoy, resolver(c)) }))
 }
 
@@ -62,6 +67,11 @@ function cobertura(exigen: { exigidos: number; faltantes: number }[]): Cobertura
 }
 
 // Cada porcentaje se mide solo sobre quienes tienen algo obligatorio de ese tipo; null si nadie lo tiene.
+const pctCapacitacion = (evaluados: Evaluado[]) => {
+  const conNormas = evaluados.filter((e) => e.pideCapacitacion)
+  return fraccion(conNormas.filter((e) => e.capacitacionOk).length, conNormas.length)
+}
+
 function cumplimiento(evaluados: Evaluado[]) {
   const conUniforme = evaluados.filter((e) => e.pideUniforme)
   const conEpp = evaluados.filter((e) => e.pideEpp)
@@ -77,7 +87,7 @@ function cumplimiento(evaluados: Evaluado[]) {
 export interface ResumenCiudad {
   ciudad: string
   activos: number
-  pctCapacitacion: number
+  pctCapacitacion: number | null
   pctUniforme: number | null
   pctEpp: number | null
   coberturaUniforme: Cobertura
@@ -85,15 +95,15 @@ export interface ResumenCiudad {
   sinRegla: number
 }
 
-export function resumenPorCiudad(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): ResumenCiudad[] {
-  const evaluados = evaluarActivos(d, hoy, reglas)
+export function resumenPorCiudad(d: DatosOperativos, hoy: Date, dotacion: Dotacion = DOTACION_VACIA): ResumenCiudad[] {
+  const evaluados = evaluarActivos(d, hoy, dotacion)
   const ciudades = Array.from(new Set(evaluados.map(({ c }) => c.ciudad)))
   return ciudades.sort().map((ciudad) => {
     const deCiudad = evaluados.filter(({ c }) => c.ciudad === ciudad).map(({ e }) => e)
     return {
       ciudad,
       activos: deCiudad.length,
-      pctCapacitacion: deCiudad.filter((e) => e.capacitacionOk).length / deCiudad.length,
+      pctCapacitacion: pctCapacitacion(deCiudad),
       ...cumplimiento(deCiudad),
     }
   })
@@ -101,7 +111,7 @@ export function resumenPorCiudad(d: DatosOperativos, hoy: Date, reglas: ReglaDot
 
 export interface ResumenGlobal {
   activos: number
-  pctCapacitacion: number
+  pctCapacitacion: number | null
   pctUniforme: number | null
   pctEpp: number | null
   coberturaUniforme: Cobertura
@@ -112,12 +122,12 @@ export interface ResumenGlobal {
 }
 
 // Porcentajes como suma de numeradores sobre suma de activos; d ya viene filtrado por ciudad.
-export function resumenGlobal(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): ResumenGlobal {
-  const evaluados = evaluarActivos(d, hoy, reglas).map(({ e }) => e)
+export function resumenGlobal(d: DatosOperativos, hoy: Date, dotacion: Dotacion = DOTACION_VACIA): ResumenGlobal {
+  const evaluados = evaluarActivos(d, hoy, dotacion).map(({ e }) => e)
   const alertas = alertasVencimiento(d, hoy)
   return {
     activos: evaluados.length,
-    pctCapacitacion: evaluados.length === 0 ? 0 : evaluados.filter((e) => e.capacitacionOk).length / evaluados.length,
+    pctCapacitacion: pctCapacitacion(evaluados),
     ...cumplimiento(evaluados),
     vencidos: alertas.filter((a) => a.estado === 'vencido').length,
     porVencer: alertas.filter((a) => a.estado === 'por_vencer').length,
@@ -135,8 +145,8 @@ export interface Pendiente {
 // Todos los activos con su estado; pideUniforme y pideEpp marcan a quienes entran en cada porcentaje
 export interface Evaluacion extends Pendiente { pideUniforme: boolean; pideEpp: boolean }
 
-export function evaluacionColaboradores(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): Evaluacion[] {
-  return evaluarActivos(d, hoy, reglas).map(({ c, e }) => ({
+export function evaluacionColaboradores(d: DatosOperativos, hoy: Date, dotacion: Dotacion = DOTACION_VACIA): Evaluacion[] {
+  return evaluarActivos(d, hoy, dotacion).map(({ c, e }) => ({
     colaborador: c,
     capacitacionPendiente: !e.capacitacionOk,
     sinRegla: e.sinRegla,
@@ -147,8 +157,8 @@ export function evaluacionColaboradores(d: DatosOperativos, hoy: Date, reglas: R
   }))
 }
 
-export function pendientesPorColaborador(d: DatosOperativos, hoy: Date, reglas: ReglaDotacion[] = []): Pendiente[] {
-  return evaluacionColaboradores(d, hoy, reglas)
+export function pendientesPorColaborador(d: DatosOperativos, hoy: Date, dotacion: Dotacion = DOTACION_VACIA): Pendiente[] {
+  return evaluacionColaboradores(d, hoy, dotacion)
     .filter((p) => p.capacitacionPendiente || p.prendasFaltantes.length > 0 || p.eppFaltantes.length > 0)
 }
 
@@ -176,7 +186,8 @@ export function alertasVencimiento(d: DatosOperativos, hoy: Date, dias = DIAS_AV
     if (!vencimiento || (estado !== 'vencido' && estado !== 'por_vencer')) return
     alertas.push({ origen, ciudad, referencia, vencimiento, dias: diasParaVencer(vencimiento, hoy), estado, ...(persona ? { colaborador: persona } : {}) })
   }
-  const caps = d.capacitaciones.filter((c) => c.cumple && personaActiva(c.colaborador_id))
+  const obligatoria = (c: Capacitacion) => { const p = colaborador(c.colaborador_id); return !!p && normasDe(p).includes(c.norma) }
+  const caps = d.capacitaciones.filter((c) => c.cumple && personaActiva(c.colaborador_id) && obligatoria(c))
   for (const c of ultimosPorClave(caps, (c) => `${c.colaborador_id}|${c.norma}`)) {
     agregar('capacitacion', c.ciudad, nombre(c.colaborador_id), c.vencimiento, colaborador(c.colaborador_id))
   }

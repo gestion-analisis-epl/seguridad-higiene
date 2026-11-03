@@ -9,6 +9,8 @@ export interface Colaborador {
   // Empresa tal como viene del Sheets (con siglas) y fecha de ingreso
   empresa?: string | null
   fecha_ingreso?: Date | null
+  // Valores del catálogo de normas que la persona debe tener vigentes; sin registro no se le exige ninguna
+  normas_obligatorias?: string[] | null
   activo?: boolean
 }
 
