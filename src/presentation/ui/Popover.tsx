@@ -75,12 +75,12 @@ export function Popover({ id, ancla, alCerrar, ancho = 288, altoMax = 340, etiqu
   // Antes de medir se oculta con opacidad: visibility:hidden impediria enfocar el contenido
   return createPortal(
     <div
-      ref={panel} id={id} role="dialog" aria-label={etiqueta} onBlur={alSalirFoco}
+      ref={panel} id={id} role="dialog" data-popover aria-label={etiqueta} onBlur={alSalirFoco}
       style={pos ? {
         position: 'fixed', left: pos.left, width: pos.ancho, maxHeight: pos.maxHeight,
         ...(pos.arriba ? { bottom: pos.bottom } : { top: pos.top }),
       } : { position: 'fixed', left: 0, top: 0, opacity: 0, pointerEvents: 'none' }}
-      className="aparecer z-40 flex flex-col overflow-hidden rounded-lg border border-borde-fuerte bg-superficie font-sans text-sm font-normal normal-case tracking-normal text-texto shadow-alta"
+      className="aparecer z-[55] flex flex-col overflow-hidden rounded-lg border border-borde-fuerte bg-superficie font-sans text-sm font-normal normal-case tracking-normal text-texto shadow-alta"
     >
       {children}
     </div>,

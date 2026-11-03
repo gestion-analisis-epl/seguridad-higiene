@@ -26,7 +26,9 @@ export function Dialogo({ titulo, alCerrar, retorno, children }: {
     const liberar = bloquear()
     panel.current?.focus()
     const alEnfocar = (e: FocusEvent) => {
-      if (panel.current && !panel.current.contains(e.target as Node)) panel.current.focus()
+      const fuera = e.target as Element
+      // Los popovers van en su propio portal pero pertenecen al diálogo que los abrió
+      if (panel.current && !panel.current.contains(fuera) && !fuera.closest?.('[data-popover]')) panel.current.focus()
     }
     document.addEventListener('focusin', alEnfocar)
     return () => {
