@@ -8,7 +8,7 @@ import { faltantesPorArticulo, pendientesDeFaltante, poblacionDeIndicador, type 
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { DataTable } from '@/presentation/ui/tabla'
-import { columnasAlertas, atributosAlerta, columnasPendientes, columnasPorCiudad } from './columnas-operativo'
+import { columnasAlertas, atributosAlerta, columnasDetalleAlertas, columnasDetalleColaboradores, columnasPendientes, columnasPorCiudad } from './columnas-operativo'
 import { celdasAlertas, celdasPendientes, conCeldas } from './celdas'
 import { DetalleDialogo } from './DetalleDialogo'
 import { AvisoSinCiudades, FiltroCiudades } from './FiltroCiudades'
@@ -52,14 +52,14 @@ export function DashboardOperativo() {
   const pendientes = useMemo(() => pendientesPorColaborador(datos, hoy, reglas), [datos, hoy, reglas])
   const evaluacion = useMemo(() => evaluacionColaboradores(datos, hoy, reglas), [datos, hoy, reglas])
   const faltantes = useMemo(() => faltantesPorArticulo(pendientes), [pendientes])
-  const colsAlertas =useMemo(() => conCeldas(columnasAlertas<Alerta & { id: string }>(etiqueta), celdasAlertas), [etiqueta])
+  const colsAlertas =useMemo(() => conCeldas(columnasDetalleAlertas(columnasAlertas<Alerta & { id: string }>(etiqueta)), celdasAlertas), [etiqueta])
   const etiquetaDe = useCallback(
     (opciones: Opcion[]) => (valor: string) => opciones.find((o) => o.valor === valor)?.etiqueta ?? valor,
     [],
   )
-  const colsPendientes = useMemo(() => conCeldas(
-    columnasPendientes(etiqueta, { articulo: etiquetaArticulo, area: etiquetaDe(areas), cuadrilla: etiquetaDe(cuadrillas) }), celdasPendientes,
-  ), [etiqueta, etiquetaArticulo, etiquetaDe, areas, cuadrillas])
+  const colsPendientes = useMemo(() => conCeldas(columnasDetalleColaboradores(
+    columnasPendientes(etiqueta, { articulo: etiquetaArticulo, area: etiquetaDe(areas), cuadrilla: etiquetaDe(cuadrillas) }),
+  ), celdasPendientes), [etiqueta, etiquetaArticulo, etiquetaDe, areas, cuadrillas])
   const colsCiudad = useMemo(() => columnasPorCiudad(etiqueta), [etiqueta])
 
   const verFaltante = (f: Faltante) => setDetalle({ titulo: etiquetaArticulo(f.articulo), filas: pendientesDeFaltante(pendientes, f) })

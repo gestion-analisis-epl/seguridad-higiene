@@ -75,6 +75,13 @@ describe('alertasVencimiento', () => {
     expect(a[1].referencia).toBe('ABC-1')
   })
 
+  it('las alertas de personas llevan al colaborador y las de equipo no', () => {
+    const a = alertasVencimiento(datos, hoy)
+    expect(a[0].colaborador?.id).toBe('c2')
+    expect(a[1].colaborador).toBeUndefined()
+    expect(a[2].colaborador).toBeUndefined()
+  })
+
   const botiquinOficina = (items?: { nombre: string; caducidad: Date | null }[]) =>
     ({ ciudad: 'ciudad-a', tipo: 'botiquin' as const, vencimiento: fechaCalendario(2026, 10, 10), items })
 

@@ -6,6 +6,9 @@ export interface Colaborador {
   linea_negocio: string
   puesto?: string | null
   cuadrilla?: string | null
+  // Empresa tal como viene del Sheets (con siglas) y fecha de ingreso
+  empresa?: string | null
+  fecha_ingreso?: Date | null
   activo?: boolean
 }
 

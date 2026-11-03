@@ -1,4 +1,5 @@
 import type { Alerta, Pendiente, ResumenCiudad } from '@/application/dashboard'
+import type { Colaborador } from '@/domain/entidades'
 import type { ColumnaTabla } from '@/presentation/ui/tabla'
 
 type Etiqueta = (valor: string) => string
@@ -37,6 +38,25 @@ export function columnasPendientes(etiqueta: Etiqueta, { articulo = (v) => v, ar
     { id: 'uniforme', encabezado: 'Uniforme faltante', tipo: 'texto', valor: (p) => p.prendasFaltantes.map(articulo).join(', ') || '-', anchoInicial: 220 },
     { id: 'epp', encabezado: 'EPP faltante', tipo: 'texto', valor: (p) => p.eppFaltantes.map(articulo).join(', ') || '-', anchoInicial: 220 },
   ]
+}
+
+// Empresa y fecha de ingreso del colaborador; vacías cuando la fila no es de una persona
+function columnasContratacion<T>(colaboradorDe: (fila: T) => Colaborador | undefined): ColumnaTabla<T>[] {
+  return [
+    { id: 'empresa', encabezado: 'Empresa', tipo: 'categoria', valor: (f) => colaboradorDe(f)?.empresa || null, anchoInicial: 150 },
+    { id: 'ingreso', encabezado: 'Fecha de ingreso', tipo: 'fecha', valor: (f) => colaboradorDe(f)?.fecha_ingreso ?? null, anchoInicial: 150 },
+  ]
+}
+
+// Junto al nombre del colaborador
+export function columnasDetalleColaboradores(base: ColumnaTabla<Pendiente>[]): ColumnaTabla<Pendiente>[] {
+  return [...base.slice(0, 1), ...columnasContratacion<Pendiente>((p) => p.colaborador), ...base.slice(1)]
+}
+
+// Después de la referencia, que en capacitación y EPP es el nombre
+export function columnasDetalleAlertas<A extends Alerta = Alerta>(base: ColumnaTabla<A>[]): ColumnaTabla<A>[] {
+  const i = base.findIndex((c) => c.id === 'referencia') + 1
+  return [...base.slice(0, i), ...columnasContratacion<A>((a) => a.colaborador), ...base.slice(i)]
 }
 
 export function columnasPorCiudad(etiqueta: Etiqueta): ColumnaTabla<ResumenCiudad>[] {

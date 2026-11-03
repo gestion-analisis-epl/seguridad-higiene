@@ -162,6 +162,8 @@ export interface Alerta {
   vencimiento: Date
   dias: number
   estado: 'vencido' | 'por_vencer'
+  // Solo en alertas de una persona (capacitación y EPP)
+  colaborador?: Colaborador
 }
 
 export function alertasVencimiento(d: DatosOperativos, hoy: Date, dias = DIAS_AVISO_VENCIMIENTO): Alerta[] {
@@ -169,18 +171,18 @@ export function alertasVencimiento(d: DatosOperativos, hoy: Date, dias = DIAS_AV
   const colaborador = (id: string) => d.colaboradores.find((c) => c.id === id)
   const nombre = (id: string) => colaborador(id)?.nombre ?? id
   const personaActiva = (id: string) => { const c = colaborador(id); return !c || esActivo(c) }
-  const agregar = (origen: OrigenAlerta, ciudad: string, referencia: string, vencimiento: Date | null) => {
+  const agregar = (origen: OrigenAlerta, ciudad: string, referencia: string, vencimiento: Date | null, persona?: Colaborador) => {
     const estado = estadoVencimiento(vencimiento, hoy, dias)
     if (!vencimiento || (estado !== 'vencido' && estado !== 'por_vencer')) return
-    alertas.push({ origen, ciudad, referencia, vencimiento, dias: diasParaVencer(vencimiento, hoy), estado })
+    alertas.push({ origen, ciudad, referencia, vencimiento, dias: diasParaVencer(vencimiento, hoy), estado, ...(persona ? { colaborador: persona } : {}) })
   }
   const caps = d.capacitaciones.filter((c) => c.cumple && personaActiva(c.colaborador_id))
   for (const c of ultimosPorClave(caps, (c) => `${c.colaborador_id}|${c.norma}`)) {
-    agregar('capacitacion', c.ciudad, nombre(c.colaborador_id), c.vencimiento)
+    agregar('capacitacion', c.ciudad, nombre(c.colaborador_id), c.vencimiento, colaborador(c.colaborador_id))
   }
   const epp = d.entregasEpp.filter((e) => e.entregado && personaActiva(e.colaborador_id))
   for (const e of ultimosPorClave(epp, (e) => `${e.colaborador_id}|${e.tipo}`)) {
-    agregar('epp', colaborador(e.colaborador_id)?.ciudad ?? '', nombre(e.colaborador_id), e.vencimiento)
+    agregar('epp', colaborador(e.colaborador_id)?.ciudad ?? '', nombre(e.colaborador_id), e.vencimiento, colaborador(e.colaborador_id))
   }
   // Con ítems cada uno alerta por separado; sin ítems rige la fecha única (registros antiguos).
   const porItem = (origen: OrigenAlerta, ciudad: string, prefijo: string, items: ItemBotiquin[]) => {
