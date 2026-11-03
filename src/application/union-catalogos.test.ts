@@ -47,6 +47,6 @@ describe('referenciasDeCatalogo', () => {
   it('incluye los campos de los módulos y bloquea las reglas de dotación', () => {
     const r = referenciasDeCatalogo('lineas_negocio')
     expect(r).toContainEqual({ coleccion: 'colaboradores', campo: 'linea_negocio' })
-    expect(r.some((x) => x.coleccion === 'reglas_dotacion' && x.bloquea)).toBe(true)
+    expect(r.some((x) => x.coleccion === 'reglas_epp' && x.bloquea)).toBe(true)
   })
 })

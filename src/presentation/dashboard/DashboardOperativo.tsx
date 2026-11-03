@@ -16,7 +16,7 @@ import { BarrasCiudad } from './graficas/BarrasCiudad'
 import { TopFaltantes } from './graficas/TopFaltantes'
 import { TarjetasResumen, type TarjetaElegida } from './TarjetasResumen'
 import { useCatalogo } from '@/presentation/datos/useCatalogo'
-import { useReglas } from '@/presentation/datos/useReglas'
+import { useDotacion } from '@/presentation/datos/useDotacion'
 import { useDatosOperativos } from './useDatosOperativos'
 import { useFiltroCiudades } from './useFiltroCiudades'
 
@@ -33,7 +33,7 @@ export function DashboardOperativo() {
   const { cargando, error, datos: todos } = useDatosOperativos()
   const filtro = useFiltroCiudades()
   const { etiqueta, ciudades } = filtro
-  const { reglas, cargando: cargandoReglas, error: errorReglas } = useReglas()
+  const { dotacion, cargando: cargandoReglas, error: errorReglas } = useDotacion()
   const prendas = useCatalogo('prendas')
   const tiposEpp = useCatalogo('tipos_epp')
   const areas = useCatalogo('areas')
@@ -46,11 +46,11 @@ export function DashboardOperativo() {
   )
 
   const datos = useMemo(() => filtrarPorCiudades(todos, ciudades), [todos, ciudades])
-  const resumen = useMemo(() => resumenGlobal(datos, hoy, reglas), [datos, hoy, reglas])
-  const porCiudad = useMemo(() => resumenPorCiudad(datos, hoy, reglas), [datos, hoy, reglas])
+  const resumen = useMemo(() => resumenGlobal(datos, hoy, dotacion), [datos, hoy, dotacion])
+  const porCiudad = useMemo(() => resumenPorCiudad(datos, hoy, dotacion), [datos, hoy, dotacion])
   const alertas = useMemo(() => alertasVencimiento(datos, hoy).map((a, i) => ({ ...a, id: String(i) })), [datos, hoy])
-  const pendientes = useMemo(() => pendientesPorColaborador(datos, hoy, reglas), [datos, hoy, reglas])
-  const evaluacion = useMemo(() => evaluacionColaboradores(datos, hoy, reglas), [datos, hoy, reglas])
+  const pendientes = useMemo(() => pendientesPorColaborador(datos, hoy, dotacion), [datos, hoy, dotacion])
+  const evaluacion = useMemo(() => evaluacionColaboradores(datos, hoy, dotacion), [datos, hoy, dotacion])
   const faltantes = useMemo(() => faltantesPorArticulo(pendientes), [pendientes])
   const colsAlertas =useMemo(() => conCeldas(columnasDetalleAlertas(columnasAlertas<Alerta & { id: string }>(etiqueta)), celdasAlertas), [etiqueta])
   const etiquetaDe = useCallback(

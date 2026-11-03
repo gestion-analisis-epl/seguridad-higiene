@@ -127,12 +127,16 @@ describe('entregas y artículos de la hoja', () => {
     await assertFails(setDoc(doc(como('capt1'), 'articulos_hoja/gorro'), { destino: 'epp', valor: 'casco' }))
     await assertFails(setDoc(doc(como('cons1'), 'articulos_hoja/gorro'), { destino: 'epp', valor: 'casco' }))
   })
-  it('las reglas de dotación se leen y solo un administrador las edita', async () => {
+  it.each(['reglas_uniforme', 'reglas_epp'])('las reglas de %s se leen y solo un administrador las edita', async (coleccion) => {
+    await assertSucceeds(getDoc(doc(como('cons1'), `${coleccion}/r1`)))
+    await assertSucceeds(setDoc(doc(como('admin1'), `${coleccion}/r1`), { linea_negocio: 'linea-x', agrega: [], quita: [] }))
+    await assertFails(setDoc(doc(como('capt1'), `${coleccion}/r1`), { agrega: [] }))
+    await assertFails(setDoc(doc(como('cons1'), `${coleccion}/r1`), { agrega: [] }))
+    await assertFails(deleteDoc(doc(como('capt1'), `${coleccion}/r1`)))
+  })
+  it('las reglas anteriores solo se leen, ni un administrador las escribe', async () => {
     await assertSucceeds(getDoc(doc(como('cons1'), 'reglas_dotacion/r1')))
-    await assertSucceeds(setDoc(doc(como('admin1'), 'reglas_dotacion/r1'), { linea_negocio: 'linea-x', prendas: [], tipos_epp: [] }))
-    await assertFails(setDoc(doc(como('capt1'), 'reglas_dotacion/r1'), { prendas: [] }))
-    await assertFails(setDoc(doc(como('cons1'), 'reglas_dotacion/r1'), { prendas: [] }))
-    await assertFails(deleteDoc(doc(como('capt1'), 'reglas_dotacion/r1')))
+    await assertFails(setDoc(doc(como('admin1'), 'reglas_dotacion/r1'), { prendas: [] }))
   })
 })
 

@@ -1,5 +1,6 @@
 import type { ItemCatalogo } from '@/domain/catalogos-iniciales'
 import { usosDeCatalogo } from '@/domain/catalogos-edicion'
+import { COLECCION_REGLAS } from '@/domain/reglas-dotacion'
 import { MODULOS } from '@/domain/modulos-definiciones'
 
 export interface DocFs { id: string; data: Record<string, unknown> }
@@ -28,9 +29,12 @@ const DESTINO_ARTICULO: Record<string, string> = { prendas: 'uniforme', tipos_ep
 export function referenciasDeCatalogo(catalogo: string): Referencia[] {
   const modulos = usosDeCatalogo(MODULOS, catalogo).flatMap((u) => u.campos.map((campo) => ({ coleccion: u.coleccion, campo })))
   const extra: Referencia[] = []
-  if (catalogo === 'lineas_negocio') extra.push({ coleccion: 'reglas_dotacion', campo: 'linea_negocio', bloquea: 'reglas de dotación' })
-  if (catalogo === 'areas') extra.push({ coleccion: 'reglas_dotacion', campo: 'area', bloquea: 'reglas de dotación' })
-  if (catalogo === 'prendas' || catalogo === 'tipos_epp') extra.push({ coleccion: 'reglas_dotacion', campo: catalogo, lista: true, bloquea: 'reglas de dotación' })
+  const reglas = Object.values(COLECCION_REGLAS)
+  const bloqueo = (coleccion: string, campo: string, lista = false): Referencia => ({ coleccion, campo, lista, bloquea: 'reglas de dotación' })
+  if (catalogo === 'lineas_negocio') extra.push(...reglas.map((c) => bloqueo(c, 'linea_negocio')))
+  if (catalogo === 'areas') extra.push(...reglas.map((c) => bloqueo(c, 'area')))
+  if (catalogo === 'prendas') extra.push(bloqueo(COLECCION_REGLAS.uniforme, 'agrega', true), bloqueo(COLECCION_REGLAS.uniforme, 'quita', true))
+  if (catalogo === 'tipos_epp') extra.push(bloqueo(COLECCION_REGLAS.epp, 'agrega', true), bloqueo(COLECCION_REGLAS.epp, 'quita', true))
   const destino = DESTINO_ARTICULO[catalogo]
   if (destino) extra.push({ coleccion: 'articulos_hoja', campo: 'valor', bloquea: 'artículos de la hoja', donde: (d) => d.destino === destino })
   return [...modulos, ...extra]

@@ -16,3 +16,6 @@ export interface ReglaAImportar { linea_negocio: string; puesto_etiqueta: string
 
 export const importarReglas = (reglas: ReglaAImportar[]) =>
   llamar<{ creadas: number; actualizadas: number }>('/api/dotacion/reglas/importar', enviar({ reglas }))
+
+export const migrarReglas = () =>
+  llamar<{ uniforme: number; epp: number }>('/api/dotacion/reglas/migrar', enviar({}))
