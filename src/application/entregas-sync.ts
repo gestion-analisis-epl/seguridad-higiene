@@ -11,13 +11,22 @@ export interface OperacionEntrega {
   nuevo: boolean
 }
 
+export interface OperacionEliminar {
+  coleccion: string
+  id: string
+  datos: Record<string, unknown>
+}
+
 export interface AlmacenEntregas {
   leerMapeo(): Promise<Map<string, MapeoArticulo>>
   leerIndice(ids: string[]): Promise<Map<string, string>>
   leerColaborador(uid: string): Promise<Record<string, unknown> | null>
   leerExistentes(coleccion: string): Promise<Map<string, Record<string, unknown>>>
   escribir(operaciones: OperacionEntrega[]): Promise<void>
+  eliminar(operaciones: OperacionEliminar[]): Promise<void>
 }
+
+export interface SobranteEntrega { coleccion: string; id: string; colaborador: string; articulo: string; talla: string; cantidad: number | null; entregado: boolean | null }
 
 export interface ArticuloSinMapeo { clave: string; articulo: string; filas: number }
 
@@ -28,6 +37,9 @@ export interface InformeEntregas {
   actualizadas: number
   sinCambios: number
   omitidas: number
+  sobrantes: number
+  detalleSobrantes: SobranteEntrega[]
+  eliminacionBloqueada: boolean
   colaboradoresNuevos: number
   rechazadas: FilaRechazada[]
   sinMapeo: ArticuloSinMapeo[]
@@ -43,6 +55,11 @@ interface Entrada {
 }
 
 const COLECCION: Record<DestinoEntrega, string> = { uniforme: 'entregas_uniforme', epp: 'entregas_epp', equipo: 'oficinas_equipo' }
+const DESTINOS = Object.keys(COLECCION) as DestinoEntrega[]
+
+// Proporción máxima de registros de la hoja que una sincronización puede eliminar
+export const MAXIMO_ELIMINAR = 0.1
+const MAXIMO_DETALLE = 300
 
 function datosDe(f: FilaEntregaHoja, m: MapeoArticulo, uid: string, c: Record<string, unknown>): Record<string, unknown> {
   const ciudad = typeof c.ciudad === 'string' ? c.ciudad : null
@@ -72,7 +89,7 @@ export async function sincronizarEntregas({ almacen, asegurar, filas, rechazadas
   const mapeo = await almacen.leerMapeo()
   const hojaPorId = new Map(hoja.map((c) => [c.id_interno, c]))
   const informe: InformeEntregas = {
-    simulacion: simular, total: filas.length + rechazadas.length, nuevas: 0, actualizadas: 0, sinCambios: 0, omitidas: 0,
+    simulacion: simular, total: filas.length + rechazadas.length, nuevas: 0, actualizadas: 0, sinCambios: 0, omitidas: 0, sobrantes: 0, detalleSobrantes: [], eliminacionBloqueada: false,
     colaboradoresNuevos: 0, rechazadas: [...rechazadas], sinMapeo: [],
   }
 
@@ -115,9 +132,7 @@ export async function sincronizarEntregas({ almacen, asegurar, filas, rechazadas
     if (c) colaboradores.set(uid, c)
   }))
   const existentes = new Map<string, Map<string, Record<string, unknown>>>()
-  for (const dest of Array.from(new Set(candidatas.map((c) => c.mapa.destino)))) {
-    existentes.set(dest, await almacen.leerExistentes(COLECCION[dest]))
-  }
+  for (const dest of DESTINOS) existentes.set(dest, await almacen.leerExistentes(COLECCION[dest]))
 
   const operaciones: OperacionEntrega[] = []
   for (const { fila: f, mapa } of candidatas) {
@@ -134,6 +149,33 @@ export async function sincronizarEntregas({ almacen, asegurar, filas, rechazadas
     if (actual) informe.actualizadas++; else informe.nuevas++
     operaciones.push({ coleccion: COLECCION[mapa.destino], id: f.llave, datos, nuevo: !actual })
   }
-  if (!simular) await almacen.escribir(operaciones)
+
+  // Un registro de la hoja sigue vigente en la colección a la que su artículo se asigna; sin mapeo se conserva en todas
+  const vigentes = new Map<string, Set<string>>()
+  for (const f of filas) {
+    const mapa = mapeo.get(claveArticulo(f.articulo))
+    vigentes.set(f.llave, new Set(mapa ? [COLECCION[mapa.destino]] : Object.values(COLECCION)))
+  }
+  const sobrantes: OperacionEliminar[] = []
+  let guardados = 0
+  for (const dest of DESTINOS) {
+    const guardadosDest = existentes.get(dest)!
+    guardados += guardadosDest.size
+    guardadosDest.forEach((datos, id) => {
+      if (!vigentes.get(id)?.has(COLECCION[dest])) sobrantes.push({ coleccion: COLECCION[dest], id, datos })
+    })
+  }
+  informe.sobrantes = sobrantes.length
+  const texto = (v: unknown) => (typeof v === 'string' ? v : '')
+  informe.detalleSobrantes = sobrantes.slice(0, MAXIMO_DETALLE).map(({ coleccion, id, datos: d }) => ({
+    coleccion, id, colaborador: texto(d.colaborador_nombre), articulo: texto(d.articulo), talla: texto(d.talla),
+    cantidad: typeof d.cantidad === 'number' ? d.cantidad : null, entregado: typeof d.entregado === 'boolean' ? d.entregado : null,
+  }))
+  informe.eliminacionBloqueada = sobrantes.length > guardados * MAXIMO_ELIMINAR
+
+  if (!simular) {
+    await almacen.escribir(operaciones)
+    if (!informe.eliminacionBloqueada) await almacen.eliminar(sobrantes)
+  }
   return informe
 }

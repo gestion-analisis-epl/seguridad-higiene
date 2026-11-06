@@ -41,7 +41,7 @@ export function SincronizacionEntregas() {
         </button>
         {confirmando ? (
           <>
-            <span className="text-sm text-texto-suave">Se escribirán las entregas de la hoja en la app.</span>
+            <span className="text-sm text-texto-suave">Se escribirán las entregas de la hoja en la app y se eliminarán las que ya no estén en ella.</span>
             <button type="button" onClick={() => void ejecutar(false)} disabled={ocupado !== null} className="boton-primario">
               Confirmar sincronización
             </button>
@@ -59,14 +59,36 @@ export function SincronizacionEntregas() {
           <p className="text-sm text-texto-suave">
             {informe.simulacion ? 'Simulación: no se escribió nada.' : 'Sincronización terminada.'} {informe.total} filas en la hoja.
           </p>
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
             <Dato etiqueta="Nuevas" valor={informe.nuevas} />
             <Dato etiqueta="Actualizadas" valor={informe.actualizadas} />
             <Dato etiqueta="Sin cambios" valor={informe.sinCambios} />
             <Dato etiqueta="Omitidas (equipo no entregado)" valor={informe.omitidas} />
+            <Dato etiqueta={informe.simulacion || informe.eliminacionBloqueada ? 'Por eliminar (ya no están en la hoja)' : 'Eliminadas (ya no están en la hoja)'} valor={informe.sobrantes} />
             <Dato etiqueta={informe.simulacion ? 'Colaboradores por crear' : 'Colaboradores creados'} valor={informe.colaboradoresNuevos} />
             <Dato etiqueta="Rechazadas" valor={informe.totalRechazadas} />
           </div>
+          {informe.eliminacionBloqueada && (
+            <AvisoError>
+              No se eliminó nada: {informe.sobrantes} registros superan el 10% de lo sincronizado desde la hoja. Revisa que la hoja esté completa y vuelve a sincronizar.
+            </AvisoError>
+          )}
+          {informe.detalleSobrantes.length > 0 && (
+            <section className="tarjeta p-4">
+              <h2 className="text-base">{informe.simulacion || informe.eliminacionBloqueada ? 'Se eliminarían' : 'Eliminadas'} ({informe.sobrantes})</h2>
+              <p className="mt-1 text-sm text-texto-suave">Estaban en la app pero ya no hay una fila equivalente en la hoja.</p>
+              <ul className="mt-2 max-h-80 overflow-y-auto text-sm">
+                {informe.detalleSobrantes.map((x) => (
+                  <li key={`${x.coleccion}/${x.id}`}>
+                    {x.colaborador || x.id} · {x.articulo} {x.talla && `· talla ${x.talla}`} · cant. {x.cantidad ?? '-'} · {x.entregado === false ? 'No entregado' : x.entregado ? 'Entregado' : '-'}
+                  </li>
+                ))}
+              </ul>
+              {informe.sobrantes > informe.detalleSobrantes.length && (
+                <p className="mt-2 text-xs text-texto-suave">Se muestran los primeros {informe.detalleSobrantes.length}.</p>
+              )}
+            </section>
+          )}
           {informe.sinMapeo.length > 0 && (
             <section className="tarjeta p-4">
               <h2 className="text-base">Artículos sin mapeo ({informe.sinMapeo.length})</h2>

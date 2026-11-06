@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ColaboradorHoja } from '@/domain/colaboradores-hoja'
 import { parsearEntregasHoja } from '@/domain/entregas-hoja'
-import { sincronizarEntregas, type AlmacenEntregas, type MapeoArticulo, type OperacionEntrega } from './entregas-sync'
+import { sincronizarEntregas, type AlmacenEntregas, type MapeoArticulo, type OperacionEliminar, type OperacionEntrega } from './entregas-sync'
 
 const ENCABEZADO = ['id', 'Uniforme&Cantidad', '$MontoMaterial', 'Talla', 'Cantidad', 'Observaciones', 'FechaRegistro', 'Fecha Entrega']
 const fila = (o: Partial<Record<string, unknown>> = {}) => {
@@ -25,18 +25,20 @@ const MAPEO = new Map<string, MapeoArticulo>([
   ['extintor-pqs-2-kg', { destino: 'equipo', valor: 'extintor' }],
 ])
 
-function almacen(inicial: { indice?: Record<string, string>; existentes?: Record<string, Record<string, unknown>> } = {}) {
+function almacen(inicial: { indice?: Record<string, string>; existentes?: Record<string, Record<string, unknown>>; coleccion?: string } = {}) {
   const indice = new Map(Object.entries(inicial.indice ?? { '1': 'u1' }))
   const existentes = new Map(Object.entries(inicial.existentes ?? {}))
   const escritas: OperacionEntrega[] = []
+  const eliminadas: OperacionEliminar[] = []
   const a: AlmacenEntregas = {
     leerMapeo: async () => MAPEO,
     leerIndice: async (ids) => new Map(ids.filter((i) => indice.has(i)).map((i) => [i, indice.get(i)!])),
     leerColaborador: async (uid) => ({ nombre: `Persona ${uid}`, ciudad: 'leon', plaza: 'LEON', puesto: 'SOLDADOR' }),
-    leerExistentes: async () => existentes,
+    leerExistentes: async (c) => (c === (inicial.coleccion ?? 'entregas_epp') ? existentes : new Map()),
     escribir: async (ops) => { escritas.push(...ops) },
+    eliminar: async (ops) => { eliminadas.push(...ops) },
   }
-  return { a, escritas, indice }
+  return { a, escritas, eliminadas, indice }
 }
 
 const asegurarFalso = (indice: Map<string, string>) => async (f: ColaboradorHoja) => {
@@ -136,5 +138,51 @@ describe('sincronizarEntregas', () => {
     expect(escritas[0]).toMatchObject({ coleccion: 'oficinas_equipo' })
     expect(escritas[0].datos).toMatchObject({ ciudad: 'leon', tipo: 'extintor' })
     expect(String(escritas[0].datos.detalle)).toContain('Persona u1')
+  })
+
+  describe('registros que ya no están en la hoja', () => {
+    const vigente = { colaborador_id: 'u1', origen: 'hoja' }
+    const existentes = (n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`1_gorro_2024122${i}`, vigente]))
+    const diez = () => parsear(...Array.from({ length: 10 }, (_, i) => fila({ 'Uniforme&Cantidad': 'GORRO', FechaRegistro: 45654 + i })))
+    const delaHoja = () => Object.fromEntries(diez().filas.map((f) => [f.llave, vigente]))
+
+    it('elimina los de la hoja que ya no vienen en ella y respeta los que siguen', async () => {
+      const { a, eliminadas, indice } = almacen({ coleccion: 'entregas_uniforme', existentes: { ...delaHoja(), '1_gorro_20241228_2': vigente } })
+      const { filas, rechazadas } = diez()
+      const informe = await sincronizarEntregas({ almacen: a, asegurar: asegurarFalso(indice), filas, rechazadas, hoja: [col('1')], simular: false })
+      expect(informe).toMatchObject({ sobrantes: 1, eliminacionBloqueada: false })
+      expect(eliminadas.map((o) => [o.coleccion, o.id])).toEqual([['entregas_uniforme', '1_gorro_20241228_2']])
+    })
+
+    it('en simulación cuenta los sobrantes sin eliminar', async () => {
+      const { a, eliminadas, indice } = almacen({ coleccion: 'entregas_uniforme', existentes: { ...delaHoja(), '1_gorro_20241228_2': vigente } })
+      const { filas, rechazadas } = diez()
+      const informe = await sincronizarEntregas({ almacen: a, asegurar: asegurarFalso(indice), filas, rechazadas, hoja: [col('1')], simular: true })
+      expect(informe.sobrantes).toBe(1)
+      expect(eliminadas).toEqual([])
+    })
+
+    it('no elimina nada si los sobrantes superan el 10%', async () => {
+      const { a, eliminadas, indice } = almacen({ coleccion: 'entregas_uniforme', existentes: existentes(5) })
+      const { filas, rechazadas } = parsear(fila({ 'Uniforme&Cantidad': 'GORRO' }))
+      const informe = await sincronizarEntregas({ almacen: a, asegurar: asegurarFalso(indice), filas, rechazadas, hoja: [col('1')], simular: false })
+      expect(informe).toMatchObject({ sobrantes: 5, eliminacionBloqueada: true })
+      expect(eliminadas).toEqual([])
+    })
+
+    it('con la hoja vacía no elimina nada', async () => {
+      const { a, eliminadas, indice } = almacen({ coleccion: 'entregas_uniforme', existentes: existentes(3) })
+      const informe = await sincronizarEntregas({ almacen: a, asegurar: asegurarFalso(indice), filas: [], rechazadas: [], hoja: [col('1')], simular: false })
+      expect(informe.eliminacionBloqueada).toBe(true)
+      expect(eliminadas).toEqual([])
+    })
+
+    it('conserva los registros de artículos sin mapeo', async () => {
+      const { a, eliminadas, indice } = almacen({ coleccion: 'entregas_uniforme', existentes: { '1_cosa-rara_20241228': vigente } })
+      const { filas, rechazadas } = parsear(fila({ 'Uniforme&Cantidad': 'COSA RARA' }))
+      const informe = await sincronizarEntregas({ almacen: a, asegurar: asegurarFalso(indice), filas, rechazadas, hoja: [col('1')], simular: false })
+      expect(informe.sobrantes).toBe(0)
+      expect(eliminadas).toEqual([])
+    })
   })
 })

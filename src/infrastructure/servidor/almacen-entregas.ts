@@ -38,6 +38,18 @@ export function crearAlmacenEntregas(db: Firestore, actor: string): AlmacenEntre
       const snap = await db.collection(coleccion).where('origen', '==', 'hoja').get()
       return new Map(snap.docs.map((d) => [d.id, aFechas(d.data())]))
     },
+    async eliminar(operaciones) {
+      for (let i = 0; i < operaciones.length; i += TAMANO_LOTE / 2) {
+        const lote = db.batch()
+        for (const op of operaciones.slice(i, i + TAMANO_LOTE / 2)) {
+          lote.set(db.collection('respaldo_entregas_eliminadas').doc(), {
+            coleccion: op.coleccion, id: op.id, datos: op.datos, eliminado_por: actor, eliminado_en: FieldValue.serverTimestamp(),
+          })
+          lote.delete(db.doc(`${op.coleccion}/${op.id}`))
+        }
+        await lote.commit()
+      }
+    },
     async escribir(operaciones) {
       for (let i = 0; i < operaciones.length; i += TAMANO_LOTE) {
         const lote = db.batch()
