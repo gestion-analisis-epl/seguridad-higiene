@@ -249,6 +249,56 @@ describe('sincronizarColaboradores', () => {
     expect(m.colaboradores.get('a')?.puesto).toBe('GUARDIA DE SEGURIDAD')
     expect(m.colaboradores.size).toBe(1)
   })
+
+  describe('colaboradores que ya no están en la hoja', () => {
+    const generales = Array.from({ length: 10 }, (_, i) => [`g${i}`, { ...vinculado, id_interno: `${100 + i}`, nombre: `Persona ${i}` }] as const)
+    const preparar = (conRegistros: string[] = []) => {
+      const m = almacenMemoria({ catalogos, colaboradores: { ...Object.fromEntries(generales), huerfano: { ...vinculado, id_interno: '999', nombre: 'Se Fue' } } })
+      const eliminados: string[] = []
+      const bajas = { conRegistros: async () => new Set(conRegistros), eliminar: async (uids: string[]) => { eliminados.push(...uids) } }
+      const hoja = generales.map(([, c]) => fila({ id_interno: c.id_interno, nombre: c.nombre.toUpperCase() }))
+      return { m, bajas, eliminados, hoja }
+    }
+
+    it('elimina al vinculado sin registros cuya fila desapareció', async () => {
+      const { m, bajas, eliminados, hoja } = preparar()
+      const r = await sincronizarColaboradores(m.almacen, hoja, existentes(m), undefined, { bajas })
+      expect(r.bajas).toEqual([{ id_interno: '999', nombre: 'Se Fue', accion: 'eliminar' }])
+      expect(eliminados).toEqual(['huerfano'])
+    })
+
+    it('si tiene registros lo conserva desactivado', async () => {
+      const { m, bajas, eliminados, hoja } = preparar(['huerfano'])
+      const r = await sincronizarColaboradores(m.almacen, hoja, existentes(m), undefined, { bajas })
+      expect(r.bajas[0].accion).toBe('conservar')
+      expect(eliminados).toEqual([])
+      expect(m.colaboradores.get('huerfano')?.activo).toBe(false)
+    })
+
+    it('en simulación informa sin eliminar ni desactivar', async () => {
+      const { m, bajas, eliminados, hoja } = preparar(['huerfano'])
+      const r = await sincronizarColaboradores(almacenSoloLectura(m.almacen), hoja, existentes(m), undefined, { bajas, simular: true })
+      expect(r.bajas).toHaveLength(1)
+      expect(eliminados).toEqual([])
+      expect(m.colaboradores.get('huerfano')?.activo).toBe(true)
+    })
+
+    it('no da de baja a nadie si superan el 10% de los vinculados', async () => {
+      const { m, bajas, eliminados } = preparar()
+      const r = await sincronizarColaboradores(m.almacen, [fila({ id_interno: '100', nombre: 'PERSONA 0' })], existentes(m), undefined, { bajas })
+      expect(r.bajasBloqueadas).toBe(true)
+      expect(eliminados).toEqual([])
+    })
+
+    it('sin el almacén de bajas no toca a nadie y no confunde a los no vinculados', async () => {
+      const { m, hoja } = preparar()
+      m.colaboradores.set('manual', { nombre: 'Sin Vinculo' })
+      const r = await sincronizarColaboradores(m.almacen, hoja, existentes(m))
+      expect(r.bajas).toEqual([])
+      const conBajas = await sincronizarColaboradores(m.almacen, hoja, existentes(m), undefined, { bajas: { conRegistros: async () => new Set(), eliminar: async () => {} } })
+      expect(conBajas.bajas.map((b) => b.id_interno)).toEqual(['999'])
+    })
+  })
 })
 
 describe('desvincularColaborador', () => {

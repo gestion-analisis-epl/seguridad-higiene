@@ -161,8 +161,21 @@ export interface PendienteSincronizacion {
   id_interno: string; nombre: string; inactivo: boolean; candidatos: { uid: string; nombre: string }[]
 }
 
+// Colaborador vinculado cuya fila ya no está en la hoja: se elimina si no tiene registros y, si los tiene, se conserva desactivado
+export interface BajaColaborador { id_interno: string; nombre: string; accion: 'eliminar' | 'conservar' }
+
+export interface AlmacenBajas {
+  conRegistros(uids: string[]): Promise<Set<string>>
+  eliminar(uids: string[]): Promise<void>
+}
+
+// Proporción máxima de colaboradores vinculados que una sincronización puede dar de baja
+export const MAXIMO_BAJAS = 0.1
+
 export interface ResultadoSincronizacion {
   creados: number; actualizados: number; reactivados: number; desactivados: number; omitidos: number
+  bajas: BajaColaborador[]
+  bajasBloqueadas: boolean
   pendientes: PendienteSincronizacion[]
   errores: { id_interno: string; nombre: string; error: string }[]
 }
@@ -191,8 +204,11 @@ const COMPETENCIA = 8
 // Altas de activos, cambios de estado y movimientos de los vinculados; los inactivos sin vincular no se crean
 export async function sincronizarColaboradores(
   almacen: AlmacenColaboradores, hoja: ColaboradorHoja[], existentes: ExistenteEnlace[], instantanea?: Instantanea,
+  { bajas, simular = false }: { bajas?: AlmacenBajas; simular?: boolean } = {},
 ): Promise<ResultadoSincronizacion> {
-  const resultado: ResultadoSincronizacion = { creados: 0, actualizados: 0, reactivados: 0, desactivados: 0, omitidos: 0, pendientes: [], errores: [] }
+  const resultado: ResultadoSincronizacion = {
+    creados: 0, actualizados: 0, reactivados: 0, desactivados: 0, omitidos: 0, bajas: [], bajasBloqueadas: false, pendientes: [], errores: [],
+  }
   const { crear, omitidas } = planearImportacion(existentes, hoja)
   const porCrear = new Set(crear.map((f) => f.id_interno))
   const porNombre = new Set(omitidas.map((f) => f.id_interno))
@@ -221,7 +237,38 @@ export async function sincronizarColaboradores(
   await Promise.all(Array.from({ length: Math.min(COMPETENCIA, hoja.length) }, async () => {
     while (siguiente < hoja.length) await procesar(hoja[siguiente++])
   }))
+  if (bajas) await procesarBajas(almacen, bajas, hoja, existentes, resultado, simular)
   return resultado
+}
+
+async function procesarBajas(
+  almacen: AlmacenColaboradores, bajas: AlmacenBajas, hoja: ColaboradorHoja[], existentes: ExistenteEnlace[],
+  resultado: ResultadoSincronizacion, simular: boolean,
+) {
+  const enHoja = new Set(hoja.map((f) => f.id_interno))
+  const vinculados = existentes.filter((e) => e.id_interno)
+  const sinHoja = vinculados.filter((e) => !enHoja.has(e.id_interno as string))
+  if (sinHoja.length === 0) return
+  const conRegistros = await bajas.conRegistros(sinHoja.map((e) => e.id))
+  resultado.bajas = sinHoja.map((e) => ({
+    id_interno: e.id_interno as string, nombre: e.nombre, accion: conRegistros.has(e.id) ? 'conservar' : 'eliminar',
+  }))
+  resultado.bajasBloqueadas = sinHoja.length > vinculados.length * MAXIMO_BAJAS
+  if (resultado.bajasBloqueadas || simular) return
+
+  const porEliminar: string[] = []
+  for (const e of sinHoja) {
+    if (!conRegistros.has(e.id)) { porEliminar.push(e.id); continue }
+    try {
+      await almacen.transaccion(async (tx) => {
+        const actual = await tx.leerColaborador(e.id)
+        if (actual && actual.activo !== false) tx.actualizarColaborador(e.id, { activo: false })
+      })
+    } catch {
+      resultado.errores.push({ id_interno: e.id_interno as string, nombre: e.nombre, error: 'No se pudo desactivar' })
+    }
+  }
+  await bajas.eliminar(porEliminar)
 }
 
 export async function desvincularColaborador(almacen: AlmacenColaboradores, uid: string) {

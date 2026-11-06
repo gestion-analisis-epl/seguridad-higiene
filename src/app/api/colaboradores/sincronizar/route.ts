@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (acceso instanceof Response) return acceso
   const { simular } = await leerCuerpo(req)
   try {
-    const r = await ejecutarSincronizacion(acceso.uid, simular !== false)
+    const r = await ejecutarSincronizacion(acceso.uid, simular !== false, true)
     if (!r.ok) return Response.json({ error: r.error }, { status: 502 })
     return Response.json({ simulado: simular !== false, ...r.resultado })
   } catch (error) {

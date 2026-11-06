@@ -67,7 +67,7 @@ export function SincronizacionColaboradores({ alCambiar }: { alCambiar: () => vo
     <div className="tarjeta space-y-4 p-4">
       <div className="flex flex-wrap items-center gap-3">
         <p className="min-w-0 flex-1 text-sm">
-          Aplica la hoja: altas de activos, bajas y reingresos, y movimientos (puesto, zona, jefe, etc.). No cambia nombre, fecha de ingreso, id ni número.
+          Aplica la hoja: altas de activos, bajas y reingresos, eliminación de quien ya no está en ella (si no tiene registros) y movimientos (puesto, zona, jefe, etc.). No cambia nombre, fecha de ingreso, id ni número.
         </p>
         <button type="button" onClick={() => void ejecutar(true)} disabled={ocupado !== null} className="boton-secundario">
           {ocupado === 'simular' ? 'Simulando...' : 'Simular'}
@@ -89,14 +89,33 @@ export function SincronizacionColaboradores({ alCambiar }: { alCambiar: () => vo
       {informe && (
         <div className="space-y-4">
           <p className="text-sm text-texto-suave">{informe.simulado ? 'Simulación: no se escribió nada.' : 'Actualización terminada.'}</p>
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
             <Dato etiqueta={informe.simulado ? 'Por crear' : 'Creados'} valor={informe.creados} />
             <Dato etiqueta={informe.simulado ? 'Por actualizar' : 'Actualizados'} valor={informe.actualizados} />
             <Dato etiqueta={informe.simulado ? 'Por reactivar' : 'Reactivados'} valor={informe.reactivados} />
             <Dato etiqueta={informe.simulado ? 'Por desactivar' : 'Desactivados'} valor={informe.desactivados} />
+            <Dato etiqueta={informe.simulado || informe.bajasBloqueadas ? 'Por eliminar' : 'Eliminados'} valor={informe.bajas.filter((b) => b.accion === 'eliminar').length} />
             <Dato etiqueta="Por decidir" valor={pendientes.length} />
             <Dato etiqueta="Con error" valor={informe.errores.length} />
           </div>
+          {informe.bajasBloqueadas && (
+            <AvisoError>
+              No se dio de baja a nadie: {informe.bajas.length} colaboradores superan el 10% de los vinculados a la hoja. Revisa que la hoja esté completa y vuelve a actualizar.
+            </AvisoError>
+          )}
+          {informe.bajas.length > 0 && (
+            <section className="space-y-2">
+              <h2 className="text-base">Ya no están en la hoja ({informe.bajas.length})</h2>
+              <p className="text-sm text-texto-suave">
+                Los que no tienen registros se eliminan; los que tienen capacitaciones, entregas, accidentes o equipo se conservan desactivados.
+              </p>
+              <ul className="max-h-80 overflow-y-auto text-sm">
+                {informe.bajas.map((b) => (
+                  <li key={b.id_interno}>{b.nombre} (id {b.id_interno}): {b.accion === 'eliminar' ? 'se elimina' : 'se conserva desactivado, tiene registros'}</li>
+                ))}
+              </ul>
+            </section>
+          )}
           {pendientes.length > 0 && (
             <section className="space-y-2">
               <h2 className="text-base">Por decidir ({pendientes.length})</h2>

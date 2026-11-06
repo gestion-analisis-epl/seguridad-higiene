@@ -24,8 +24,8 @@ export async function POST(req: Request) {
   try {
     const r = await ejecutarSincronizacion('sincronizacion-automatica', simular)
     if (!r.ok) return Response.json({ error: r.error }, { status: 502 })
-    const { errores, pendientes, ...conteos } = r.resultado
-    return Response.json({ simulado: simular, ...conteos, totalPendientes: pendientes.length, totalErrores: errores.length, errores: errores.slice(0, MAX_ERRORES) })
+    const { errores, pendientes, creados, actualizados, reactivados, desactivados, omitidos } = r.resultado
+    return Response.json({ simulado: simular, creados, actualizados, reactivados, desactivados, omitidos, totalPendientes: pendientes.length, totalErrores: errores.length, errores: errores.slice(0, MAX_ERRORES) })
   } catch (error) {
     console.error('No se pudo sincronizar a los colaboradores', error)
     return Response.json({ error: 'No se pudo sincronizar a los colaboradores' }, { status: 500 })

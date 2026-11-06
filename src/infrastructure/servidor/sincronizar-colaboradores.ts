@@ -4,13 +4,15 @@ import {
 } from '@/application/colaboradores-servidor'
 import { adminDb } from './admin'
 import { crearAlmacenAdmin } from './almacen-admin'
+import { crearAlmacenBajas } from './almacen-bajas'
 import { leerHoja } from './hoja'
 
 export type EjecucionSincronizacion = { ok: true; resultado: ResultadoSincronizacion } | { ok: false; error: string }
 
 const CATALOGOS = ['ciudades', 'areas', 'lineas_negocio']
 
-export async function ejecutarSincronizacion(actor: string, simular: boolean): Promise<EjecucionSincronizacion> {
+// eliminar: da de baja a los vinculados cuya fila ya no está en la hoja; solo lo pide la sincronización manual
+export async function ejecutarSincronizacion(actor: string, simular: boolean, eliminar = false): Promise<EjecucionSincronizacion> {
   const db = adminDb()
   const [{ dato: hoja, desactualizado }, snap, catalogos] = await Promise.all([
     leerHoja(true),
@@ -32,7 +34,9 @@ export async function ejecutarSincronizacion(actor: string, simular: boolean): P
     catalogos: Object.fromEntries(CATALOGOS.map((c, i) => [c, (catalogos[i].data()?.items ?? []) as ItemCatalogo[]])),
   }
   const almacen = crearAlmacenAdmin(db, actor)
-  const resultado = await sincronizarColaboradores(simular ? almacenSoloLectura(almacen) : almacen, hoja, existentes, instantanea)
+  const resultado = await sincronizarColaboradores(simular ? almacenSoloLectura(almacen) : almacen, hoja, existentes, instantanea, {
+    bajas: eliminar ? crearAlmacenBajas(db, actor) : undefined, simular,
+  })
   if (resultado.errores.length) console.warn(`Sincronización de colaboradores: ${resultado.errores.length} filas con error`)
   return { ok: true, resultado }
 }
