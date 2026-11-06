@@ -14,7 +14,8 @@ export function HistorialEntregas({ config, registros, items }: {
 }) {
   const columnas = useMemo((): ColumnaTabla<RegistroEntrega>[] => {
     const lista: ColumnaTabla<RegistroEntrega>[] = [
-      { id: 'fecha', encabezado: 'Fecha', tipo: 'fecha', anchoInicial: 130, valor: (r) => (r.fecha instanceof Date ? r.fecha : null) },
+      { id: 'registro', encabezado: 'Registro', tipo: 'fecha', anchoInicial: 130, valor: (r) => (r.fecha_registro instanceof Date ? r.fecha_registro : null) },
+      { id: 'fecha', encabezado: 'Entrega', tipo: 'fecha', anchoInicial: 130, valor: (r) => (r.fecha instanceof Date ? r.fecha : null) },
       { id: 'item', encabezado: 'Elemento', tipo: 'categoria', anchoInicial: 220, valor: (r) => etiquetaDe(items, r[config.campoItem]) },
       { id: 'articulo', encabezado: 'Artículo', tipo: 'texto', anchoInicial: 240, valor: (r) => (typeof r.articulo === 'string' ? r.articulo : '') },
       { id: 'detalle', encabezado: 'Detalle', tipo: 'texto', anchoInicial: 260, valor: (r) => config.detalle(r) },

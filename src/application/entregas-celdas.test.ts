@@ -25,6 +25,11 @@ describe('textos', () => {
   it('celda de uniforme con talla, cantidad y fecha', () => {
     expect(textoCelda(CONFIG_UNIFORME, u)).toBe('M, 2, 05/03/2026')
   })
+  it('sin entrega, la celda indica desde cuándo se solicitó', () => {
+    const sin = { id: 'u', entregado: false, fecha: null, fecha_registro: fechaCalendario(2026, 9, 23) }
+    expect(textoCelda(CONFIG_UNIFORME, sin)).toBe('No entregado, solicitado 23/09/2026')
+    expect(textoCelda(CONFIG_UNIFORME, { ...sin, fecha_registro: undefined })).toBe('No entregado, -')
+  })
   it('detalle de uniforme y de EPP', () => {
     expect(CONFIG_UNIFORME.detalle(u)).toBe('Talla M, cantidad 2')
     expect(CONFIG_EPP.detalle(epp({ vencimiento: fechaCalendario(2027, 1, 1) }))).toBe('Entregado, vence 01/01/2027')

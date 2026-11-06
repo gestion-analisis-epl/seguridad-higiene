@@ -22,5 +22,8 @@ export function estadoEpp(registro: RegistroEntrega, hoy: Date): { clave: ClaveE
 }
 
 export function textoCelda(config: ConfigEntrega, registro: RegistroEntrega): string {
+  // Sin entrega, la fecha útil es la de registro: indica desde cuándo se solicitó
+  const registrada = comoFecha(registro.fecha_registro)
+  if (registro.entregado === false && registrada) return `${config.resumen(registro)}, solicitado ${formatearFecha(registrada)}`
   return `${config.resumen(registro)}, ${formatearFecha(comoFecha(registro.fecha))}`
 }
