@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MODULOS } from '@/domain/modulos-definiciones'
 import type { UsuarioDoc } from '@/domain/permisos'
-import { estaActivo, gruposDeNavegacion } from './enlaces'
+import { ENLACE_ADMIN, estaActivo, gruposDeNavegacion, gruposParaBusqueda } from './enlaces'
 
 const u = (rol: UsuarioDoc['rol'], activo = true): UsuarioDoc => ({ email: 'a@ejemplo.test', rol, activo })
 const hrefs = (usuario: UsuarioDoc | null) => gruposDeNavegacion(usuario).flatMap((g) => g.enlaces.map((e) => e.href))
@@ -12,7 +12,13 @@ describe('gruposDeNavegacion', () => {
     expect(h).toContain('/')
     expect(h).toContain('/analitico')
     for (const id of Object.keys(MODULOS)) expect(h).toContain(`/datos/${id}`)
+    expect(h.filter((x) => x.startsWith('/admin'))).toEqual([ENLACE_ADMIN])
+  })
+
+  it('el buscador lista cada pantalla de administración', () => {
+    const h = gruposParaBusqueda(u('admin')).flatMap((g) => g.enlaces.map((e) => e.href))
     expect(h).toEqual(expect.arrayContaining(['/admin/usuarios', '/admin/catalogos', '/admin/reglas-dotacion', '/admin/configuracion']))
+    expect(gruposParaBusqueda(u('capturista')).flatMap((g) => g.enlaces).some((e) => e.href.startsWith('/admin'))).toBe(false)
   })
 
   it('capturista y consulta ven módulos pero no administración', () => {

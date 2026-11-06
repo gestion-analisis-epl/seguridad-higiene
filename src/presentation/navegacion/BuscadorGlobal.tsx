@@ -9,7 +9,7 @@ import { useColeccion } from '@/presentation/datos/useColeccion'
 import { Icono } from '@/presentation/ui/Icono'
 import { Popover } from '@/presentation/ui/Popover'
 import { buscar, seccionesDeGrupos, type ColaboradorBusqueda } from './busqueda'
-import { gruposDeNavegacion } from './enlaces'
+import { gruposParaBusqueda } from './enlaces'
 import { prepararTablaColaboradores, RUTA_COLABORADORES } from './filtro-colaborador'
 import { ListaResultados, opcionesDe, type OpcionBusqueda } from './ListaResultados'
 
@@ -29,7 +29,7 @@ export function BuscadorGlobal() {
   const [activo, setActivo] = useState(0)
 
   const leer = puede(usuario, 'leer')
-  const secciones = useMemo(() => seccionesDeGrupos(gruposDeNavegacion(usuario)), [usuario])
+  const secciones = useMemo(() => seccionesDeGrupos(gruposParaBusqueda(usuario)), [usuario])
   const { registros } = useColeccion(leer ? 'colaboradores' : null)
   const ciudades = useCatalogo(leer ? 'ciudades' : null)
   const colaboradores = useMemo<ColaboradorBusqueda[]>(() => {

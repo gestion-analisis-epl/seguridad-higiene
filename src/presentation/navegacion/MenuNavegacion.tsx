@@ -24,7 +24,7 @@ export function MenuNavegacion({ grupos, ruta, compacta = false }: { grupos: Gru
           </h2>
           <ul className="space-y-0.5">
             {g.enlaces.map((e) => {
-              const activo = estaActivo(e.href, ruta)
+              const activo = estaActivo(e.activoEn ?? e.href, ruta)
               return (
                 <li key={e.href}>
                   <Link href={e.href} onMouseEnter={(ev) => mostrar(e.titulo, ev.currentTarget)} onFocus={(ev) => mostrar(e.titulo, ev.currentTarget)}
