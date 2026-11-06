@@ -4,12 +4,14 @@ import { Dialogo } from '@/presentation/ui/Dialogo'
 import { DataTable, type ColumnaTabla } from '@/presentation/ui'
 
 // Los registros que suman en la barra o tarjeta elegida
-export function DetalleDialogo<T>({ titulo, unidad, filas, columnas, idFila, alCerrar }: {
+export function DetalleDialogo<T>({ titulo, unidad, filas, columnas, idFila, alSeleccionarFila, textoAccionFila, alCerrar }: {
   titulo: string
   unidad: string
   filas: T[]
   columnas: ColumnaTabla<T>[]
   idFila: (fila: T) => string
+  alSeleccionarFila?: (fila: T) => void
+  textoAccionFila?: string
   alCerrar: () => void
 }) {
   return (
@@ -19,7 +21,8 @@ export function DetalleDialogo<T>({ titulo, unidad, filas, columnas, idFila, alC
         <button type="button" className="boton-secundario" onClick={alCerrar}>Cerrar</button>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
-        <DataTable columnas={columnas} filas={filas} idFila={idFila} vacio="Sin registros." etiqueta={titulo} claveAnchos="dashboard-detalle" />
+        <DataTable columnas={columnas} filas={filas} idFila={idFila} alSeleccionarFila={alSeleccionarFila} textoAccionFila={textoAccionFila}
+          vacio="Sin registros" etiqueta={titulo} claveAnchos="dashboard-detalle" />
       </div>
     </Dialogo>
   )

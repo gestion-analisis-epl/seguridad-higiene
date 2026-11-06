@@ -9,6 +9,9 @@ export interface GrupoEnlaces { titulo: string; enlaces: Enlace[] }
 
 export const ENLACE_ADMIN = '/admin/usuarios'
 
+// Único lugar que construye la ruta de la ficha de un colaborador
+export const rutaColaborador = (id: string) => `/colaboradores/${encodeURIComponent(id)}`
+
 // Pestañas de la sección de administración, agrupadas por tema
 export const GRUPOS_ADMIN: GrupoEnlaces[] = [
   {

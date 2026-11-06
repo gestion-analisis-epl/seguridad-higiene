@@ -1,10 +1,12 @@
 'use client'
 
 import { useCallback, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { alertasVencimiento, evaluacionColaboradores, type Alerta, type Pendiente, pendientesPorColaborador, resumenGlobal, resumenPorCiudad } from '@/application/dashboard'
 import type { Opcion } from '@/domain/modulos'
 import { filtrarPorCiudades } from '@/application/dashboard-filtro'
 import { faltantesPorArticulo, pendientesDeFaltante, poblacionDeIndicador, type Faltante, type Indicador } from '@/application/dashboard-graficas'
+import { rutaColaborador } from '@/presentation/navegacion/enlaces'
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { DataTable } from '@/presentation/ui/tabla'
@@ -30,6 +32,8 @@ function Seccion({ titulo, indice, children }: { titulo: string; indice: number;
 }
 
 export function DashboardOperativo() {
+  const router = useRouter()
+  const verFicha = (p: Pendiente) => router.push(rutaColaborador(p.colaborador.id))
   const { cargando, error, datos: todos } = useDatosOperativos()
   const filtro = useFiltroCiudades()
   const { etiqueta, ciudades } = filtro
@@ -98,6 +102,7 @@ export function DashboardOperativo() {
           </Seccion>
           <Seccion titulo="Colaboradores con pendientes" indice={7}>
             <DataTable columnas={colsPendientes} filas={pendientes} idFila={(p) => p.colaborador.id}
+              alSeleccionarFila={verFicha} textoAccionFila="ver ficha"
               vacio="Sin pendientes." etiqueta="Colaboradores con pendientes" claveAnchos="dashboard-pendientes" />
           </Seccion>
           <details className="mt-8">
@@ -111,7 +116,7 @@ export function DashboardOperativo() {
       )}
       {detalle && (detalle.filas ? (
         <DetalleDialogo titulo={detalle.titulo} unidad="colaboradores" filas={detalle.filas} columnas={colsPendientes}
-          idFila={(p) => p.colaborador.id} alCerrar={() => setDetalle(null)} />
+          idFila={(p) => p.colaborador.id} alSeleccionarFila={verFicha} textoAccionFila="ver ficha" alCerrar={() => setDetalle(null)} />
       ) : (
         <DetalleDialogo titulo={detalle.titulo} unidad="vencimientos" filas={alertas} columnas={colsAlertas}
           idFila={(a) => a.id} alCerrar={() => setDetalle(null)} />

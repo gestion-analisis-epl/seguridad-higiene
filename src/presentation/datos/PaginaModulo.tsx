@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { puede } from '@/domain/permisos'
 import type { ModuloDef } from '@/domain/modulos'
 import type { Registro } from '@/infrastructure/firestore/repositorio'
 import { useSesion } from '@/presentation/auth/AuthProvider'
 import { AltaColaborador } from '@/presentation/colaboradores/AltaColaborador'
+import { rutaColaborador } from '@/presentation/navegacion/enlaces'
 import { EncabezadoPagina } from '@/presentation/ui/EncabezadoPagina'
 import { AvisoError, Cargando } from '@/presentation/ui/Estado'
 import { Icono } from '@/presentation/ui/Icono'
@@ -21,10 +23,15 @@ function detalleDe(editando: Registro | 'nuevo' | null, cargando: boolean, total
 }
 
 export function PaginaModulo({ def }: { def: ModuloDef }) {
+  const router = useRouter()
   const { usuario } = useSesion()
   const { registros, cargando, error } = useColeccion(def.coleccion)
   const [editando, setEditando] = useState<Registro | 'nuevo' | null>(null)
   const capturista = puede(usuario, 'capturar') && !def.soloLectura
+  // En colaboradores la fila abre la ficha, desde donde se edita
+  const alSeleccionar = def.id === 'colaboradores'
+    ? (r: Registro) => router.push(rutaColaborador(r.id))
+    : capturista ? setEditando : undefined
 
   return (
     <section className="aparecer">
@@ -45,8 +52,8 @@ export function PaginaModulo({ def }: { def: ModuloDef }) {
         <div className="space-y-4">
           {error && <AvisoError>{error}</AvisoError>}
           {cargando ? <Cargando /> : (
-            <TablaModulo def={def} registros={registros}
-              alSeleccionar={capturista ? setEditando : undefined} />
+            <TablaModulo def={def} registros={registros} alSeleccionar={alSeleccionar}
+              textoAccionFila={def.id === 'colaboradores' ? 'ver ficha' : undefined} />
           )}
         </div>
       )}

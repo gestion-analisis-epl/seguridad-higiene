@@ -30,6 +30,6 @@ export function TablaEntregas({ cfg, filas, items, ciudades, alAbrir }: {
   return (
     <DataTable columnas={columnas} filas={filas} idFila={idFila} alSeleccionarFila={(f) => alAbrir(f.colaborador.id)}
       vacio="Sin colaboradores" etiqueta={cfg.titulo} claveAnchos={`tabla-entregas-${cfg.titulo}`}
-      textoAccionFila="ver entregas" filtrosIniciales={FILTROS_INICIALES} />
+      textoAccionFila="ver ficha" filtrosIniciales={FILTROS_INICIALES} />
   )
 }

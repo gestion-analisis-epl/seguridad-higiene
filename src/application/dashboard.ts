@@ -25,7 +25,7 @@ function ultimosPorClave<T extends { vencimiento: Date | null }>(items: T[], cla
 const normasDe = (c: Colaborador): string[] => c.normas_obligatorias ?? []
 
 // Normas obligatorias de la persona sin una capacitación vigente que cumpla
-function normasFaltantes(c: Colaborador, caps: Capacitacion[], hoy: Date): string[] {
+export function normasFaltantes(c: Colaborador, caps: Capacitacion[], hoy: Date): string[] {
   return normasDe(c).filter((n) => !caps.some((x) => x.colaborador_id === c.id && x.norma === n && x.cumple && estadoVencimiento(x.vencimiento, hoy) !== 'vencido'))
 }
 

@@ -9,8 +9,7 @@ import { useColeccion } from '@/presentation/datos/useColeccion'
 import { Icono } from '@/presentation/ui/Icono'
 import { Popover } from '@/presentation/ui/Popover'
 import { buscar, seccionesDeGrupos, type ColaboradorBusqueda } from './busqueda'
-import { gruposParaBusqueda } from './enlaces'
-import { prepararTablaColaboradores, RUTA_COLABORADORES } from './filtro-colaborador'
+import { gruposParaBusqueda, rutaColaborador } from './enlaces'
 import { ListaResultados, opcionesDe, type OpcionBusqueda } from './ListaResultados'
 
 const esCampoEditable = (t: EventTarget | null) =>
@@ -68,8 +67,7 @@ export function BuscadorGlobal() {
     setConsulta('')
     entrada.current?.blur()
     if (o.tipo === 'seccion') { router.push(o.seccion.href); return }
-    prepararTablaColaboradores(o.colaborador.nombre)
-    router.push(RUTA_COLABORADORES)
+    router.push(rutaColaborador(o.colaborador.id))
   }
 
   const mover = (paso: number) => {

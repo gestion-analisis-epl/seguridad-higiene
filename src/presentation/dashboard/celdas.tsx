@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import type { Alerta, Pendiente } from '@/application/dashboard'
+import { rutaColaborador } from '@/presentation/navegacion/enlaces'
 import { Icono } from '@/presentation/ui/Icono'
 import type { ColumnaTabla } from '@/presentation/ui/tabla'
 import { columnasMensual } from './columnas-analitico'
@@ -20,6 +22,9 @@ export const celdasAlertas = {
     </span>
   ),
   origen: (a: Alerta) => <span className="capitalize">{textoOrigen(a)}</span>,
+  referencia: (a: Alerta) => (a.colaborador
+    ? <Link href={rutaColaborador(a.colaborador.id)} className="font-medium underline-offset-2 hover:underline">{a.referencia}</Link>
+    : a.referencia),
 }
 
 export const celdasPendientes = {

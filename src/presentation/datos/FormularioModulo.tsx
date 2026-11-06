@@ -24,21 +24,22 @@ import { useColeccion } from './useColeccion'
 interface Props {
   def: ModuloDef
   registro?: Registro
+  inicial?: Valores
   alTerminar: () => void
 }
 
-function valoresDe(def: ModuloDef, registro?: Registro): Valores {
-  const base: Valores = { ...(def.inicial ?? {}) }
+function valoresDe(def: ModuloDef, registro?: Registro, inicial?: Valores): Valores {
+  const base: Valores = { ...(def.inicial ?? {}), ...(inicial ?? {}) }
   for (const c of def.campos) {
     if (registro && c.nombre in registro) base[c.nombre] = registro[c.nombre] as Valor
   }
   return base
 }
 
-export function FormularioModulo({ def, registro, alTerminar }: Props) {
+export function FormularioModulo({ def, registro, inicial, alTerminar }: Props) {
   const { uid, usuario } = useSesion()
   const { registros: colaboradores } = useColeccion('colaboradores')
-  const [valores, setValores] = useState<Valores>(() => valoresDe(def, registro))
+  const [valores, setValores] = useState<Valores>(() => valoresDe(def, registro, inicial))
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [guardando, setGuardando] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)

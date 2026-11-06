@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MODULOS } from '@/domain/modulos-definiciones'
 import type { UsuarioDoc } from '@/domain/permisos'
-import { ENLACE_ADMIN, estaActivo, gruposDeNavegacion, gruposParaBusqueda } from './enlaces'
+import { ENLACE_ADMIN, estaActivo, gruposDeNavegacion, gruposParaBusqueda, rutaColaborador } from './enlaces'
 
 const u = (rol: UsuarioDoc['rol'], activo = true): UsuarioDoc => ({ email: 'a@ejemplo.test', rol, activo })
 const hrefs = (usuario: UsuarioDoc | null) => gruposDeNavegacion(usuario).flatMap((g) => g.enlaces.map((e) => e.href))
@@ -42,5 +42,12 @@ describe('estaActivo', () => {
     expect(estaActivo('/', '/analitico')).toBe(false)
     expect(estaActivo('/datos/accidentes', '/datos/accidentes')).toBe(true)
     expect(estaActivo('/admin/usuarios', '/admin/usuarios-x')).toBe(false)
+  })
+})
+
+describe('rutaColaborador', () => {
+  it('arma la ruta de la ficha y codifica el id', () => {
+    expect(rutaColaborador('abc123')).toBe('/colaboradores/abc123')
+    expect(rutaColaborador('a/b c')).toBe('/colaboradores/a%2Fb%20c')
   })
 })
