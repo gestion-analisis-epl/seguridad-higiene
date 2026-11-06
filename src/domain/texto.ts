@@ -24,4 +24,21 @@ export function aTitulo(s: string): string {
   }).join(' ')
 }
 
+// Siglas de sociedad que se muestran en mayúsculas; el resto de la frase queda en minúsculas
+const SIGLAS_SOCIEDAD: [RegExp, string][] = [
+  [/(^|\s)s de rl de cv(?=\s|$)/g, '$1S de RL de CV'],
+  [/(^|\s)sapi de cv(?=\s|$)/g, '$1SAPI de CV'],
+  [/(^|\s)sa de cv(?=\s|$)/g, '$1SA de CV'],
+  [/(^|\s)s\.a\. de c\.v\.(?=\s|$)/g, '$1S.A. de C.V.'],
+]
+
+// Formato oración: primera letra en mayúscula; siglas de sociedad y códigos con números (NOM-009-STPS-2011, AGS001) en mayúsculas.
+export function aOracion(s: string): string {
+  const palabras = limpiarTexto(s).toLowerCase().split(' ').filter(Boolean)
+  if (palabras.length === 0) return ''
+  let texto = palabras.map((p) => (/\d/.test(p) ? p.toUpperCase() : p)).join(' ')
+  for (const [patron, siglas] of SIGLAS_SOCIEDAD) texto = texto.replace(patron, siglas)
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
 export const aPlaca = (s: string): string => limpiarTexto(s).replace(/\s/g, '').toUpperCase()
