@@ -41,7 +41,7 @@ const fila = (o: Partial<ColaboradorHoja> = {}): ColaboradorHoja => ({
   id_interno: '12066', numero: '2120', nombre: 'ADALBERTO GUTIERREZ MIRANDA', plaza: 'LEON', departamento: 'SEGURIDAD',
   empresa: 'SICMART SA DE CV', puesto: 'GUARDIA DE SEGURIDAD', fecha_ingreso: '2026-09-28', zona: 'Bajío Centro',
   jefe: 'JOSE', gerente: 'ALFONSO', fecha_baja: null, motivo_baja: '', inactivo: false,
-  nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', ...o,
+  nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', codigo_cuadrilla: '', id_cuadrilla: '', cuadrilla_tipo: '', cuadrilla: '', ...o,
 })
 
 describe('importarColaboradores', () => {
@@ -328,5 +328,27 @@ describe('columnas adicionales del Sheets', () => {
     expect(m.colaboradores.get(uid)).toMatchObject(extra)
     expect(await actualizarDesdeHoja(m.almacen, fila({ ...extra, correo: 'nuevo@b.com' }))).toBe('actualizado')
     expect(m.colaboradores.get(uid)?.correo).toBe('nuevo@b.com')
+  })
+})
+
+describe('cuadrilla desde la hoja', () => {
+  it('se crea y se asigna al dar de alta y al sincronizar, con su entrada de catálogo', async () => {
+    const m = almacenMemoria()
+    await asegurarColaborador(m.almacen, fila({ cuadrilla: 'PUE001 - Lonas' }))
+    const uid = m.indice.get('12066')!
+    expect(m.colaboradores.get(uid)?.cuadrilla).toBe('pue001-lonas')
+    expect(m.catalogos.get('cuadrillas')).toEqual([{ valor: 'pue001-lonas', etiqueta: 'PUE001 - Lonas' }])
+    expect(await actualizarDesdeHoja(m.almacen, fila({ cuadrilla: 'PUE002 - Lonas' }))).toBe('actualizado')
+    expect(m.colaboradores.get(uid)?.cuadrilla).toBe('pue002-lonas')
+  })
+
+  it('una celda vacía o un inactivo no borran ni cambian la cuadrilla', async () => {
+    const m = almacenMemoria()
+    await asegurarColaborador(m.almacen, fila({ cuadrilla: 'PUE001 - Lonas' }))
+    const uid = m.indice.get('12066')!
+    expect(await actualizarDesdeHoja(m.almacen, fila({ cuadrilla: '' }))).toBe('sin_cambios')
+    await actualizarDesdeHoja(m.almacen, fila({ cuadrilla: 'PUE009 - Otra', fecha_baja: '2026-10-01', inactivo: true }))
+    expect(m.colaboradores.get(uid)?.cuadrilla).toBe('pue001-lonas')
+    expect(m.catalogos.get('cuadrillas')).toHaveLength(1)
   })
 })

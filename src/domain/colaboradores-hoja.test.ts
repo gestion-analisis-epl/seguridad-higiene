@@ -20,7 +20,7 @@ const hoja = (...filas: Record<string, string>[]) => [ENCABEZADO, ...filas.map(f
 const col = (o: Partial<ColaboradorHoja>): ColaboradorHoja => ({
   id_interno: '1', numero: '1', nombre: 'ANA PEREZ', plaza: 'LEON', departamento: 'OPERACIONES', empresa: 'X', puesto: 'P',
   fecha_ingreso: null, zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', inactivo: false,
-  nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', ...o,
+  nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', codigo_cuadrilla: '', id_cuadrilla: '', cuadrilla_tipo: '', cuadrilla: '', ...o,
 })
 
 describe('parsearFilasHoja', () => {
@@ -41,14 +41,14 @@ describe('parsearFilasHoja', () => {
       empresa: 'SICMART SA DE CV', puesto: 'GUARDIA DE SEGURIDAD', fecha_ingreso: '2026-09-28', zona: 'Bajío Centro',
       jefe: 'JOSE CHAGOYA', gerente: 'ALFONSO ORDAZ OCAÑA', fecha_baja: null, motivo_baja: '', inactivo: false,
       nombres: 'ADALBERTO', apellido_paterno: 'GUTIERREZ', apellido_materno: 'MIRANDA', funcion_area: 'OPERACION',
-      empresa_alta: 'SICMART', correo: 'x@y.com', tipo_nomina: 'SEMANAL',
+      empresa_alta: 'SICMART', correo: 'x@y.com', tipo_nomina: 'SEMANAL', codigo_cuadrilla: '', id_cuadrilla: '', cuadrilla_tipo: '', cuadrilla: '',
     }])
   })
 
   it('las columnas adicionales son opcionales: si la pestaña no las trae quedan vacías', () => {
     const minima = [['id', 'NombreCompleto', 'Departamento', 'Puesto', 'FechaIngreso', 'Plaza', 'Empresa'], ['7', 'ANA PEREZ', 'OPS', 'P', '2026-01-02', 'LEON', 'X']]
     expect(parsearFilasHoja(minima).colaboradores[0]).toMatchObject({
-      nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '',
+      nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', codigo_cuadrilla: '', id_cuadrilla: '', cuadrilla_tipo: '', cuadrilla: '',
     })
   })
 
@@ -181,4 +181,17 @@ describe('copiaDeColaborador', () => {
 
 describe('normalizarNombre', () => {
   it('quita acentos, mayúsculas y espacios repetidos', () => expect(normalizarNombre('  MaRía   PÉREZ ')).toBe('maria perez'))
+})
+
+describe('cuadrilla en la hoja', () => {
+  const enc = ['id', 'NombreCompleto', 'Departamento', 'Puesto', 'FechaIngreso', 'Plaza', 'Empresa', 'CodigoCuadrilla', 'IDCuadrilla', 'CuadrillaTipo']
+  const fila = (...c: string[]) => [enc, ['7', 'ANA PEREZ', 'OPS', 'P', '2026-01-02', 'LEON', 'X', ...c]]
+  it('une código y tipo y guarda cada columna', () => {
+    expect(parsearFilasHoja(fila('pue001', '55', 'LONAS')).colaboradores[0]).toMatchObject({
+      codigo_cuadrilla: 'PUE001', id_cuadrilla: '55', cuadrilla_tipo: 'Lonas', cuadrilla: 'PUE001 - Lonas',
+    })
+  })
+  it('sin datos de cuadrilla queda vacía', () => {
+    expect(parsearFilasHoja(fila('', '', '')).colaboradores[0].cuadrilla).toBe('')
+  })
 })

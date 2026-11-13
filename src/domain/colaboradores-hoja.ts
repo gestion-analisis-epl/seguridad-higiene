@@ -26,11 +26,16 @@ export interface ColaboradorHoja {
   empresa_alta: string
   correo: string
   tipo_nomina: string
+  codigo_cuadrilla: string
+  id_cuadrilla: string
+  cuadrilla_tipo: string
+  // Código y tipo unidos, p. ej. PUE001 - Lonas; es lo que se guarda en el catálogo
+  cuadrilla: string
   // Viene de la pestaña de inactivos o trae fecha de baja
   inactivo: boolean
 }
 
-type CampoHoja = Exclude<keyof ColaboradorHoja, 'inactivo'>
+type CampoHoja = Exclude<keyof ColaboradorHoja, 'inactivo' | 'cuadrilla'>
 type TextoHoja = Exclude<CampoHoja, 'fecha_ingreso' | 'fecha_baja'>
 
 const ENCABEZADOS: Record<CampoHoja, string> = {
@@ -38,7 +43,7 @@ const ENCABEZADOS: Record<CampoHoja, string> = {
   empresa: 'empresa', puesto: 'puesto', fecha_ingreso: 'fechaingreso', zona: 'zona', jefe: 'jefe', gerente: 'gerente',
   fecha_baja: 'fechabaja', motivo_baja: 'motivobaja', nombres: 'nombre', apellido_paterno: 'apellidopaterno',
   apellido_materno: 'apellidomaterno', funcion_area: 'funcionarea', empresa_alta: 'empresaalta', correo: 'correoempresa',
-  tipo_nomina: 'tiponomina',
+  tipo_nomina: 'tiponomina', codigo_cuadrilla: 'codigocuadrilla', id_cuadrilla: 'idcuadrilla', cuadrilla_tipo: 'cuadrillatipo',
 }
 const OBLIGATORIAS: CampoHoja[] = ['id_interno', 'nombre', 'plaza', 'departamento', 'empresa', 'puesto', 'fecha_ingreso']
 const ID_VALIDO = /^[0-9A-Za-z_-]{1,64}$/
@@ -82,6 +87,8 @@ export function parsearFilasHoja(valores: string[][], { inactivos = false } = {}
     }
     vistos.add(id)
     const fechaBaja = fecha('fecha_baja')
+    const codigo = texto('codigo_cuadrilla').toUpperCase()
+    const tipoCuadrilla = aTitulo(texto('cuadrilla_tipo'))
     colaboradores.push({
       id_interno: id, numero: texto('numero'), nombre: texto('nombre'), plaza: texto('plaza'),
       departamento: texto('departamento'), empresa: texto('empresa'), puesto: texto('puesto'),
@@ -89,6 +96,8 @@ export function parsearFilasHoja(valores: string[][], { inactivos = false } = {}
       fecha_baja: fechaBaja, motivo_baja: texto('motivo_baja'), nombres: texto('nombres'),
       apellido_paterno: texto('apellido_paterno'), apellido_materno: texto('apellido_materno'), funcion_area: texto('funcion_area'),
       empresa_alta: texto('empresa_alta'), correo: texto('correo'), tipo_nomina: texto('tipo_nomina'),
+      codigo_cuadrilla: codigo, id_cuadrilla: texto('id_cuadrilla'), cuadrilla_tipo: tipoCuadrilla,
+      cuadrilla: [codigo, tipoCuadrilla].filter(Boolean).join(' - '),
       inactivo: inactivos || fechaBaja !== null,
     })
   }
@@ -98,6 +107,7 @@ export function parsearFilasHoja(valores: string[][], { inactivos = false } = {}
 // El navegador solo necesita identificar la fila; las columnas adicionales se guardan en el servidor y no viajan
 export const paraCliente = (f: ColaboradorHoja): ColaboradorHoja => ({
   ...f, nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '',
+  codigo_cuadrilla: '', id_cuadrilla: '', cuadrilla_tipo: '', cuadrilla: '',
 })
 
 export function buscarColaboradores(filas: ColaboradorHoja[], texto: string): ColaboradorHoja[] {
@@ -115,8 +125,8 @@ export const etiquetaColaboradorHoja = (f: ColaboradorHoja): string =>
 export interface EntradaResuelta { valor: string; etiqueta: string; nueva: boolean }
 
 // Reutiliza la entrada del catálogo que coincide; si no existe propone una nueva
-export function resolverEntradaCatalogo(items: ItemCatalogo[], texto: string): EntradaResuelta | null {
-  const etiqueta = aTitulo(texto)
+export function resolverEntradaCatalogo(items: ItemCatalogo[], texto: string, formato: (t: string) => string = aTitulo): EntradaResuelta | null {
+  const etiqueta = formato(texto)
   const valor = slug(etiqueta)
   if (!valor) return null
   const clave = normalizarNombre(etiqueta)

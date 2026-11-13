@@ -18,7 +18,7 @@ function datosDelRegistro(r: Registro): ColaboradorHoja {
     departamento: texto(r.area), empresa: texto(r.linea_negocio), puesto: texto(r.puesto),
     fecha_ingreso: ingreso instanceof Date ? ingreso.toISOString().slice(0, 10) : null,
     zona: '', jefe: '', gerente: '', fecha_baja: null, motivo_baja: '', inactivo: r.activo === false,
-    nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '',
+    nombres: '', apellido_paterno: '', apellido_materno: '', funcion_area: '', empresa_alta: '', correo: '', tipo_nomina: '', codigo_cuadrilla: '', id_cuadrilla: '', cuadrilla_tipo: '', cuadrilla: '',
   }
 }
 

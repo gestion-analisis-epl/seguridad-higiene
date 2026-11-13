@@ -1,7 +1,7 @@
 import type { ItemCatalogo } from '@/domain/catalogos-iniciales'
 import { normalizarNombre, planearImportacion, resolverEntradaCatalogo, type ColaboradorHoja, type ExistenteEnlace } from '@/domain/colaboradores-hoja'
 import { deTextoIso } from '@/domain/fechas'
-import { aTitulo } from '@/domain/texto'
+import { aTitulo, limpiarTexto } from '@/domain/texto'
 
 export interface TxColaboradores {
   leerIndice(idInterno: string): Promise<string | null>
@@ -24,11 +24,14 @@ export class ErrorColaborador extends Error {
   constructor(readonly estado: number, mensaje: string) { super(mensaje) }
 }
 
-type CampoCatalogo = 'ciudad' | 'area' | 'linea_negocio'
-const CATALOGOS: { campo: CampoCatalogo; catalogo: string; texto: (f: ColaboradorHoja) => string; obligatorio: boolean; origen: string }[] = [
+type CampoCatalogo = 'ciudad' | 'area' | 'linea_negocio' | 'cuadrilla'
+// conservar: una celda vacía no borra el valor que ya tiene el colaborador
+const CATALOGOS: { campo: CampoCatalogo; catalogo: string; texto: (f: ColaboradorHoja) => string; obligatorio: boolean; origen: string; conservar?: boolean; formato?: (t: string) => string }[] = [
   { campo: 'ciudad', catalogo: 'ciudades', texto: (f) => f.plaza, obligatorio: true, origen: 'Plaza' },
   { campo: 'area', catalogo: 'areas', texto: (f) => f.departamento, obligatorio: false, origen: 'Departamento' },
   { campo: 'linea_negocio', catalogo: 'lineas_negocio', texto: (f) => f.empresa, obligatorio: true, origen: 'Empresa' },
+  // La cuadrilla solo se toma de los activos
+  { campo: 'cuadrilla', catalogo: 'cuadrillas', texto: (f) => (f.inactivo ? '' : f.cuadrilla), obligatorio: false, origen: 'Cuadrilla', conservar: true, formato: limpiarTexto },
 ]
 
 // Lee los catálogos necesarios antes de cualquier escritura, como exigen las transacciones
@@ -37,8 +40,9 @@ async function resolverCatalogos(tx: TxColaboradores, fila: ColaboradorHoja, cam
   const nuevos = new Map<string, ItemCatalogo[]>()
   for (const c of CATALOGOS.filter((x) => campos.includes(x.campo))) {
     const items = await tx.leerCatalogo(c.catalogo)
-    const entrada = resolverEntradaCatalogo(items, c.texto(fila))
+    const entrada = resolverEntradaCatalogo(items, c.texto(fila), c.formato)
     if (!entrada) {
+      if (c.conservar) continue
       if (c.obligatorio) throw new ErrorColaborador(422, `La hoja no trae ${c.origen} para este colaborador`)
       valores[c.campo] = null
       continue
@@ -54,6 +58,7 @@ const camposMovibles = (f: ColaboradorHoja) => ({
   motivo_baja: f.motivo_baja, fecha_baja: f.fecha_baja ? deTextoIso(f.fecha_baja) : null,
   nombres: f.nombres, apellido_paterno: f.apellido_paterno, apellido_materno: f.apellido_materno, funcion_area: f.funcion_area,
   empresa_alta: f.empresa_alta, correo: f.correo, tipo_nomina: f.tipo_nomina,
+  codigo_cuadrilla: f.codigo_cuadrilla, id_cuadrilla: f.id_cuadrilla, cuadrilla_tipo: f.cuadrilla_tipo,
 })
 
 const datosDeHoja = (f: ColaboradorHoja) => ({ id_interno: f.id_interno, numero_colaborador: f.numero, ...camposMovibles(f) })
@@ -65,7 +70,7 @@ export async function asegurarColaborador(
   return almacen.transaccion(async (tx) => {
     const existente = await tx.leerIndice(fila.id_interno)
     if (existente) return { uid: existente, creado: false }
-    const { valores, nuevos } = await resolverCatalogos(tx, fila, ['ciudad', 'area', 'linea_negocio'])
+    const { valores, nuevos } = await resolverCatalogos(tx, fila, ['ciudad', 'area', 'linea_negocio', 'cuadrilla'])
     for (const [id, items] of Array.from(nuevos)) tx.escribirCatalogo(id, items)
     const uid = tx.nuevoId()
     tx.crearColaborador(uid, {
@@ -135,7 +140,7 @@ export async function actualizarDesdeHoja(almacen: AlmacenColaboradores, fila: C
     const uid = await tx.leerIndice(fila.id_interno)
     const actual = uid ? await tx.leerColaborador(uid) : null
     if (!uid || !actual) return 'sin_cambios'
-    const { valores, nuevos } = await resolverCatalogos(tx, fila, ['ciudad', 'area', 'linea_negocio'])
+    const { valores, nuevos } = await resolverCatalogos(tx, fila, ['ciudad', 'area', 'linea_negocio', 'cuadrilla'])
     const cambios = cambiosPropuestos(fila, actual, valores)
     if (Object.keys(cambios).length === 0) return 'sin_cambios'
     for (const [id, items] of Array.from(nuevos)) tx.escribirCatalogo(id, items)
@@ -192,8 +197,9 @@ function sinCambiosEnMemoria(fila: ColaboradorHoja, { colaboradores, catalogos }
   if (!actual) return false
   const valores: Partial<Record<CampoCatalogo, string | null>> = {}
   for (const c of CATALOGOS) {
-    const entrada = resolverEntradaCatalogo(catalogos[c.catalogo] ?? [], c.texto(fila))
+    const entrada = resolverEntradaCatalogo(catalogos[c.catalogo] ?? [], c.texto(fila), c.formato)
     if (entrada?.nueva || (!entrada && c.obligatorio)) return false
+    if (!entrada && c.conservar) continue
     valores[c.campo] = entrada?.valor ?? null
   }
   return Object.keys(cambiosPropuestos(fila, actual, valores)).length === 0
